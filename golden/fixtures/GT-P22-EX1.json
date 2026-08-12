@@ -1,0 +1,10 @@
+{
+  "id": "GT-P22-EX1",
+  "sourceEvidenceId": "SRC-P22",
+  "page": 22,
+  "section": "Fraction Calculations",
+  "initialMode": "COMP",
+  "setup": { "displayFormat": "MthIO-MathO" },
+  "keys": ["2", "frac", "3", "right", "add", "1", "frac", "2", "equals"],
+  "expectedDisplay": "7/6"
+}

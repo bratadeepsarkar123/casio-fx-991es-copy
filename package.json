@@ -1,0 +1,40 @@
+{
+  "name": "casio-fx-991es-plus-2",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Web clone of Casio fx-991ES PLUS 2nd edition (fx-991ES PLUS-2)",
+  "engines": {
+    "node": ">=22.14.0"
+  },
+  "packageManager": "npm@10.9.7",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "lint": "tsc --noEmit --pretty false"
+  },
+  "dependencies": {
+    "decimal.js": "10.6.0",
+    "mathjs": "14.5.2",
+    "react": "19.1.1",
+    "react-dom": "19.1.1",
+    "zustand": "5.0.8"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.55.0",
+    "@tailwindcss/vite": "4.1.12",
+    "@types/react": "19.1.12",
+    "@types/react-dom": "19.1.9",
+    "@vitejs/plugin-react": "5.0.2",
+    "tailwindcss": "4.1.12",
+    "typescript": "5.9.2",
+    "vite": "7.1.5",
+    "vite-plugin-pwa": "1.0.3",
+    "vitest": "3.2.4",
+    "workbox-window": "7.3.0"
+  }
+}

@@ -1,0 +1,518 @@
+{
+  "version": 1,
+  "sourceImage": "assets/chassis-fx-991es-plus-2.png",
+  "sourceImageWidth": 890,
+  "sourceImageHeight": 1847,
+  "sourceImageAspect": 0.481862,
+  "coordinateSpace": "percent-of-source-image",
+  "lcd": {
+    "x": 8.9,
+    "y": 14.9,
+    "w": 80.1,
+    "h": 16.2
+  },
+  "keys": [
+    {
+      "id": "shift",
+      "primary": "SHIFT",
+      "shift": null,
+      "alpha": null,
+      "x": 10.9,
+      "y": 37.1,
+      "w": 8.2,
+      "h": 3.9
+    },
+    {
+      "id": "alpha",
+      "primary": "ALPHA",
+      "shift": null,
+      "alpha": null,
+      "x": 23.9,
+      "y": 37.1,
+      "w": 8.1,
+      "h": 3.9
+    },
+    {
+      "id": "up",
+      "primary": "▲",
+      "shift": null,
+      "alpha": null,
+      "x": 45.1,
+      "y": 36.2,
+      "w": 8.5,
+      "h": 2.4
+    },
+    {
+      "id": "down",
+      "primary": "▼",
+      "shift": null,
+      "alpha": null,
+      "x": 45.1,
+      "y": 39.4,
+      "w": 8.5,
+      "h": 2.4
+    },
+    {
+      "id": "left",
+      "primary": "◀",
+      "shift": null,
+      "alpha": null,
+      "x": 39.6,
+      "y": 37.6,
+      "w": 6.5,
+      "h": 2.8
+    },
+    {
+      "id": "right",
+      "primary": "▶",
+      "shift": null,
+      "alpha": null,
+      "x": 52.6,
+      "y": 37.6,
+      "w": 6.5,
+      "h": 2.8
+    },
+    {
+      "id": "mode",
+      "primary": "MODE",
+      "shift": "SETUP",
+      "alpha": null,
+      "x": 67.8,
+      "y": 37.0,
+      "w": 8.0,
+      "h": 4.0
+    },
+    {
+      "id": "on",
+      "primary": "ON",
+      "shift": null,
+      "alpha": null,
+      "x": 80.7,
+      "y": 37.0,
+      "w": 8.1,
+      "h": 4.0
+    },
+    {
+      "id": "calc",
+      "primary": "CALC",
+      "shift": "SOLVE",
+      "alpha": "=",
+      "x": 10.9,
+      "y": 44.6,
+      "w": 8.2,
+      "h": 3.8
+    },
+    {
+      "id": "integral",
+      "primary": "∫dx",
+      "shift": "d/dx",
+      "alpha": ":",
+      "x": 23.9,
+      "y": 44.6,
+      "w": 8.1,
+      "h": 3.8
+    },
+    {
+      "id": "xinv",
+      "primary": "x⁻¹",
+      "shift": "x!",
+      "alpha": "Σ",
+      "x": 67.8,
+      "y": 44.6,
+      "w": 8.0,
+      "h": 3.8
+    },
+    {
+      "id": "logab",
+      "primary": "log□□",
+      "shift": "Σ",
+      "alpha": "Π",
+      "x": 80.7,
+      "y": 44.6,
+      "w": 8.1,
+      "h": 3.8
+    },
+    {
+      "id": "frac",
+      "primary": "□/□",
+      "shift": "mixed",
+      "alpha": "recurring",
+      "x": 10.5,
+      "y": 50.6,
+      "w": 9.8,
+      "h": 3.7
+    },
+    {
+      "id": "sqrt",
+      "primary": "√□",
+      "shift": "∛□",
+      "alpha": "]",
+      "x": 24.3,
+      "y": 50.6,
+      "w": 9.8,
+      "h": 3.7
+    },
+    {
+      "id": "square",
+      "primary": "x²",
+      "shift": "x³",
+      "alpha": "DEC",
+      "x": 38.1,
+      "y": 50.6,
+      "w": 9.8,
+      "h": 3.7
+    },
+    {
+      "id": "power",
+      "primary": "x^□",
+      "shift": "ⁿ√□",
+      "alpha": "HEX",
+      "x": 51.9,
+      "y": 50.6,
+      "w": 9.8,
+      "h": 3.7
+    },
+    {
+      "id": "log",
+      "primary": "log",
+      "shift": "10^x",
+      "alpha": "BIN",
+      "x": 65.7,
+      "y": 50.6,
+      "w": 9.8,
+      "h": 3.7
+    },
+    {
+      "id": "ln",
+      "primary": "ln",
+      "shift": "e^x",
+      "alpha": "OCT",
+      "x": 79.6,
+      "y": 50.6,
+      "w": 9.8,
+      "h": 3.7
+    },
+    {
+      "id": "neg",
+      "primary": "(-)",
+      "shift": "∠",
+      "alpha": "A",
+      "x": 10.5,
+      "y": 56.8,
+      "w": 9.8,
+      "h": 3.7
+    },
+    {
+      "id": "dms",
+      "primary": "° ′ ″",
+      "shift": "←",
+      "alpha": "B",
+      "x": 24.3,
+      "y": 56.8,
+      "w": 9.8,
+      "h": 3.7
+    },
+    {
+      "id": "hyp",
+      "primary": "hyp",
+      "shift": "Abs",
+      "alpha": "C",
+      "x": 38.1,
+      "y": 56.8,
+      "w": 9.8,
+      "h": 3.7
+    },
+    {
+      "id": "sin",
+      "primary": "sin",
+      "shift": "sin⁻¹",
+      "alpha": "D",
+      "x": 51.9,
+      "y": 56.8,
+      "w": 9.8,
+      "h": 3.7
+    },
+    {
+      "id": "cos",
+      "primary": "cos",
+      "shift": "cos⁻¹",
+      "alpha": "E",
+      "x": 65.7,
+      "y": 56.8,
+      "w": 9.8,
+      "h": 3.7
+    },
+    {
+      "id": "tan",
+      "primary": "tan",
+      "shift": "tan⁻¹",
+      "alpha": "F",
+      "x": 79.6,
+      "y": 56.8,
+      "w": 9.8,
+      "h": 3.7
+    },
+    {
+      "id": "rcl",
+      "primary": "RCL",
+      "shift": "STO",
+      "alpha": null,
+      "x": 10.5,
+      "y": 63.0,
+      "w": 9.8,
+      "h": 3.7
+    },
+    {
+      "id": "eng",
+      "primary": "ENG",
+      "shift": "←ENG",
+      "alpha": "i",
+      "x": 24.3,
+      "y": 63.0,
+      "w": 9.8,
+      "h": 3.7
+    },
+    {
+      "id": "lparen",
+      "primary": "(",
+      "shift": "%",
+      "alpha": null,
+      "x": 38.1,
+      "y": 63.0,
+      "w": 9.8,
+      "h": 3.7
+    },
+    {
+      "id": "rparen",
+      "primary": ")",
+      "shift": ",",
+      "alpha": "X",
+      "x": 51.9,
+      "y": 63.0,
+      "w": 9.8,
+      "h": 3.7
+    },
+    {
+      "id": "sd",
+      "primary": "S⇔D",
+      "shift": "ab/c⇔d/c",
+      "alpha": "Y",
+      "x": 65.7,
+      "y": 63.0,
+      "w": 9.8,
+      "h": 3.7
+    },
+    {
+      "id": "mplus",
+      "primary": "M+",
+      "shift": "M-",
+      "alpha": "M",
+      "x": 79.6,
+      "y": 63.0,
+      "w": 9.8,
+      "h": 3.7
+    },
+    {
+      "id": "7",
+      "primary": "7",
+      "shift": "CONST",
+      "alpha": null,
+      "x": 10.2,
+      "y": 69.3,
+      "w": 12.2,
+      "h": 4.4
+    },
+    {
+      "id": "8",
+      "primary": "8",
+      "shift": "CONV",
+      "alpha": null,
+      "x": 26.9,
+      "y": 69.3,
+      "w": 12.2,
+      "h": 4.4
+    },
+    {
+      "id": "9",
+      "primary": "9",
+      "shift": "CLR",
+      "alpha": null,
+      "x": 43.6,
+      "y": 69.3,
+      "w": 12.2,
+      "h": 4.4
+    },
+    {
+      "id": "del",
+      "primary": "DEL",
+      "shift": "INS",
+      "alpha": null,
+      "x": 60.3,
+      "y": 69.3,
+      "w": 12.2,
+      "h": 4.4
+    },
+    {
+      "id": "ac",
+      "primary": "AC",
+      "shift": "OFF",
+      "alpha": null,
+      "x": 77.0,
+      "y": 69.3,
+      "w": 12.2,
+      "h": 4.4
+    },
+    {
+      "id": "4",
+      "primary": "4",
+      "shift": "MATRIX",
+      "alpha": null,
+      "x": 10.2,
+      "y": 76.3,
+      "w": 12.2,
+      "h": 4.4
+    },
+    {
+      "id": "5",
+      "primary": "5",
+      "shift": "VECTOR",
+      "alpha": null,
+      "x": 26.9,
+      "y": 76.3,
+      "w": 12.2,
+      "h": 4.4
+    },
+    {
+      "id": "6",
+      "primary": "6",
+      "shift": null,
+      "alpha": null,
+      "x": 43.6,
+      "y": 76.3,
+      "w": 12.2,
+      "h": 4.4
+    },
+    {
+      "id": "mul",
+      "primary": "×",
+      "shift": "nPr",
+      "alpha": null,
+      "x": 60.3,
+      "y": 76.3,
+      "w": 12.2,
+      "h": 4.4
+    },
+    {
+      "id": "div",
+      "primary": "÷",
+      "shift": "nCr",
+      "alpha": null,
+      "x": 77.0,
+      "y": 76.3,
+      "w": 12.2,
+      "h": 4.4
+    },
+    {
+      "id": "1",
+      "primary": "1",
+      "shift": "STAT",
+      "alpha": null,
+      "x": 10.2,
+      "y": 83.3,
+      "w": 12.2,
+      "h": 4.4
+    },
+    {
+      "id": "2",
+      "primary": "2",
+      "shift": "CMPLX",
+      "alpha": null,
+      "x": 26.9,
+      "y": 83.3,
+      "w": 12.2,
+      "h": 4.4
+    },
+    {
+      "id": "3",
+      "primary": "3",
+      "shift": "BASE",
+      "alpha": null,
+      "x": 43.6,
+      "y": 83.3,
+      "w": 12.2,
+      "h": 4.4
+    },
+    {
+      "id": "add",
+      "primary": "+",
+      "shift": "Pol",
+      "alpha": null,
+      "x": 60.3,
+      "y": 83.3,
+      "w": 12.2,
+      "h": 4.4
+    },
+    {
+      "id": "sub",
+      "primary": "-",
+      "shift": "Rec",
+      "alpha": null,
+      "x": 77.0,
+      "y": 83.3,
+      "w": 12.2,
+      "h": 4.4
+    },
+    {
+      "id": "0",
+      "primary": "0",
+      "shift": "Rnd",
+      "alpha": null,
+      "x": 10.2,
+      "y": 90.3,
+      "w": 12.2,
+      "h": 4.4
+    },
+    {
+      "id": "dot",
+      "primary": ".",
+      "shift": "Ran#",
+      "alpha": "RanInt",
+      "x": 26.9,
+      "y": 90.3,
+      "w": 12.2,
+      "h": 4.4
+    },
+    {
+      "id": "exp10",
+      "primary": "×10ˣ",
+      "shift": "π",
+      "alpha": "e",
+      "x": 43.6,
+      "y": 90.3,
+      "w": 12.2,
+      "h": 4.4
+    },
+    {
+      "id": "ans",
+      "primary": "Ans",
+      "shift": "DRG▶",
+      "alpha": null,
+      "x": 60.3,
+      "y": 90.3,
+      "w": 12.2,
+      "h": 4.4
+    },
+    {
+      "id": "equals",
+      "primary": "=",
+      "shift": null,
+      "alpha": null,
+      "x": 77.0,
+      "y": 90.3,
+      "w": 12.2,
+      "h": 4.4
+    }
+  ],
+  "calibrationStatus": "NEEDS_HUMAN_REVIEW",
+  "calibrationNotes": "Geometric fit from official Casio FX-991ESPLUS-2BU product photo (cropped). Chat-attached chassis binary was not persisted as a file. Visual verification required via ?debug=true."
+}
