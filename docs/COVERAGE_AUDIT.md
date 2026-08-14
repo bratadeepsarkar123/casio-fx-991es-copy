@@ -31,7 +31,7 @@ All seven are Impl `PARTIAL` (MODE entry only), Ver `UNVERIFIED`. This pass does
 | NEEDS-HUMAN-REVIEW (verification) | 3 | C-P0-PREANS, C-NHR-CAL, C-NHR-RND |
 | DEFERRED (priority) | 4 | C-P2-INT, DIFF, SUM, SOLVE |
 | UNSUPPORTED-BY-HARDWARE | 3 | INEQ, VERIFY, DIST |
-| OPTIONAL-V1 (priority, excl. NHR visual/rounding if counted above) | 4 | PREANS, KBD, NHR-CAL, NHR-RND |
+| OPTIONAL-V1 (priority) | 4 | PREANS, KBD, NHR-CAL, NHR-RND |
 
 This build must **not** be described as a complete clone. No physical differential testing. Playwright tablet project is Chromium with an iPad-sized viewport, **not** real iOS Safari.
 
