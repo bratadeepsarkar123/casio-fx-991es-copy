@@ -25,7 +25,7 @@ All seven are Impl `PARTIAL` (MODE entry only), Ver `UNVERIFIED`. This pass does
 
 | Bucket | Count | IDs |
 | --- | --- | --- |
-| Identified (matrix rows) | 45 | |
+| Identified (matrix rows) | 44 | |
 | PARTIAL (implementation) | 10 | 7× P1 modes + INT + DIFF + SUM |
 | BLOCKED (verification) | 1 | C-P0-PWA |
 | NEEDS-HUMAN-REVIEW (verification) | 3 | C-P0-PREANS, C-NHR-CAL, C-NHR-RND |
