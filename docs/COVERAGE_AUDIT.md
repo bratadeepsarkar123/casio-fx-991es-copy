@@ -35,14 +35,15 @@ All seven are Impl `PARTIAL` (MODE entry only), Ver `UNVERIFIED`. This pass does
 
 This build must **not** be described as a complete clone. No physical differential testing. Playwright tablet project is Chromium with an iPad-sized viewport, **not** real iOS Safari.
 
-## Tests (filled after the gate)
+## Tests (this revision, actually run)
 
 | Suite | Result |
 | --- | --- |
-| Vitest | 70 passed (pre-gate) |
-| Playwright | pending full gate |
-| `tsc --noEmit` / lint | pending full gate |
-| production build + Workbox | pending full gate |
+| `npm ci` | pass |
+| Vitest (`npm test`) | **70 passed** (9 files) |
+| `npm run lint` (`tsc --noEmit`) | pass |
+| `npm run build` (`tsc` + Vite PWA) | pass — Workbox precache 15 entries |
+| Playwright (`npx playwright install --with-deps chromium` then `npm run test:e2e`) | **12 passed** (Chromium desktop, Pixel 7, iPad-sized Chromium). **Not** real iOS Safari. |
 | Differential vs physical unit | N/A |
 
 ## Visual calibration
