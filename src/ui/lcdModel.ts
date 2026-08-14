@@ -46,3 +46,35 @@ export function angleIndicator(state: CalcState): "D" | "R" | "G" {
     }
   }
 }
+
+export interface LcdIndicators {
+  shift: boolean;
+  alpha: boolean;
+  hyp: boolean;
+  memory: boolean;
+  angle: "D" | "R" | "G";
+  math: boolean;
+  fix: boolean;
+  sci: boolean;
+  mode: string | null;
+  replay: boolean;
+  sto: boolean;
+  rcl: boolean;
+}
+
+export function lcdIndicators(state: CalcState): LcdIndicators {
+  return {
+    shift: state.shift,
+    alpha: state.alpha,
+    hyp: state.hyp,
+    memory: state.memoryM !== "0",
+    angle: angleIndicator(state),
+    math: state.setup.displayFormat !== "LineIO",
+    fix: state.setup.numberFormat.kind === "Fix",
+    sci: state.setup.numberFormat.kind === "Sci",
+    mode: state.mode === "COMP" ? null : state.mode,
+    replay: state.history.length > 0,
+    sto: state.menu.kind === "sto",
+    rcl: state.menu.kind === "rcl",
+  };
+}

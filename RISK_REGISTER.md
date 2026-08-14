@@ -2,8 +2,9 @@
 
 | Risk | Likelihood | Impact | Detection | Mitigation | Status |
 | --- | --- | --- | --- | --- | --- |
-| Wrong target-model behavior imported | Medium | Critical | Source/model audit | Hardware lock; 115/C extras excluded | Open — PDF is 115/C combined |
-| Numerical engine divergence | High | Critical | Golden tests | decimal.js policy layer | Mitigated for COMP examples |
+| Wrong target-model behavior imported | Medium | Critical | Source/model audit | Evidence classes; 115/C extras excluded; PreAns not promoted | Open — PDF is 115/C; PreAns UNCONFIRMED |
+| Numerical engine divergence | High | Critical | Golden + edge tests | decimal.js; native-float audit | Mitigated for COMP; ties NHR |
+| GitHub Pages not enabled | High | High | `gh api .../pages` | Workflow present; Ver=BLOCKED | BLOCKED until repo Pages on |
 | Coordinate calibration error | High | High | `?debug=true` + Playwright | Shared transform | NEEDS HUMAN REVIEW |
 | Context-window loss during manual ingestion | High | High | Coverage index | Incremental ToC audit | Partial ingestion |
 | Golden tests become circular | Medium | Critical | Source IDs in test names | Manual page citations | Mitigated |
@@ -15,4 +16,3 @@
 | Physical reference unavailable | Medium | Medium | TARGET_SPEC | Differential = N/A | Accepted |
 | Browser/platform mismatch | Medium | Medium | Honest coverage | Chromium + Playwright devices | Partial |
 | Documentation drift | Medium | Medium | Stable IDs | Incremental docs | Process |
-| GitHub Pages not enabled | High | High | Deploy job | Workflow present; live URL after Pages enable | BLOCKED until repo Pages on |

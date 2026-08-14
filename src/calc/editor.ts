@@ -599,10 +599,17 @@ export function clearEditor(ed: EditorState): EditorState {
   return { ...emptyEditor(), insertMode: ed.insertMode };
 }
 
-export function editorFromAtoms(atoms: Atom[]): EditorState {
+export function editorFromAtoms(atoms: Atom[], cursorIndex?: number): EditorState {
+  const end = atoms.length;
+  const index = cursorIndex === undefined ? end : Math.min(end, Math.max(0, cursorIndex));
+  const at = atoms[index];
   return {
     root: atoms,
-    cursor: { path: [], index: atoms.length, offset: null },
+    cursor: {
+      path: [],
+      index,
+      offset: at?.t === "num" ? 0 : null,
+    },
     insertMode: "insert",
   };
 }
@@ -811,7 +818,7 @@ export function prepareForBinaryOp(ed: EditorState): EditorState {
     case "frac":
     case "mixed":
       if (last.field === "den") {
-        return closeGroupOrCall(ed);
+        return { ...ed, cursor: { path: parentPath, index: last.index + 1, offset: null } };
       }
       return ed;
     case "sqrt":

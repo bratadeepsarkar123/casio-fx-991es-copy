@@ -40,13 +40,17 @@ Colorway used for the chassis overlay: official Casio **FX-991ESPLUS-2BU** (ligh
 
 ## Source-of-truth hierarchy (this project)
 
-1. Supplied PDF for overlapping COMP/setup/numeric/error behavior (worked examples, ranges, priority).
-2. Official Casio documentation for **fx-570ES PLUS / fx-991ES PLUS / fx-9910NG PLUS (2nd edition)** for the **target capability surface** (modes present on FX-991ESPLUS-2).
+Evidence classes: see `docs/EVIDENCE_CLASSES.md`. Short labels used below: `TARGET-OFFICIAL-DOC`, `CROSS-MODEL-SOURCE`, `EMPIRICAL`, `INFERRED`, `NEEDS-HUMAN-REVIEW`.
+
+1. Official Casio documentation for **fx-570ES PLUS / fx-991ES PLUS / fx-9910NG PLUS (2nd edition)** for the **target capability surface** (modes present on FX-991ESPLUS-2). Class: `TARGET-OFFICIAL-DOC`.
    - https://support.casio.com/global/en/calc/manual/fx-570ESPLUS_991ESPLUS_en/
+2. Supplied PDF for overlapping COMP/setup/numeric/error **worked examples** (priority, ranges, fractions, trig examples). Class: `CROSS-MODEL-SOURCE`. A 115/C rule is **not** target-verified unless item (1) independently confirms it.
 3. Physical unit: **N/A** — differential testing is N/A.
-4. Golden tests derived from (1)–(2).
+4. Golden tests derived from (1)–(2), tagged with source page + evidence class.
 5. General mathematical conventions.
 6. Library behavior (`decimal.js`) only as an implementation tool.
+
+**Do not** silently treat the supplied 115/C manual as an exact FX-991ESPLUS-2 source. INEQ / VERIFY / DIST remain `UNSUPPORTED-BY-HARDWARE`. PreAns is documented on 115/C and **omitted** from the target official memory chapter — see D-012.
 
 ## Chassis / display image
 

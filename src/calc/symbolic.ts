@@ -268,25 +268,81 @@ export function symDiv(a: Sym, b: Sym): Sym {
   return { k: "real", v: toDec(a).div(bd) };
 }
 
+function powBig(base: bigint, exp: bigint): bigint {
+  let acc = 1n;
+  let b = base;
+  let e = exp;
+  while (e > 0n) {
+    if (e & 1n) {
+      acc *= b;
+    }
+    b *= b;
+    e >>= 1n;
+  }
+  return acc;
+}
+
+/** Exact integer nth root, or null if not a perfect power. */
+export function integerNthRoot(x: bigint, n: bigint): bigint | null {
+  if (n <= 0n || n > 64n) {
+    return null;
+  }
+  if (x < 0n) {
+    return null;
+  }
+  if (x === 0n || x === 1n || n === 1n) {
+    return x;
+  }
+  let lo = 1n;
+  let hi = x;
+  while (lo <= hi) {
+    const mid = (lo + hi) / 2n;
+    const p = powBig(mid, n);
+    if (p === x) {
+      return mid;
+    }
+    if (p < x) {
+      lo = mid + 1n;
+    } else {
+      hi = mid - 1n;
+    }
+  }
+  return null;
+}
+
+function ratNthRoot(r: Rat, n: bigint): Rat | null {
+  const num = integerNthRoot(r.n < 0n ? -r.n : r.n, n);
+  const den = integerNthRoot(r.d, n);
+  if (num === null || den === null) {
+    return null;
+  }
+  return r.n < 0n ? rat(-num, den) : rat(num, den);
+}
+
 export function symPow(base: Sym, exp: Sym): Sym {
+  if (base.k === "rat" && exp.k === "rat" && exp.r.n === 1n && exp.r.d > 1n) {
+    const odd = exp.r.d % 2n === 1n;
+    if (base.r.n < 0n && !odd) {
+      throw new Error("math");
+    }
+    const rooted = ratNthRoot(base.r, exp.r.d);
+    if (rooted) {
+      return { k: "rat", r: rooted };
+    }
+  }
   const ed = toDec(exp);
   if (base.k === "rat" && ed.isInteger() && ed.abs().lte(32)) {
-    const e = Number(ed.toFixed(0));
-    if (e === 0) {
+    if (ed.isZero()) {
       return symRat(1n);
     }
-    if (e > 0) {
-      let acc = rat(1n);
-      for (let i = 0; i < e; i += 1) {
-        acc = ratMul(acc, base.r);
-      }
-      return { k: "rat", r: acc };
-    }
+    const positive = !ed.isNeg();
+    let steps = ed.abs();
     let acc = rat(1n);
-    for (let i = 0; i < -e; i += 1) {
+    while (steps.gt(0)) {
       acc = ratMul(acc, base.r);
+      steps = steps.minus(1);
     }
-    return { k: "rat", r: ratDiv(rat(1n), acc) };
+    return { k: "rat", r: positive ? acc : ratDiv(rat(1n), acc) };
   }
   if (ed.eq(2) && (base.k === "rat" || base.k === "quad")) {
     return symMul(base, base);

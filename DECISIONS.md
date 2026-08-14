@@ -4,9 +4,9 @@ Verification token for ICM session rules was acknowledged; this project is an au
 
 ## D-001 — Target variant vs supplied PDF
 
-**Decision:** Implement **FX-991ESPLUS-2 / fx-991ES PLUS 2nd edition (417 functions)**. Use the supplied PDF for overlapping numerical/COMP behavior. Do **not** implement 115/C-only modes INEQ, VERIF, DIST as REQUIRED-V1.
+**Decision:** Implement **FX-991ESPLUS-2 / fx-991ES PLUS 2nd edition (417 functions)**. Use the supplied PDF for overlapping numerical/COMP behavior only where the target official ToC independently confirms the capability. Do **not** implement 115/C-only modes INEQ, VERIF, DIST.
 
-**Why:** Hardware lock + official 570/991 2nd edition ToC. Supplied PDF cover is fx-115ES PLUS / fx-991ES PLUS C.
+**Why:** Hardware lock + official 570/991 2nd edition ToC. Supplied PDF cover is fx-115ES PLUS / fx-991ES PLUS C. Evidence classes: `docs/EVIDENCE_CLASSES.md`.
 
 **Status:** Recorded. See `TARGET_SPEC.md`.
 
@@ -59,6 +59,18 @@ STAT/EQN/MATRIX/VECTOR/CMPLX/BASE-N/TABLE: mode **entry** is implemented (MODE m
 ## D-011 — Integration / Σ / SOLVE
 
 Classified P2. Integration call token exists; Gauss-Kronrod fidelity is not VERIFIED. Chassis demo integral is presentation-only on the photo.
+
+## D-012 — PreAns is cross-model, not target-confirmed
+
+**Decision:** Keep PreAns **memory + evaluation** in the COMP engine (Fibonacci-style Ans+PreAns). Entry is **ALPHA+Ans** (`INFERRED`): SHIFT+Ans is DRG▶ on this chassis (`EMPIRICAL` keymap). Official target memory chapter lists Ans / variables / M only — **no PreAns**. 115/C SRC-P32–33 documents PreAns (`CROSS-MODEL-SOURCE`). TargetConfirm = `UNCONFIRMED`. Verification status `NEEDS-HUMAN-REVIEW`. Priority `OPTIONAL-V1`, not part of the functional-v1 VERIFIED floor.
+
+## D-013 — No calculator-semantic IEEE-754 in `src/calc`
+
+**Decision:** Remove `Number` / `.toNumber()` / `Math.*` from evaluation, roots, nPr/nCr, Ran#, special-angle reduction, and sci exponent formatting. Remaining `Math.min` / `Number(keyId)` / `Math.imul` are control-flow or 32-bit LCG state. See `docs/NUMERIC_AUDIT.md`.
+
+## D-014 — M+ / STO execute the current expression
+
+**Decision:** M+ / M− / STO evaluate the input expression when not already on a result, then update M or the variable, matching target official memory examples (`TARGET-OFFICIAL-DOC` 10×5 M+ → 50).
 
 ## Risk register
 

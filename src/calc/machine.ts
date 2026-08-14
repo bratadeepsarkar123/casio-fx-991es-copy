@@ -31,8 +31,9 @@ import {
 } from "./editor.ts";
 import { evaluateEquals } from "./evaluate.ts";
 import { formatBySetup, toggleDecimal } from "./format.ts";
-import { D, seededRng } from "./numeric.ts";
+import { D, createUint32Rng } from "./numeric.ts";
 import type {
+  Atom,
   CalcMode,
   CalcState,
   ErrorCode,
@@ -44,6 +45,7 @@ import type {
 import { VAR_NAMES } from "./types.ts";
 
 const AUTO_OFF_MS = 10 * 60 * 1000;
+export { AUTO_OFF_MS };
 
 export function defaultSetup(): SetupState {
   return {
@@ -281,16 +283,27 @@ function handleMenu(state: CalcState, keyId: KeyId): CalcState | null {
     }
     return state;
   }
-  if (menu.kind === "sto" || menu.kind === "rcl") {
+  if (menu.kind === "sto") {
     const name = alphaVar(keyId);
     if (!name) {
       return state;
     }
-    if (menu.kind === "sto") {
-      const value = state.result?.approx ?? state.ans;
-      const variables = { ...state.variables, [name]: value };
-      const memoryM = name === "M" ? value : state.memoryM;
-      return { ...clearLatches(state), variables, memoryM, menu: { kind: "none" } };
+    let base = state;
+    if (state.screen.kind !== "result" && state.editor.root.length > 0) {
+      base = onEquals(state, createUint32Rng(state.rngSeed));
+      if (base.screen.kind === "error") {
+        return { ...base, menu: { kind: "none" } };
+      }
+    }
+    const value = base.result?.approx ?? base.ans;
+    const variables = { ...base.variables, [name]: value };
+    const memoryM = name === "M" ? value : base.memoryM;
+    return { ...clearLatches(base), variables, memoryM, menu: { kind: "none" } };
+  }
+  if (menu.kind === "rcl") {
+    const name = alphaVar(keyId);
+    if (!name) {
+      return state;
     }
     return {
       ...clearLatches(state),
@@ -428,9 +441,26 @@ function trigName(state: CalcState, base: "sin" | "cos" | "tan"): string {
   return base;
 }
 
-function onEquals(state: CalcState, rng: () => number): CalcState {
+function guessErrorIndex(atoms: Atom[]): number {
+  for (let i = 0; i + 1 < atoms.length; i += 1) {
+    const op = atoms[i];
+    const next = atoms[i + 1];
+    if (op?.t === "op" && (op.op === "÷" || op.op === "÷R") && next?.t === "num") {
+      try {
+        if (D(next.s).isZero()) {
+          return i + 1;
+        }
+      } catch {
+        return i + 1;
+      }
+    }
+  }
+  return 0;
+}
+
+function onEquals(state: CalcState, nextUint32: () => number): CalcState {
   try {
-    const result = evaluateEquals(state, rng);
+    const result = evaluateEquals(state, nextUint32);
     const entry = { expression: state.editor.root, result };
     const history = [...state.history, entry].slice(-40);
     return {
@@ -441,12 +471,18 @@ function onEquals(state: CalcState, rng: () => number): CalcState {
       preAns: state.ans,
       ans: result.approx,
       history,
+      rngSeed: state.rngSeed + 1,
     };
   } catch (err) {
     const code = (err as { code?: ErrorCode }).code ?? "Math ERROR";
     return {
       ...clearLatches(state),
-      screen: { kind: "error", code, expression: state.editor.root, errorIndex: 0 },
+      screen: {
+        kind: "error",
+        code,
+        expression: state.editor.root,
+        errorIndex: guessErrorIndex(state.editor.root),
+      },
       result: null,
     };
   }
@@ -493,7 +529,7 @@ export function reduce(state: CalcState, event: KeyEvent): CalcState {
     if (event.keyId === "left" || event.keyId === "right") {
       return {
         ...clearLatches(s),
-        editor: editorFromAtoms(s.screen.expression),
+        editor: editorFromAtoms(s.screen.expression, s.screen.errorIndex + 1),
         screen: { kind: "input" },
       };
     }
@@ -569,9 +605,10 @@ export function reduce(state: CalcState, event: KeyEvent): CalcState {
   }
 
   if (event.keyId === "equals") {
+    const rng = createUint32Rng(s.rngSeed);
     if (s.shift) {
       try {
-        const result = evaluateEquals(s, seededRng(s.rngSeed));
+        const result = evaluateEquals(s, rng);
         const approx: ResultValue = { ...result, display: result.approx, naturalKind: "decimal" };
         return {
           ...clearLatches(s),
@@ -581,12 +618,13 @@ export function reduce(state: CalcState, event: KeyEvent): CalcState {
           preAns: s.ans,
           ans: result.approx,
           history: [...s.history, { expression: s.editor.root, result: approx }].slice(-40),
+          rngSeed: s.rngSeed + 1,
         };
       } catch {
-        return onEquals(s, seededRng(s.rngSeed));
+        return onEquals(s, createUint32Rng(s.rngSeed));
       }
     }
-    return onEquals(s, seededRng(s.rngSeed));
+    return onEquals(s, rng);
   }
 
   if (event.keyId === "sd") {
@@ -634,12 +672,31 @@ export function reduce(state: CalcState, event: KeyEvent): CalcState {
     if (s.alpha) {
       return { ...clearLatches(s), editor: insertVar(beginInputIfResult(s).editor, "M"), screen: { kind: "input" } };
     }
-    const value = D(s.result?.approx ?? s.ans);
-    const next = s.shift ? D(s.memoryM).minus(value) : D(s.memoryM).plus(value);
-    return { ...clearLatches(s), memoryM: next.toString(), variables: { ...s.variables, M: next.toString() } };
+    let base = s;
+    if (s.screen.kind !== "result" && s.editor.root.length > 0) {
+      base = onEquals(s, createUint32Rng(s.rngSeed));
+      if (base.screen.kind === "error") {
+        return base;
+      }
+    }
+    const value = D(base.result?.approx ?? base.ans);
+    const next = s.shift ? D(base.memoryM).minus(value) : D(base.memoryM).plus(value);
+    const mStr = next.toString();
+    return {
+      ...clearLatches(base),
+      memoryM: mStr,
+      variables: { ...base.variables, M: mStr },
+    };
   }
 
   if (event.keyId === "ans") {
+    if (s.alpha) {
+      return {
+        ...clearLatches(s),
+        editor: insertSym(beginInputIfResult(s).editor, "preAns"),
+        screen: { kind: "input" },
+      };
+    }
     if (s.shift) {
       return { ...clearLatches(s), menu: { kind: "drg" } };
     }

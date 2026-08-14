@@ -1,6 +1,7 @@
 # MANUAL_COVERAGE.md
 
-Source: ToC of supplied PDF (printed pages 1–3 of the file, labeled 1–3 in the footer). Total PDF pages: **105**.
+Source: ToC of supplied PDF (printed pages 1–3 of the file, labeled 1–3 in the footer). Total PDF pages: **105**.  
+**Evidence class of this ToC: `CROSS-MODEL-SOURCE`** (fx-115ES PLUS / fx-991ES PLUS C). In-scope for *clone overlapping COMP* is not the same as target-confirmed. Target capability surface: `TARGET-OFFICIAL-DOC` ToC (COMP…VECTOR only).
 
 | ToC entry | Pages | Class | Reason |
 | --- | --- | --- | --- |
@@ -32,7 +33,7 @@ Source: ToC of supplied PDF (printed pages 1–3 of the file, labeled 1–3 in t
 | Recurring decimals | 26–29 | in-scope | DEFERRED/PARTIAL |
 | Prime factorization | 30 | in-scope | DEFERRED |
 | History/Replay | 31–32 | in-scope | |
-| Memory Ans/PreAns/Vars/M | 32–35 | in-scope | |
+| Memory Ans/PreAns/Vars/M | 32–35 | in-scope | Ans/vars/M target-confirmed; PreAns UNCONFIRMED |
 | π, e, trig, hyp | 36 | in-scope | |
 | Angle conversion | 37 | in-scope | DRG menu |
 | Exp/log/power/root | 37–38 | in-scope | |

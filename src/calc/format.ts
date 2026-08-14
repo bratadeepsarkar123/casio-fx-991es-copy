@@ -21,8 +21,9 @@ export function formatSci(x: Decimal, digits: number): string {
   const sci = x.toExponential(n - 1, Decimal.ROUND_HALF_UP);
   const [mantRaw, expRaw] = sci.split("e");
   const mant = stripTrailingZeros(mantRaw ?? "0");
-  const exp = Number(expRaw);
-  const expStr = exp < 0 ? `-${String(Math.abs(exp)).padStart(2, "0")}` : `+${String(exp).padStart(2, "0")}`;
+  const exp = D(expRaw ?? "0");
+  const mag = exp.abs().toFixed(0).padStart(2, "0");
+  const expStr = exp.isNeg() ? `-${mag}` : `+${mag}`;
   return `${mant}×10${expStr}`;
 }
 
@@ -246,7 +247,7 @@ export function tryPiForm(x: Decimal, setup: SetupState): ResultValue | null {
   let bestD = 1n;
   let bestErr = D(1);
   for (let d = 1n; d <= maxDen; d += 1n) {
-    const n = BigInt(ratio.times(Number(d)).round().toFixed(0));
+    const n = BigInt(ratio.times(D(d.toString())).round().toFixed(0));
     const err = ratio.minus(D(n.toString()).div(D(d.toString()))).abs();
     if (err.lt(bestErr)) {
       bestErr = err;

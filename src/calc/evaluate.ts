@@ -9,11 +9,14 @@ import {
   factorial,
   nCr,
   nPr,
+  ranHash,
+  ranInt,
   roundInternal,
   toRad,
   type Dec,
 } from "./numeric.ts";
 import { resultFromSym } from "./format.ts";
+import { specialTrigFromSym } from "./specialTrig.ts";
 import {
   fromDec,
   symAdd,
@@ -35,10 +38,10 @@ export interface EvalContext {
   preAns: Dec;
   variables: Record<VarName, Dec>;
   memoryM: Dec;
-  rng: () => number;
+  nextUint32: () => number;
 }
 
-function ctxFromState(state: CalcState, rng: () => number): EvalContext {
+function ctxFromState(state: CalcState, nextUint32: () => number): EvalContext {
   const vars = {} as Record<VarName, Dec>;
   for (const k of Object.keys(state.variables) as VarName[]) {
     vars[k] = D(state.variables[k] ?? "0");
@@ -49,7 +52,7 @@ function ctxFromState(state: CalcState, rng: () => number): EvalContext {
     preAns: D(state.preAns),
     variables: vars,
     memoryM: D(state.memoryM),
-    rng,
+    nextUint32,
   };
 }
 
@@ -102,8 +105,8 @@ function evalAtom(atom: Atom, ctx: EvalContext): Sym {
     case "sqrt":
       return symSqrt(evalSlot(atom.inner, ctx));
     case "cbrt": {
-      const x = toDec(evalSlot(atom.inner, ctx));
-      return fromDec(roundInternal(x.cbrt()));
+      const inner = evalSlot(atom.inner, ctx);
+      return symPow(inner, symRat(1n, 3n));
     }
     case "nthrt": {
       const n = evalSlot(atom.n, ctx);
@@ -212,11 +215,12 @@ function evalCall(name: string, args: Atom[][], ctx: EvalContext): Sym {
     case "asinh":
     case "acosh":
     case "atanh": {
-      const special = specialTrigSym(name, x, ctx.angle);
+      const arg = vals[0] ?? symRat(0n);
+      const special = specialTrigFromSym(name, arg, ctx.angle);
       if (special) {
         return special;
       }
-      return fromDec(evalTrig(name, x, ctx.angle));
+      return fromDec(evalTrig(name, toDec(arg), ctx.angle));
     }
     case "log": {
       if (vals.length >= 2 && vals[0] && vals[1]) {
@@ -244,20 +248,14 @@ function evalCall(name: string, args: Atom[][], ctx: EvalContext): Sym {
     case "abs":
       return fromDec(x.abs());
     case "Ran#":
-      return fromDec(D(Math.floor(ctx.rng() * 1000)).div(1000));
+      return fromDec(ranHash(ctx.nextUint32()));
     case "RanInt": {
       const a = vals[0];
       const b = vals[1];
       if (!a || !b) {
         throw new CalcArgumentError();
       }
-      const aa = toDec(a);
-      const bb = toDec(b);
-      if (aa.gte(bb)) {
-        throw new CalcMathError();
-      }
-      const span = bb.minus(aa).plus(1).toNumber();
-      return fromDec(aa.plus(Math.floor(ctx.rng() * span)));
+      return fromDec(ranInt(toDec(a), toDec(b), ctx.nextUint32()));
     }
     case "Rnd":
       return fromDec(x.toSignificantDigits(10, 4));
@@ -266,27 +264,7 @@ function evalCall(name: string, args: Atom[][], ctx: EvalContext): Sym {
   }
 }
 
-function specialTrigSym(name: string, x: Dec, angle: AngleUnit): Sym | null {
-  if (name === "sin" && angle === "Deg" && x.eq(30)) {
-    return symRat(1n, 2n);
-  }
-  if (name === "cos" && angle === "Deg" && x.eq(60)) {
-    return symRat(1n, 2n);
-  }
-  if (name === "tan" && angle === "Deg" && x.eq(45)) {
-    return symRat(1n);
-  }
-  if (name === "asin" && x.eq("0.5") && angle === "Deg") {
-    return fromDec(D(30));
-  }
-  return null;
-}
-
 function evalTrig(name: string, x: Dec, angle: AngleUnit): Dec {
-  const special = specialAngle(name, x, angle);
-  if (special) {
-    return special;
-  }
   switch (name) {
     case "sin":
       return roundInternal(toRad(x, angle).sin());
@@ -333,65 +311,6 @@ function evalTrig(name: string, x: Dec, angle: AngleUnit): Dec {
     default:
       throw new CalcSyntaxError();
   }
-}
-
-function specialAngle(name: string, x: Dec, angle: AngleUnit): Dec | null {
-  if (name !== "sin" && name !== "cos" && name !== "tan") {
-    return null;
-  }
-  let deg = x;
-  if (angle === "Rad") {
-    deg = x.times(180).div(PI);
-  } else if (angle === "Gra") {
-    deg = x.times(0.9);
-  }
-  const d = ((deg.toNumber() % 360) + 360) % 360;
-  const table: Record<string, [string, string, string | null]> = {
-    "0": ["0", "1", "0"],
-    "30": ["0.5", "√3/2", "1/√3"],
-    "45": ["√2/2", "√2/2", "1"],
-    "60": ["√3/2", "0.5", "√3"],
-    "90": ["1", "0", null],
-    "180": ["0", "-1", "0"],
-    "270": ["-1", "0", null],
-  };
-  const nearest = Object.keys(table).find((k) => Math.abs(d - Number(k)) < 1e-10);
-  if (!nearest) {
-    return null;
-  }
-  const row = table[nearest];
-  if (!row) {
-    return null;
-  }
-  const pick = name === "sin" ? row[0] : name === "cos" ? row[1] : row[2];
-  if (pick === null) {
-    throw new CalcMathError();
-  }
-  if (pick === "0.5") {
-    return D("0.5");
-  }
-  if (pick === "0") {
-    return D(0);
-  }
-  if (pick === "1") {
-    return D(1);
-  }
-  if (pick === "-1") {
-    return D(-1);
-  }
-  if (pick === "√2/2") {
-    return D(2).sqrt().div(2);
-  }
-  if (pick === "√3/2") {
-    return D(3).sqrt().div(2);
-  }
-  if (pick === "√3") {
-    return D(3).sqrt();
-  }
-  if (pick === "1/√3") {
-    return D(1).div(D(3).sqrt());
-  }
-  return null;
 }
 
 function evalExpr(atoms: Atom[], ctx: EvalContext): Sym {
@@ -500,15 +419,16 @@ function applyOp(op: string, a: Sym, b: Sym): Sym {
   }
 }
 
-export function evaluateAtoms(atoms: Atom[], state: CalcState, rng: () => number): ResultValue {
+export function evaluateAtoms(atoms: Atom[], state: CalcState, nextUint32: () => number): ResultValue {
   try {
-    const ctx = ctxFromState(state, rng);
+    const ctx = ctxFromState(state, nextUint32);
     const sym = evalSlot(atoms, ctx);
-    const dec = assertRange(toDec(sym));
-    const result = resultFromSym(sym, state.setup);
-    result.approx = result.approx;
-    void dec;
-    return result;
+    const raw = toDec(sym);
+    const dec = assertRange(raw);
+    if (raw.isZero() || (dec.isZero() && !raw.isZero())) {
+      return resultFromSym(symRat(0n), state.setup);
+    }
+    return resultFromSym(sym, state.setup);
   } catch (err) {
     if (err instanceof CalcMathError || err instanceof CalcSyntaxError || err instanceof CalcArgumentError) {
       throw err;
@@ -520,8 +440,8 @@ export function evaluateAtoms(atoms: Atom[], state: CalcState, rng: () => number
   }
 }
 
-export function evaluateEquals(state: CalcState, rng: () => number): ResultValue {
-  return evaluateAtoms(state.editor.root, state, rng);
+export function evaluateEquals(state: CalcState, nextUint32: () => number): ResultValue {
+  return evaluateAtoms(state.editor.root, state, nextUint32);
 }
 
 export { ctxFromState };

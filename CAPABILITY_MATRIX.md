@@ -1,58 +1,62 @@
 # CAPABILITY_MATRIX.md
 
-Statuses: `VERIFIED` | `IMPLEMENTED` | `PARTIAL` | `UNSUPPORTED` | `BLOCKED` | `N/A`  
-Priority: `REQUIRED-V1` | `OPTIONAL-V1` | `DEFERRED` | `UNSUPPORTED-BY-HARDWARE` | `NEEDS-HUMAN-REVIEW`
+Three-axis model. **VERIFIED** means Implementation Status `IMPLEMENTED` **and** Verification Status `VERIFIED`.
 
-Legend: Impl = implementation status; Ver = verification status.
+Implementation: `NOT_STARTED` | `PARTIAL` | `IMPLEMENTED` | `UNSUPPORTED`  
+Verification: `UNVERIFIED` | `VERIFIED` | `BLOCKED` | `NEEDS-HUMAN-REVIEW` | `N/A`  
+Priority: `REQUIRED-FUNCTIONAL-V1` | `REQUIRED-COMPLETE-CLONE` | `OPTIONAL-V1` | `DEFERRED` | `UNSUPPORTED-BY-HARDWARE`
 
-| ID | Capability | Priority | Source | Impl | Ver | Tests |
-| --- | --- | --- | --- | --- | --- | --- |
-| C-P0-COMP | COMP mode arithmetic | REQUIRED-V1 | SRC-P18,P21 | IMPLEMENTED | VERIFIED | GT-P18-EX1, GT-P21-* |
-| C-P0-PREC | Operator priority | REQUIRED-V1 | SRC-P96 | IMPLEMENTED | VERIFIED | GT-P96 |
-| C-P0-TRIG | sin/cos/tan + inverse | REQUIRED-V1 | SRC-P36 | IMPLEMENTED | VERIFIED | GT-P36-EX1, EX2 |
-| C-P0-ANG | Deg/Rad/Gra | REQUIRED-V1 | SRC-P12 | IMPLEMENTED | VERIFIED | GT-P12-RAD |
-| C-P0-FRAC | Natural fractions | REQUIRED-V1 | SRC-P22 | IMPLEMENTED | VERIFIED | GT-P22-EX1 |
-| C-P0-SD | S⇔D toggle | REQUIRED-V1 | SRC-P21 | IMPLEMENTED | VERIFIED | GT-P21-EX1, EX3 |
-| C-P0-POW | Exponents / x² / x³ | REQUIRED-V1 | SRC-P38 | IMPLEMENTED | VERIFIED | GT-P38-EX1–3 |
-| C-P0-ROOT | Square/cube/nth roots | REQUIRED-V1 | SRC-P18,P38 | IMPLEMENTED | PARTIAL | sqrt used in editor; nth-root not golden-complete |
-| C-P0-EDIT | Cursor / DEL / insert | REQUIRED-V1 | SRC-P20 | IMPLEMENTED | PARTIAL | replay edit GT-P32 |
-| C-P0-SHIFT | SHIFT latch consume | REQUIRED-V1 | SRC-P6,P8 | IMPLEMENTED | VERIFIED | SHIFT test |
-| C-P0-ALPHA | ALPHA A–F,X,Y,M | REQUIRED-V1 | SRC-P34 | IMPLEMENTED | VERIFIED | ALPHA store/recall |
-| C-P0-REPLAY | History/replay | REQUIRED-V1 | SRC-P31–32 | IMPLEMENTED | VERIFIED | GT-P32 |
-| C-P0-ERR | Math/Syntax error + recover | REQUIRED-V1 | SRC-P92 | IMPLEMENTED | VERIFIED | GT-P92 |
-| C-P0-ANS | Ans / PreAns | REQUIRED-V1 | SRC-P32–33 | IMPLEMENTED | PARTIAL | Ans VERIFIED; PreAns key not on chassis — PARTIAL |
-| C-P0-MEM | Variables + M+ | REQUIRED-V1 | SRC-P34–35 | IMPLEMENTED | VERIFIED | ALPHA test; M+ ungolden |
-| C-P0-AC | AC vs CLR Setup/All | REQUIRED-V1 | SRC-P15,P35 | IMPLEMENTED | VERIFIED | AC test; CLR menus IMPLEMENTED |
-| C-P0-PERSIST | localStorage schema v1 | REQUIRED-V1 | spec §8 | IMPLEMENTED | PARTIAL | hydrate on load; no e2e refresh yet |
-| C-P0-KEYS | Physical overlay + keymap.json | REQUIRED-V1 | chassis | IMPLEMENTED | PARTIAL | coords tests; visual NHR |
-| C-P0-LCD | LCD display model | REQUIRED-V1 | SRC-P7–8 | IMPLEMENTED | PARTIAL | indicators + expr/result |
-| C-P0-PWA | Install + offline SW | REQUIRED-V1 | spec §9 | IMPLEMENTED | BLOCKED | Pages not confirmed live |
-| C-P0-LOG | log / ln / 10^x / e^x | REQUIRED-V1 | SRC-P37 | IMPLEMENTED | VERIFIED | GT-P37 |
-| C-P0-PCT | Percent | REQUIRED-V1 | SRC-P23 | IMPLEMENTED | VERIFIED | GT-P23 |
-| C-P0-FIX | Fix/Sci/Norm | REQUIRED-V1 | SRC-P13 | IMPLEMENTED | VERIFIED | GT-P13 Fix3 |
-| C-P0-PI | π / e constants | REQUIRED-V1 | SRC-P36 | IMPLEMENTED | VERIFIED | GT-P21-EX1 |
-| C-P0-HYP | hyp prefix | REQUIRED-V1 | SRC-P36 | IMPLEMENTED | PARTIAL | no golden sinh example in suite |
-| C-P0-MULTI | Colon multi-statement | REQUIRED-V1 | SRC-P24 | IMPLEMENTED | PARTIAL | editor colon; no golden |
-| C-OPT-KBD | Physical keyboard map | OPTIONAL-V1 | spec §5 | IMPLEMENTED | PARTIAL | repeat ignored |
-| C-P1-CMPLX | CMPLX mode | REQUIRED-V1* | SRC-P56 | PARTIAL | — | mode entry only |
-| C-P1-STAT | STAT mode | REQUIRED-V1* | SRC-P57 | PARTIAL | — | mode entry only |
-| C-P1-BASE | BASE-N | REQUIRED-V1* | SRC-P66 | PARTIAL | — | mode entry only |
-| C-P1-EQN | EQN | REQUIRED-V1* | SRC-P70 | PARTIAL | — | mode entry only |
-| C-P1-MAT | MATRIX | REQUIRED-V1* | SRC-P73 | PARTIAL | — | mode entry only |
-| C-P1-TBL | TABLE | REQUIRED-V1* | SRC-P76 | PARTIAL | — | mode entry only |
-| C-P1-VCT | VECTOR | REQUIRED-V1* | SRC-P79 | PARTIAL | — | mode entry only |
-| C-P2-INT | Numerical integration | DEFERRED | SRC-P39 | PARTIAL | — | token only |
-| C-P2-DIFF | d/dx | DEFERRED | SRC-P41 | PARTIAL | — | token only |
-| C-P2-SUM | Σ / Π | DEFERRED | SRC-P42–43 | PARTIAL | — | |
-| C-P2-SOLVE | CALC/SOLVE | DEFERRED | SRC-P47–51 | UNSUPPORTED | — | |
-| C-HW-INEQ | INEQ | UNSUPPORTED-BY-HARDWARE | 115/C PDF only | UNSUPPORTED | N/A | |
-| C-HW-VERIF | VERIFY | UNSUPPORTED-BY-HARDWARE | 115/C PDF only | UNSUPPORTED | N/A | |
-| C-HW-DIST | DIST | UNSUPPORTED-BY-HARDWARE | 115/C PDF only | UNSUPPORTED | N/A | |
-| C-NHR-CAL | Visual keymap vs chat photo | NEEDS-HUMAN-REVIEW | chassis | IMPLEMENTED | NHR | `?debug=true` |
-| C-NHR-RND | Rounding ties | NEEDS-HUMAN-REVIEW | SRC-P13 “rounded off” | IMPLEMENTED | NHR | HALF_UP |
+Evidence classes and TargetConfirm: `docs/EVIDENCE_CLASSES.md`.
 
-\*P1 modes are on the target device and are inventoried as required for a *complete* clone. They are **not** part of the §15 functional-v1 floor. They are not silently omitted: they are `PARTIAL` (mode switch works; editors unverified).
+| ID | Capability | Priority | Source | EvidenceClass | TargetConfirm | Impl | Ver | Tests |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| C-P0-COMP | COMP mode arithmetic | REQUIRED-FUNCTIONAL-V1 | SRC-P18,P21; TGT-TOC COMP | CROSS-MODEL-SOURCE | CONFIRMED | IMPLEMENTED | VERIFIED | GT-P18-EX1, GT-P21-* |
+| C-P0-PREC | Operator priority | REQUIRED-FUNCTIONAL-V1 | SRC-P96; TGT-TOC priority | CROSS-MODEL-SOURCE | CONFIRMED | IMPLEMENTED | VERIFIED | GT-P96 |
+| C-P0-TRIG | sin/cos/tan + inverse | REQUIRED-FUNCTIONAL-V1 | SRC-P36; TGT-TOC functions | CROSS-MODEL-SOURCE | CONFIRMED | IMPLEMENTED | VERIFIED | GT-P36-EX1, EX2; special-angles |
+| C-P0-ANG | Deg/Rad/Gra | REQUIRED-FUNCTIONAL-V1 | SRC-P12; TGT-TOC setup | CROSS-MODEL-SOURCE | CONFIRMED | IMPLEMENTED | VERIFIED | GT-P12-RAD |
+| C-P0-FRAC | Natural fractions | REQUIRED-FUNCTIONAL-V1 | SRC-P22; TGT-TOC fractions | CROSS-MODEL-SOURCE | CONFIRMED | IMPLEMENTED | VERIFIED | GT-P22-EX1 |
+| C-P0-SD | S⇔D toggle | REQUIRED-FUNCTIONAL-V1 | SRC-P21; TGT-TOC | CROSS-MODEL-SOURCE | CONFIRMED | IMPLEMENTED | VERIFIED | GT-P21-EX1, EX3 |
+| C-P0-POW | Exponents / x² / x³ | REQUIRED-FUNCTIONAL-V1 | SRC-P38; TGT-TOC | CROSS-MODEL-SOURCE | CONFIRMED | IMPLEMENTED | VERIFIED | GT-P38-EX1–3 |
+| C-P0-ROOT | Square/cube/nth roots | REQUIRED-FUNCTIONAL-V1 | SRC-P18,P38; TGT-TOC | CROSS-MODEL-SOURCE | CONFIRMED | IMPLEMENTED | VERIFIED | GT-P38-EX4 ⁵√32; cuberoot 8 |
+| C-P0-EDIT | Cursor / DEL / insert | REQUIRED-FUNCTIONAL-V1 | SRC-P20; TGT-TOC input | CROSS-MODEL-SOURCE | CONFIRMED | IMPLEMENTED | VERIFIED | editor.test.ts; GT-P32 |
+| C-P0-SHIFT | SHIFT latch consume | REQUIRED-FUNCTIONAL-V1 | SRC-P6; CHASSIS | CROSS-MODEL-SOURCE | CONFIRMED | IMPLEMENTED | VERIFIED | SHIFT test |
+| C-P0-ALPHA | ALPHA A–F,X,Y,M | REQUIRED-FUNCTIONAL-V1 | SRC-P34; TGT-TOC vars; CHASSIS | CROSS-MODEL-SOURCE | CONFIRMED | IMPLEMENTED | VERIFIED | ALPHA store/recall |
+| C-P0-REPLAY | History/replay | REQUIRED-FUNCTIONAL-V1 | SRC-P31–32; TGT-TOC | CROSS-MODEL-SOURCE | CONFIRMED | IMPLEMENTED | VERIFIED | GT-P32 |
+| C-P0-ERR | Math/Syntax error + recover | REQUIRED-FUNCTIONAL-V1 | SRC-P92; TGT-TOC errors | CROSS-MODEL-SOURCE | CONFIRMED | IMPLEMENTED | VERIFIED | GT-P92 recover/AC |
+| C-P0-ANS | Ans memory | REQUIRED-FUNCTIONAL-V1 | SRC-P32; TGT-TOC Ans | CROSS-MODEL-SOURCE | CONFIRMED | IMPLEMENTED | VERIFIED | GT-P32 Ans |
+| C-P0-MEM | Variables + M+/M− | REQUIRED-FUNCTIONAL-V1 | SRC-P34–35; TGT-TOC M | CROSS-MODEL-SOURCE | CONFIRMED | IMPLEMENTED | VERIFIED | ALPHA; M+ 10×5 |
+| C-P0-AC | AC vs CLR Setup/Memory/All | REQUIRED-FUNCTIONAL-V1 | SRC-P4,P15,P35; TGT-TOC CLR | CROSS-MODEL-SOURCE | CONFIRMED | IMPLEMENTED | VERIFIED | state-transitions.test.ts |
+| C-P0-PERSIST | localStorage schema v1 | REQUIRED-FUNCTIONAL-V1 | spec §8 | INFERRED | N/A | IMPLEMENTED | VERIFIED | persist.test.ts; e2e persist |
+| C-P0-KEYS | Physical overlay + keymap.json | REQUIRED-FUNCTIONAL-V1 | CHASSIS | EMPIRICAL | CONFIRMED | IMPLEMENTED | VERIFIED | coords.test.ts; overlay e2e |
+| C-P0-LCD | LCD expression/result/indicators | REQUIRED-FUNCTIONAL-V1 | SRC-P7–8; CHASSIS | CROSS-MODEL-SOURCE | CONFIRMED | IMPLEMENTED | VERIFIED | lcdIndicators; lcd-expr/result |
+| C-P0-PWA | Install + offline SW | REQUIRED-FUNCTIONAL-V1 | spec §9 | INFERRED | N/A | IMPLEMENTED | BLOCKED | Workflow builds; live Pages 404 |
+| C-P0-LOG | log / ln / 10^x / e^x | REQUIRED-FUNCTIONAL-V1 | SRC-P37; TGT-TOC | CROSS-MODEL-SOURCE | CONFIRMED | IMPLEMENTED | VERIFIED | GT-P37 |
+| C-P0-PCT | Percent | REQUIRED-FUNCTIONAL-V1 | SRC-P23; TGT-TOC | CROSS-MODEL-SOURCE | CONFIRMED | IMPLEMENTED | VERIFIED | GT-P23 |
+| C-P0-FIX | Fix/Sci/Norm | REQUIRED-FUNCTIONAL-V1 | SRC-P13; TGT-TOC setup | CROSS-MODEL-SOURCE | CONFIRMED | IMPLEMENTED | VERIFIED | GT-P13 Fix3 |
+| C-P0-PI | π / e constants | REQUIRED-FUNCTIONAL-V1 | SRC-P36; TGT-TOC | CROSS-MODEL-SOURCE | CONFIRMED | IMPLEMENTED | VERIFIED | GT-P21-EX1 |
+| C-P0-HYP | hyp prefix | REQUIRED-FUNCTIONAL-V1 | SRC-P36; TGT-TOC; CHASSIS hyp | CROSS-MODEL-SOURCE | CONFIRMED | IMPLEMENTED | VERIFIED | GT-P36 sinh 1 |
+| C-P0-MULTI | Colon multi-statement | REQUIRED-FUNCTIONAL-V1 | SRC-P24; CHASSIS ALPHA : | CROSS-MODEL-SOURCE | CONFIRMED | IMPLEMENTED | VERIFIED | GT-P24 |
+| C-P0-PREANS | PreAns memory + ALPHA+Ans entry | OPTIONAL-V1 | SRC-P32–33; TGT-TOC omits | CROSS-MODEL-SOURCE | UNCONFIRMED | IMPLEMENTED | NEEDS-HUMAN-REVIEW | GT-P33 Fibonacci (clone) |
+| C-OPT-KBD | Physical keyboard map | OPTIONAL-V1 | spec §5 | INFERRED | N/A | IMPLEMENTED | UNVERIFIED | repeat ignored |
+| C-P1-CMPLX | CMPLX mode | REQUIRED-COMPLETE-CLONE | SRC-P56; TGT-TOC CMPLX | TARGET-OFFICIAL-DOC | CONFIRMED | PARTIAL | UNVERIFIED | mode entry only |
+| C-P1-STAT | STAT mode | REQUIRED-COMPLETE-CLONE | SRC-P57; TGT-TOC STAT | TARGET-OFFICIAL-DOC | CONFIRMED | PARTIAL | UNVERIFIED | mode entry only |
+| C-P1-BASE | BASE-N | REQUIRED-COMPLETE-CLONE | SRC-P66; TGT-TOC BASE-N | TARGET-OFFICIAL-DOC | CONFIRMED | PARTIAL | UNVERIFIED | mode entry only |
+| C-P1-EQN | EQN | REQUIRED-COMPLETE-CLONE | SRC-P70; TGT-TOC EQN | TARGET-OFFICIAL-DOC | CONFIRMED | PARTIAL | UNVERIFIED | mode entry only |
+| C-P1-MAT | MATRIX | REQUIRED-COMPLETE-CLONE | SRC-P73; TGT-TOC MATRIX | TARGET-OFFICIAL-DOC | CONFIRMED | PARTIAL | UNVERIFIED | mode entry only |
+| C-P1-TBL | TABLE | REQUIRED-COMPLETE-CLONE | SRC-P76; TGT-TOC TABLE | TARGET-OFFICIAL-DOC | CONFIRMED | PARTIAL | UNVERIFIED | mode entry only |
+| C-P1-VCT | VECTOR | REQUIRED-COMPLETE-CLONE | SRC-P79; TGT-TOC VECTOR | TARGET-OFFICIAL-DOC | CONFIRMED | PARTIAL | UNVERIFIED | mode entry only |
+| C-P2-INT | Numerical integration | DEFERRED | SRC-P39; TGT-TOC | CROSS-MODEL-SOURCE | CONFIRMED | PARTIAL | UNVERIFIED | token only |
+| C-P2-DIFF | d/dx | DEFERRED | SRC-P41; TGT-TOC | CROSS-MODEL-SOURCE | CONFIRMED | PARTIAL | UNVERIFIED | token only |
+| C-P2-SUM | Σ / Π | DEFERRED | SRC-P42–43; TGT-TOC | CROSS-MODEL-SOURCE | CONFIRMED | PARTIAL | UNVERIFIED | token only |
+| C-P2-SOLVE | CALC/SOLVE | DEFERRED | SRC-P47–51; TGT-TOC | CROSS-MODEL-SOURCE | CONFIRMED | UNSUPPORTED | UNVERIFIED | |
+| C-HW-INEQ | INEQ | UNSUPPORTED-BY-HARDWARE | 115/C PDF only | CROSS-MODEL-SOURCE | N/A | UNSUPPORTED | N/A | |
+| C-HW-VERIF | VERIFY | UNSUPPORTED-BY-HARDWARE | 115/C PDF only | CROSS-MODEL-SOURCE | N/A | UNSUPPORTED | N/A | |
+| C-HW-DIST | DIST | UNSUPPORTED-BY-HARDWARE | 115/C PDF only | CROSS-MODEL-SOURCE | N/A | UNSUPPORTED | N/A | |
+| C-NHR-CAL | Visual keymap vs chat photo | OPTIONAL-V1 | chassis; chat binary missing | EMPIRICAL | N/A | IMPLEMENTED | NEEDS-HUMAN-REVIEW | `?debug=true` |
+| C-NHR-RND | Rounding ties vs hardware | OPTIONAL-V1 | SRC-P13 “rounded off” | CROSS-MODEL-SOURCE | UNCONFIRMED | IMPLEMENTED | NEEDS-HUMAN-REVIEW | HALF_UP policy tests |
 
-## Counts (see final report)
+P1 modes are on the target device (`TARGET-OFFICIAL-DOC`) and are required for a **complete** clone. They are **not** part of the functional-v1 floor. They are `PARTIAL` (mode switch works; editors unverified).
 
-Computed in `docs/COVERAGE_AUDIT.md`.
+## Counts
+
+Computed after the last test/build gate in `docs/COVERAGE_AUDIT.md`.

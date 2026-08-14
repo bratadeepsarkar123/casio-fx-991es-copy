@@ -4,7 +4,7 @@ Responsive, offline-capable web clone of the **Casio fx-991ES PLUS 2nd edition**
 
 ## Not a complete clone
 
-P0 COMP-mode behavior is covered by golden tests. P1 modes (STAT, TABLE, EQN, BASE-N, MATRIX, VECTOR, CMPLX) can be **entered** from MODE but are not verified editors. See `CAPABILITY_MATRIX.md`.
+P0 COMP-mode behavior is covered by golden tests. P1 modes (STAT, TABLE, EQN, BASE-N, MATRIX, VECTOR, CMPLX) can be **entered** from MODE but are not verified editors. Functional-v1 vs complete-clone counts are separate; see `CAPABILITY_MATRIX.md` and `docs/COVERAGE_AUDIT.md`.
 
 ## Requirements
 
@@ -38,9 +38,11 @@ npm run test:e2e  # Playwright (build + preview)
 
 ## Docs
 
-- `TARGET_SPEC.md` — model lock, PDF hash, variant conflict
-- `calc_logic_reference.md` — page citations
-- `CAPABILITY_MATRIX.md` — IDs and statuses
+- `TARGET_SPEC.md` — model lock, PDF hash, variant conflict, evidence hierarchy
+- `docs/EVIDENCE_CLASSES.md` — TARGET-MANUAL / TARGET-OFFICIAL-DOC / CROSS-MODEL-SOURCE / …
+- `docs/NUMERIC_AUDIT.md` — native Number/Math classification
+- `calc_logic_reference.md` — page citations + evidence tags
+- `CAPABILITY_MATRIX.md` — priority + impl + verification
 - `DECISIONS.md` / `RISK_REGISTER.md`
 - `MANUAL_COVERAGE.md` / `docs/COVERAGE_AUDIT.md`
 

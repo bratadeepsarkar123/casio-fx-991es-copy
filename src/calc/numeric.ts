@@ -145,9 +145,10 @@ export function factorial(n: Decimal): Decimal {
     throw new CalcMathError();
   }
   let acc = ONE;
-  const ni = n.toNumber();
-  for (let i = 2; i <= ni; i += 1) {
+  let i = D(2);
+  while (i.lte(n)) {
     acc = acc.times(i);
+    i = i.plus(1);
   }
   return roundInternal(acc);
 }
@@ -157,10 +158,10 @@ export function nPr(n: Decimal, r: Decimal): Decimal {
     throw new CalcMathError();
   }
   let acc = ONE;
-  const nn = n.toNumber();
-  const rr = r.toNumber();
-  for (let i = 0; i < rr; i += 1) {
-    acc = acc.times(nn - i);
+  let i = ZERO;
+  while (i.lt(r)) {
+    acc = acc.times(n.minus(i));
+    i = i.plus(1);
   }
   return roundInternal(acc);
 }
@@ -171,34 +172,45 @@ export function nCr(n: Decimal, r: Decimal): Decimal {
   }
   const k = Decimal.min(r, n.minus(r));
   let acc = ONE;
-  const kk = k.toNumber();
-  const nn = n.toNumber();
-  for (let i = 1; i <= kk; i += 1) {
-    acc = acc.times(nn - kk + i).div(i);
+  let i = ONE;
+  while (i.lte(k)) {
+    acc = acc.times(n.minus(k).plus(i)).div(i);
+    i = i.plus(1);
   }
   return roundInternal(acc);
 }
 
-export function seededRng(seed: number): () => number {
+/**
+ * 32-bit LCG control stream (Numerical Recipes). `Math.imul` is a bounded
+ * integer control-flow primitive, not calculator-semantic IEEE-754 math.
+ * Hardware Ran# algorithm is unspecified (INFERRED).
+ */
+export function createUint32Rng(seed: number): () => number {
   let s = seed >>> 0;
   return () => {
     s = (Math.imul(1664525, s) + 1013904223) >>> 0;
-    return s / 0x100000000;
+    return s;
   };
 }
 
-export function ranHash(rng: () => number): Decimal {
-  const n = Math.floor(rng() * 1000);
-  return D(n).div(1000);
+/** Unit-interval wrapper kept for non-semantic callers. Prefer `createUint32Rng`. */
+export function seededRng(seed: number): () => number {
+  const next = createUint32Rng(seed);
+  return () => next() / 0x100000000;
 }
 
-export function ranInt(a: Decimal, b: Decimal, rng: () => number): Decimal {
-  if (a.gte(b) || a.abs().gte("1e10") || b.abs().gte("1e10") || b.minus(a).gte("1e10")) {
+/** Ran#: 0.000–0.999 in thousandths. Uses integer remainder, not Math.floor. */
+export function ranHash(u: number): Decimal {
+  return D(u).mod(1000).div(1000);
+}
+
+export function ranInt(a: Decimal, b: Decimal, u: number): Decimal {
+  if (!a.isInteger() || !b.isInteger() || a.gte(b) || a.abs().gte("1e10") || b.abs().gte("1e10")) {
     throw new CalcMathError();
   }
-  const aa = a.toNumber();
-  const bb = b.toNumber();
-  const span = bb - aa + 1;
-  const n = aa + Math.floor(rng() * span);
-  return D(n);
+  const span = b.minus(a).plus(1);
+  if (span.lte(0) || span.gte("1e10")) {
+    throw new CalcMathError();
+  }
+  return a.plus(D(u).mod(span));
 }

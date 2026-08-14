@@ -4,4 +4,4 @@ export type { CalcState, ResultValue, SetupState } from "./types.ts";
 export { createInitialState, dispatchKeys, reduce } from "./machine.ts";
 export { loadPersisted, savePersisted } from "./persist.ts";
 export { atomsToLinear } from "./editor.ts";
-export { seededRng } from "./numeric.ts";
+export { createUint32Rng, seededRng } from "./numeric.ts";

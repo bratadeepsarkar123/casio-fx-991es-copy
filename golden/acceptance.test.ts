@@ -93,31 +93,17 @@ describe("canonical acceptance (manual-derived)", () => {
     expect(lcdResult(next)).toMatch(/^0\.4/);
   });
 
-  it("GT-P33 PreAns Fibonacci SRC-P33", () => {
+  it("GT-P33 PreAns Fibonacci via ALPHA Ans (clone entry; target key unverified)", () => {
     let s = run(["1", "equals"]);
     s = dispatchKeys(s, ["1", "equals"], 0);
-    s = dispatchKeys(s, ["ans", "add", "alpha", "rparen"], 0);
-    // PreAns is ALPHA? No, PreAns is a dedicated function. Manual uses PreAns key via SHIFT or catalog.
-    // SRC-P33: PreAns is entered as a function. On this chassis PreAns is not a dedicated key;
-    // it is inserted via the PreAns memory recall in COMP. We model it as ALPHA Ans is not PreAns.
-    // Use internal: after two equals, insert preAns by evaluating Ans+PreAns through successive Ans.
-    s = run(["1", "equals"]);
-    s = dispatchKeys(s, ["1", "equals"], 0);
-    s = dispatchKeys(s, ["ans", "add"], 0);
-    // inject PreAns via editor sym — covered in unit test below
-    expect(s.ans).toBe("1");
-    expect(s.preAns).toBe("1");
-  });
-
-  it("GT-P92 Math ERROR 14÷0×2 SRC-P92", () => {
-    const s = run(["1", "4", "div", "0", "mul", "2", "equals"]);
-    expect(s.screen.kind).toBe("error");
-    if (s.screen.kind === "error") {
-      expect(s.screen.code).toBe("Math ERROR");
-    }
-    const recovered = dispatchKeys(s, ["left"], 0);
-    expect(recovered.screen.kind).toBe("input");
-    expect(lcdExpression(recovered).length).toBeGreaterThan(0);
+    expect(s.ans).toMatch(/^1/);
+    expect(s.preAns).toMatch(/^1/);
+    s = dispatchKeys(s, ["ans", "add", "alpha", "ans", "equals"], 0);
+    expect(lcdResult(s)).toBe("2");
+    s = dispatchKeys(s, ["equals"], 0);
+    expect(lcdResult(s)).toBe("3");
+    s = dispatchKeys(s, ["equals"], 0);
+    expect(lcdResult(s)).toBe("5");
   });
 
   it("GT-P96 negative square priority SRC-P96", () => {
@@ -160,6 +146,59 @@ describe("canonical acceptance (manual-derived)", () => {
 
   it("angle unit Rad sin(π/2) SRC-P12", () => {
     const s = run(["shift", "mode", "4", "sin", "shift", "exp10", "div", "2", "equals"]);
-    expect(Number(lcdResult(s))).toBeCloseTo(1, 8);
+    expect(lcdResult(s)).toBe("1");
+  });
+
+  it("GT-P38-EX4 ⁵√32 = 2 SRC-P38", () => {
+    const s = run(["shift", "power", "5", "right", "3", "2", "equals"]);
+    expect(lcdResult(s)).toBe("2");
+  });
+
+  it("cube root of 8 is 2", () => {
+    const s = run(["shift", "sqrt", "8", "equals"]);
+    expect(lcdResult(s)).toBe("2");
+  });
+
+  it("GT-P36 sinh 1 = 1.175201194 SRC-P36", () => {
+    const s = run(["hyp", "sin", "1", "equals"], lineIo);
+    expect(lcdResult(s)).toMatch(/^1\.175201194/);
+  });
+
+  it("GT-P24 multi-statement 3+3:3×3 last result 9 SRC-P24", () => {
+    const s = run(["3", "add", "3", "alpha", "integral", "3", "mul", "3", "equals"], lineIo);
+    expect(lcdExpression(s)).toMatch(/:/);
+    expect(lcdResult(s)).toBe("9");
+  });
+
+  it("M+ evaluates 10×5 and accumulates independent memory SRC-P35", () => {
+    const s = run(["1", "0", "mul", "5", "mplus"], lineIo);
+    expect(lcdResult(s)).toBe("50");
+    expect(s.memoryM).toMatch(/^50/);
+    const t = dispatchKeys(s, ["1", "0", "add", "5", "shift", "mplus"], 0);
+    expect(lcdResult(t)).toBe("15");
+    expect(t.memoryM).toMatch(/^35/);
+  });
+
+  it("GT-P92 left/right recover at the zero; AC clears SRC-P92", () => {
+    const s = run(["1", "4", "div", "0", "mul", "2", "equals"]);
+    expect(s.screen.kind).toBe("error");
+    if (s.screen.kind === "error") {
+      expect(s.screen.code).toBe("Math ERROR");
+      expect(s.screen.errorIndex).toBeGreaterThan(0);
+    }
+    const recovered = dispatchKeys(s, ["left"], 0);
+    expect(recovered.screen.kind).toBe("input");
+    expect(lcdExpression(recovered)).toMatch(/14/);
+    const fixed = dispatchKeys(recovered, ["del", "2", "equals"], 0);
+    expect(lcdResult(fixed)).toBe("14");
+    const cleared = dispatchKeys(s, ["ac"], 0);
+    expect(lcdExpression(cleared)).toBe("");
+  });
+
+  it("range: 10^100 is Math ERROR and 10^(-100) underflows to 0", () => {
+    const overflow = run(["exp10", "1", "0", "0", "equals"]);
+    expect(overflow.screen.kind).toBe("error");
+    const under = run(["exp10", "neg", "1", "0", "0", "equals"], lineIo);
+    expect(lcdResult(under)).toBe("0");
   });
 });

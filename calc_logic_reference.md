@@ -1,12 +1,14 @@
 # calc_logic_reference.md
 
-Citations refer to **printed page numbers** in `sources/supplied/FX991ESPLUS2_user_manual.pdf` (105 pages). Extracted text is imperfect (key glyphs often dropped). Rules below are only those the extractor plus ToC support. Diagram-only sequences: `NEEDS HUMAN REVIEW`.
+Citations refer to **printed page numbers** in `sources/supplied/FX991ESPLUS2_user_manual.pdf` (105 pages). That file is **fx-115ES PLUS / fx-991ES PLUS C**, evidence class `CROSS-MODEL-SOURCE`. It is **not** `TARGET-MANUAL`. Target confirmation uses `TARGET-OFFICIAL-DOC` (570/991 2nd edition ToC). Extracted text is imperfect (key glyphs often dropped). Diagram-only sequences: `NEEDS-HUMAN-REVIEW`.
 
-## SRC-P4 Initializing
+Legend on important rules below: `[class; target: CONFIRMED|UNCONFIRMED|CONFLICT|N/A]`.
+
+## SRC-P4 Initializing `[CROSS-MODEL-SOURCE; target: CONFIRMED — TGT-TOC initializing]`
 
 CLR → All → Yes initializes mode and setup and **clears all memory**. Sample operations assume initial default setup.
 
-## SRC-P6 Power
+## SRC-P6 Power `[CROSS-MODEL-SOURCE; target: CONFIRMED — ON/OFF/APO on target family]`
 
 ON turns the calculator on. SHIFT AC (OFF) turns it off. Auto power-off after **approximately 10 minutes**.
 
@@ -14,7 +16,7 @@ ON turns the calculator on. SHIFT AC (OFF) turns it off. Auto power-off after **
 
 SHIFT / ALPHA select alternate key markings (gold / red). Indicators: S, A, M, STO, RCL, STAT, CMPLX, MAT, VCT, D/R/G, FIX, SCI, Math. Replay ▲▼ when history exists.
 
-## SRC-P10 Modes (115/C list)
+## SRC-P10 Modes (115/C list) `[CROSS-MODEL-SOURCE; INEQ/VERIF/DIST = CONFLICT vs target]`
 
 COMP, CMPLX, STAT, BASE-N, EQN, MATRIX, TABLE, VECTOR, **INEQ, VERIF, DIST**. Default COMP.
 
@@ -60,11 +62,11 @@ Quotient stored in Ans. Large operands fall back to normal division.
 
 COMP/CMPLX/BASE-N remember ~200 bytes. ▲▼ scroll. Replay: left/right from result to edit. History cleared by ON? Manual: cleared on **mode change, display format change, CLR Setup/All** (not by AC). Example 4×3+2=14 then replay to 4×3−7=5.
 
-## SRC-P32–35 Memory
+## SRC-P32–35 Memory `[CROSS-MODEL-SOURCE; Ans/vars/M target: CONFIRMED; PreAns target: UNCONFIRMED]`
 
-Ans last result; PreAns previous (COMP only; cleared when leaving COMP). Variables A,B,C,D,E,F,M,X,Y. Independent M via M+/M−. Ans/M/variables **survive AC, mode change, power off**. CLR Memory Yes clears all memories.
+Ans last result; PreAns previous (COMP only; cleared when leaving COMP) — **115/C**. Target official memory page does **not** list PreAns. Clone entry: ALPHA+Ans (`INFERRED`; chassis Ans ALPHA legend is empty; SHIFT+Ans = DRG▶). Variables A,B,C,D,E,F,M,X,Y. Independent M via M+/M− (M+ evaluates the current expression — `TARGET-OFFICIAL-DOC`). Ans/M/variables **survive AC, mode change, power off**. CLR Memory Yes clears all memories. Encoded in `state-transitions.test.ts`, not only in this paragraph.
 
-## SRC-P36 Functions
+## SRC-P36 Functions `[CROSS-MODEL-SOURCE; target: CONFIRMED that trig/hyp/π/e exist]`
 
 π internal 3.14159265358980; e internal 2.71828182845904. sin 30°=0.5; sin⁻¹ 0.5=30° (Deg, LineIO). sinh 1=1.175201194.
 
@@ -95,8 +97,8 @@ Internal 15 digits. Display precision ±1 at 10th digit typical. Function domain
 
 ## NEEDS HUMAN REVIEW
 
-- Exact SETUP page-2 item numbers (glyphs dropped).
-- PreAns key sequence on this chassis (no dedicated key in overlay).
-- Rounding-to-even vs half-up.
-- Dual TABLE f,g on 991ES PLUS-2 vs 115/C.
-- Visual keymap vs original chat binary.
+- Exact SETUP page-2 item numbers (glyphs dropped). `[NEEDS-HUMAN-REVIEW]`
+- PreAns on FX-991ESPLUS-2: omitted from target official memory ToC; no PreAns legend on chassis Ans key. `[CROSS-MODEL-SOURCE` vs `TARGET-OFFICIAL-DOC` → UNCONFIRMED]
+- Rounding-to-even vs half-up. Clone uses `ROUND_HALF_UP`. `[NEEDS-HUMAN-REVIEW]`
+- Dual TABLE f,g on 991ES PLUS-2 vs 115/C (D-007). `[CONFLICT]`
+- Visual keymap vs original chat binary (file not in repo). `[NEEDS-HUMAN-REVIEW]`

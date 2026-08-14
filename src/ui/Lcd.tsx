@@ -1,6 +1,6 @@
 import type { CSSProperties } from "react";
 import type { CalcState } from "../calc/types.ts";
-import { angleIndicator, lcdExpression, lcdResult } from "./lcdModel.ts";
+import { angleIndicator, lcdExpression, lcdIndicators, lcdResult } from "./lcdModel.ts";
 
 interface LcdProps {
   state: CalcState;
@@ -11,7 +11,8 @@ export function Lcd({ state, style }: LcdProps) {
   const expr = lcdExpression(state);
   const result = lcdResult(state);
   const ang = angleIndicator(state);
-  const math = state.setup.displayFormat !== "LineIO";
+  const ind = lcdIndicators(state);
+  const math = ind.math;
   const contrast = 0.75 + state.setup.contrast * 0.05;
 
   return (
@@ -29,15 +30,18 @@ export function Lcd({ state, style }: LcdProps) {
       aria-live="polite"
     >
       <div className="flex h-[18%] items-center gap-2 text-[0.55em] font-bold tracking-wide">
-        {state.shift ? <span data-testid="ind-s">S</span> : null}
-        {state.alpha ? <span data-testid="ind-a">A</span> : null}
-        {state.memoryM !== "0" ? <span>M</span> : null}
+        {ind.shift ? <span data-testid="ind-s">S</span> : null}
+        {ind.alpha ? <span data-testid="ind-a">A</span> : null}
+        {ind.hyp ? <span data-testid="ind-hyp">HYP</span> : null}
+        {ind.memory ? <span data-testid="ind-m">M</span> : null}
+        {ind.sto ? <span data-testid="ind-sto">STO</span> : null}
+        {ind.rcl ? <span data-testid="ind-rcl">RCL</span> : null}
         <span data-testid="ind-angle">{ang}</span>
         {math ? <span data-testid="ind-math">Math</span> : null}
-        {state.setup.numberFormat.kind === "Fix" ? <span>FIX</span> : null}
-        {state.setup.numberFormat.kind === "Sci" ? <span>SCI</span> : null}
-        {state.mode !== "COMP" ? <span>{state.mode}</span> : null}
-        {state.history.length > 0 ? <span>▲</span> : null}
+        {ind.fix ? <span data-testid="ind-fix">FIX</span> : null}
+        {ind.sci ? <span data-testid="ind-sci">SCI</span> : null}
+        {ind.mode ? <span data-testid="ind-mode">{ind.mode}</span> : null}
+        {ind.replay ? <span data-testid="ind-replay">▲</span> : null}
       </div>
       <div
         className="h-[52%] overflow-hidden text-[0.95em] leading-tight"
