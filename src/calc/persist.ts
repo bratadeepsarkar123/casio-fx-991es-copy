@@ -2,6 +2,7 @@ import type { CalcState, VarName } from "./types.ts";
 import { VAR_NAMES } from "./types.ts";
 import { createInitialState } from "./machine.ts";
 import { emptyTableSession } from "./table.ts";
+import { emptyBaseN } from "./baseN.ts";
 
 export const PERSIST_KEY = "fx991es-plus2/v1";
 export const SCHEMA_VERSION = 1;
@@ -217,9 +218,10 @@ export function serializeState(state: CalcState): PersistEnvelope {
     state: {
       ...state,
       table: null,
-      editor: state.mode === "TABLE" ? createInitialState(0).editor : state.editor,
-      screen: state.mode === "TABLE" ? { kind: "input" } : state.screen,
-      result: state.mode === "TABLE" ? null : state.result,
+      baseN: emptyBaseN(state.baseN.radix),
+      editor: state.mode === "TABLE" || state.mode === "BASE-N" ? createInitialState(0).editor : state.editor,
+      screen: state.mode === "TABLE" || state.mode === "BASE-N" ? { kind: "input" } : state.screen,
+      result: state.mode === "TABLE" || state.mode === "BASE-N" ? null : state.result,
     },
   };
 }
@@ -238,9 +240,15 @@ export function deserializeState(raw: unknown, nowMs = 0): CalcState | null {
   return {
     ...env.state,
     table: env.state.mode === "TABLE" ? emptyTableSession() : null,
+    baseN: emptyBaseN(env.state.baseN.radix),
     lastActivityMs: nowMs,
     power: "on",
-    screen: env.state.power === "off" ? { kind: "input" } : env.state.mode === "TABLE" ? { kind: "input" } : env.state.screen,
+    screen:
+      env.state.power === "off"
+        ? { kind: "input" }
+        : env.state.mode === "TABLE" || env.state.mode === "BASE-N"
+          ? { kind: "input" }
+          : env.state.screen,
   };
 }
 

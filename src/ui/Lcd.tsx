@@ -41,6 +41,7 @@ export function Lcd({ state, style }: LcdProps) {
         {ind.fix ? <span data-testid="ind-fix">FIX</span> : null}
         {ind.sci ? <span data-testid="ind-sci">SCI</span> : null}
         {ind.mode ? <span data-testid="ind-mode">{ind.mode}</span> : null}
+        {ind.baseN ? <span data-testid="ind-basen">{ind.baseN}</span> : null}
         {ind.replay ? <span data-testid="ind-replay">▲</span> : null}
       </div>
       <div

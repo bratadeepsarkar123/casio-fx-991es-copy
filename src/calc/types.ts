@@ -121,7 +121,8 @@ export type MenuState =
   | { kind: "table-fmt" }
   | { kind: "rdec" }
   | { kind: "disp" }
-  | { kind: "contrast" };
+  | { kind: "contrast" }
+  | { kind: "base-op"; page: number };
 
 export type Screen =
   | { kind: "input" }
@@ -139,6 +140,30 @@ export interface TableRow {
   fxApprox: string | null;
   fxDisplay: string | null;
   fxError: ErrorCode | null;
+}
+
+export type BaseNRadix = 2 | 8 | 10 | 16;
+
+export type BaseNOp = "+" | "-" | "×" | "÷" | "and" | "or" | "xor" | "xnor";
+
+/** Linear BASE-N tokens. Not COMP decimal `Atom[]`. */
+export type BaseNToken =
+  | { t: "num"; digits: string; suffix: BaseNRadix | null }
+  | { t: "op"; op: BaseNOp }
+  | { t: "not" }
+  | { t: "negfn" }
+  | { t: "lparen" }
+  | { t: "rparen" }
+  | { t: "unary" }
+  | { t: "ans" };
+
+/** Additive BASE-N session. Integer domain is independent of COMP `Atom[]`. */
+export interface BaseNState {
+  radix: BaseNRadix;
+  tokens: BaseNToken[];
+  cursor: number;
+  /** Canonical signed integer (decimal string), or null if no result yet. */
+  value: string | null;
 }
 
 /** Additive TABLE session. Not a COMP Atom[] encoding of the grid. */
@@ -172,7 +197,7 @@ export interface CalcState {
   menu: MenuState;
   lastActivityMs: number;
   rngSeed: number;
-  baseN: { radix: 2 | 8 | 10 | 16 };
+  baseN: BaseNState;
   table: TableSession | null;
 }
 

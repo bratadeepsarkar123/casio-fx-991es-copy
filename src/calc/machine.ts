@@ -33,6 +33,7 @@ import { evaluateEquals } from "./evaluate.ts";
 import { formatBySetup, toggleDecimal } from "./format.ts";
 import { D, createUint32Rng } from "./numeric.ts";
 import { emptyTableSession, reduceTable, tableReturnToFx } from "./table.ts";
+import { applyBaseOpMenu, emptyBaseN, reduceBaseN, reduceBaseNError } from "./baseN.ts";
 import type {
   Atom,
   CalcMode,
@@ -85,7 +86,7 @@ export function createInitialState(nowMs = 0): CalcState {
     menu: { kind: "none" },
     lastActivityMs: nowMs,
     rngSeed: 1,
-    baseN: { radix: 10 },
+    baseN: emptyBaseN(10),
     table: null,
   };
 }
@@ -139,6 +140,7 @@ function handleMenu(state: CalcState, keyId: KeyId): CalcState | null {
         history: [],
         preAns: mode === "COMP" ? state.preAns : "0",
         table: mode === "TABLE" ? emptyTableSession() : null,
+        baseN: emptyBaseN(10),
       };
     }
     return state;
@@ -339,6 +341,9 @@ function handleMenu(state: CalcState, keyId: KeyId): CalcState | null {
     }
     return state;
   }
+  if (menu.kind === "base-op") {
+    return applyBaseOpMenu(state, keyId);
+  }
   return state;
 }
 
@@ -384,6 +389,7 @@ function runConfirm(state: CalcState, action: "setup" | "memory" | "all"): CalcS
       result: null,
       history: [],
       table: null,
+      baseN: emptyBaseN(10),
     };
   }
   const cleared = runConfirm(state, "memory");
@@ -538,6 +544,17 @@ export function reduce(state: CalcState, event: KeyEvent): CalcState {
   if (event.keyId === "alpha") {
     return { ...s, alpha: !s.alpha, shift: false };
   }
+
+  if (s.mode === "BASE-N") {
+    if (s.screen.kind === "error") {
+      return reduceBaseNError(s, event);
+    }
+    const baseHandled = reduceBaseN(s, event);
+    if (baseHandled) {
+      return baseHandled;
+    }
+  }
+
   if (event.keyId === "hyp") {
     if (s.shift) {
       return { ...clearLatches(s), editor: insertAbs(beginInputIfResult(s).editor), screen: { kind: "input" } };

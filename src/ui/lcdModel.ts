@@ -1,5 +1,6 @@
 import type { CalcState } from "../calc/types.ts";
 import { atomsToLinear } from "../calc/editor.ts";
+import { formatBaseNExpression, radixLabel } from "../calc/baseN.ts";
 
 function tablePromptLabel(phase: "fx" | "start" | "end" | "step"): string {
   switch (phase) {
@@ -19,6 +20,9 @@ function tablePromptLabel(phase: "fx" | "start" | "end" | "step"): string {
 }
 
 export function lcdExpression(state: CalcState): string {
+  if (state.mode === "BASE-N") {
+    return formatBaseNExpression(state.baseN.tokens);
+  }
   if (state.screen.kind === "error") {
     return atomsToLinear(state.screen.expression, state.setup.displayFormat);
   }
@@ -46,6 +50,11 @@ export function lcdResult(state: CalcState): string {
     return state.menu.page === 0
       ? "1:MthIO 2:LineIO 3:Deg 4:Rad 5:Gra 6:Fix 7:Sci 8:Norm"
       : "1:ab/c 2:d/c 3:CMPLX 4:STAT 5:TABLE 6:Rdec 7:Disp 8:CONT";
+  }
+  if (state.menu.kind === "base-op") {
+    return state.menu.page === 0
+      ? "1:and 2:or 3:xor 4:xnor 5:Not 6:Neg"
+      : "1:d 2:h 3:b 4:o";
   }
   if (state.menu.kind !== "none") {
     return state.menu.kind.toUpperCase();
@@ -94,6 +103,7 @@ export interface LcdIndicators {
   replay: boolean;
   sto: boolean;
   rcl: boolean;
+  baseN: "BIN" | "OCT" | "DEC" | "HEX" | null;
 }
 
 export function lcdIndicators(state: CalcState): LcdIndicators {
@@ -103,12 +113,13 @@ export function lcdIndicators(state: CalcState): LcdIndicators {
     hyp: state.hyp,
     memory: state.memoryM !== "0",
     angle: angleIndicator(state),
-    math: state.setup.displayFormat !== "LineIO",
+    math: state.mode === "BASE-N" ? false : state.setup.displayFormat !== "LineIO",
     fix: state.setup.numberFormat.kind === "Fix",
     sci: state.setup.numberFormat.kind === "Sci",
     mode: state.mode === "COMP" ? null : state.mode,
     replay: state.history.length > 0,
     sto: state.menu.kind === "sto",
     rcl: state.menu.kind === "rcl",
+    baseN: state.mode === "BASE-N" ? radixLabel(state.baseN.radix) : null,
   };
 }
