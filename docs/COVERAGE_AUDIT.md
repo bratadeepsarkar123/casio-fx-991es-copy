@@ -45,7 +45,7 @@ This build must **not** be described as a complete clone. No physical differenti
 | Vitest (`npm test`) | **195 passed** (18 files). Pre-CMPLX baseline 145/15 files; CMPLX domain + reducer + goldens added. COMP `golden/acceptance.test.ts` still 30 passed. TABLE and BASE-N suites still green. |
 | `npm run lint` (`tsc --noEmit`) | pass |
 | `npm run build` (`tsc` + Vite PWA) | pass — Workbox precache 15 entries |
-| Playwright (`npx playwright install --with-deps chromium` then `npm run test:e2e`) | **18 passed** (was 15; +BASE-N on Chromium desktop, Pixel 7, iPad-sized Chromium). **Not** real iOS Safari. |
+| Playwright (`npx playwright install --with-deps chromium` then `npm run test:e2e`) | **21 passed** (was 18; +CMPLX on Chromium desktop, Pixel 7, iPad-sized Chromium). **Not** real iOS Safari. |
 | Differential vs physical unit | N/A |
 
 ## Visual calibration
