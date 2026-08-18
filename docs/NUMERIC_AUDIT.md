@@ -32,6 +32,8 @@ Hardware tie-rounding is **not** established. Clone policy remains `Decimal.ROUN
 
 `src/ui/*` still uses `Math.*` for layout (object-fit, font size, hit-testing). That is class 1 and must not feed `reduce()`.
 
+BASE-N (`src/calc/baseNNumeric.ts`, `src/calc/baseN.ts`) uses signed `bigint` with explicit 16/32-bit mask/sign. `bigint.toString(2|8|16)` is integer conversion, not IEEE-754. Cursor clamps use `Math.min`/`Math.max` (class 1). `BigInt(baseN.value)` only re-parses the canonical signed decimal string written by the same domain. See `docs/BASE_N.md`.
+
 ## Policy notes (not hardware claims)
 
 - Internal digits 15, display 10+2, range ±1e-99 … ±9.999999999e99: `CROSS-MODEL-SOURCE` SRC-P97; overlapping range also in target precision pages (`CONFIRMED` as a specification class, not by physical measurement).

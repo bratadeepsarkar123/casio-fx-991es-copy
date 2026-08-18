@@ -111,7 +111,7 @@ Future modes (TABLE first — see `docs/ARCHITECTURE.md` §12) must be **additiv
 - **Domain:** signed two's-complement integers. **16-bit in BIN**, **32-bit in DEC/HEX/OCT** (`TARGET-OFFICIAL-DOC`). Canonical value is a signed `bigint`; display formats that word. JavaScript `Number` / `parseInt` are not the semantic authority.
 - **Default:** MODE 4 enters DEC (`TARGET-OFFICIAL-DOC`). Chassis DEC/HEX/BIN/OCT keys (`x²` / `^` / `log` / `ln`) switch radix **without ALPHA** (`TARGET-OFFICIAL-DOC` + `EMPIRICAL` legends).
 - **A–F:** unshifted in HEX; ALPHA+key otherwise (`INFERRED`; **NEEDS-HUMAN-REVIEW** vs hardware when HEX is not the current radix).
-- **Grammar:** linear `BaseNToken[]`, not COMP `Atom[]`. No fractions/exponents (`TARGET-OFFICIAL-DOC`). Invalid digits → Syntax ERROR at `=`.
+- **Grammar:** linear `BaseNToken[]`, not COMP `Atom[]`. No fractions/exponents (`TARGET-OFFICIAL-DOC`). Invalid **current-radix** digits are ignored at keypress (`INFERRED`). Digits illegal for a **suffix** (e.g. `2b`) → Syntax ERROR at `=`.
 - **Arithmetic + − ×:** exact signed `bigint`; out of signed word range → Math ERROR. **Not** silent wrap. (**NEEDS-HUMAN-REVIEW** vs hardware wrap.)
 - **÷:** integer, fractional part cut off toward zero (`TARGET-OFFICIAL-DOC` cut-off; toward-zero `INFERRED`).
 - **Bitwise and/or/xor/xnor, Not, Neg:** mask to the **current** word width (`TARGET-OFFICIAL-DOC` examples). SHIFT+`3` (BASE) page 0 = logical ops (`CROSS-MODEL-SOURCE` FAQ 2=or); page 1 = d/h/b/o suffixes (`INFERRED` layout; commands `TARGET-OFFICIAL-DOC`).

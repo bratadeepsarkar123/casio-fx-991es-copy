@@ -149,7 +149,8 @@ Official 570/991 2nd-edition BASE-N page: https://support.casio.com/global/en/ca
 | d/h/b/o suffixes | SHIFT+`3` BASE page 1 (down) | Commands: `TARGET-OFFICIAL-DOC`. Page layout: `INFERRED` **NHR** |
 | Mixed 10d+10h+10b+10o | 36 in DEC | `TARGET-OFFICIAL-DOC` |
 | 15×37 then HEX/BIN/OCT | 555 / 0000022B / 0000001000101011 / 00000001053 | `TARGET-OFFICIAL-DOC` |
-| Invalid digit | Syntax ERROR at `=` | `INFERRED` |
+| Invalid current-radix digit | Ignored at keypress | `INFERRED` **NHR** |
+| Illegal suffix digits (e.g. `2b`) | Syntax ERROR at `=` | `INFERRED` |
 | Out of word / ÷0 | Math ERROR | `INFERRED` / overlapping SRC-P92 names `CROSS-MODEL-SOURCE` |
 | Bit shifts | **Not implemented** | Official BASE-N page does not list them → **DEFERRED** |
 | Ans | Signed decimal string; survives MODE 1 | Memories survive mode change: `TARGET-OFFICIAL-DOC`. BASE-N writes that string: `INFERRED` **NHR** |
@@ -165,5 +166,5 @@ Clone (D-017): `bigint` word with explicit 16/32-bit mask/sign. Not COMP `decima
 - Rounding-to-even vs half-up. Clone uses `ROUND_HALF_UP`. `[NEEDS-HUMAN-REVIEW]`
 - Dual TABLE f,g on 991ES PLUS-2 vs 115/C (D-007). Target official TABLE page is **f(x) only**. Clone implements f(x); g(x) is not implemented. `[CONFLICT` / SETUP leftover `CROSS-MODEL-SOURCE`]
 - TABLE zero/negative Step vs hardware; per-row Math ERROR policy; TABLE persist across power-off; one-row LCD vs hardware table screen. `[NEEDS-HUMAN-REVIEW]`
-- BASE-N +/−/× overflow vs wrap; ÷ toward-zero; A–F vs `(-)` outside HEX; BASE menu page order for d/h/b/o; persist of BASE-N expression. `[NEEDS-HUMAN-REVIEW]`
+- BASE-N +/−/× overflow vs wrap; ÷ toward-zero; A–F vs `(-)` outside HEX; BASE menu page order for d/h/b/o; persist of BASE-N expression; invalid-digit ignore vs queued Syntax ERROR. `[NEEDS-HUMAN-REVIEW]`
 - Visual keymap vs original chat binary (file not in repo). `[NEEDS-HUMAN-REVIEW]`

@@ -7,6 +7,8 @@ This document describes the **current** fx-991ES PLUS 2nd edition clone as a sys
 
 **Frozen core (D-015):** `reduce` + custom AST/cursor editor + decimal.js scalars + Zustand as a view/persist holder. Do not replace these to start later modes.
 
+BASE-N domain contract: `docs/BASE_N.md` (D-017).
+
 ---
 
 ## 1. System overview

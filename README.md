@@ -40,6 +40,7 @@ npm run test:e2e  # Playwright (build + preview)
 ## Docs
 
 - `docs/ARCHITECTURE.md` — system layers, state model, event flows, mode readiness
+- `docs/BASE_N.md` — BASE-N integer domain, evidence classes, unresolved hardware items
 - `TARGET_SPEC.md` — model lock, PDF hash, variant conflict, evidence hierarchy
 - `docs/EVIDENCE_CLASSES.md` — TARGET-MANUAL / TARGET-OFFICIAL-DOC / CROSS-MODEL-SOURCE / …
 - `docs/NUMERIC_AUDIT.md` — native Number/Math classification
