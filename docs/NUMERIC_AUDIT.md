@@ -34,6 +34,8 @@ Hardware tie-rounding is **not** established. Clone policy remains `Decimal.ROUN
 
 BASE-N (`src/calc/baseNNumeric.ts`, `src/calc/baseN.ts`) uses signed `bigint` with explicit 16/32-bit mask/sign. `bigint.toString(2|8|16)` is integer conversion, not IEEE-754. Cursor clamps use `Math.min`/`Math.max` (class 1). `BigInt(baseN.value)` only re-parses the canonical signed decimal string written by the same domain. See `docs/BASE_N.md`.
 
+CMPLX (`src/calc/symbolic.ts` `cplx`, `src/calc/complex.ts`) uses real `Sym` parts. `atan`/`sin`/`cos` for arg/polar go through decimal.js (`Dec.atan`, `toRad(...).sin()`), not IEEE-754 `Math.*`. `toDec` of a non-real throws. Integer-to-`BigInt` via `toFixed(0)` is only for exact integer degree args. See `docs/CMPLX.md`.
+
 ## Policy notes (not hardware claims)
 
 - Internal digits 15, display 10+2, range ±1e-99 … ±9.999999999e99: `CROSS-MODEL-SOURCE` SRC-P97; overlapping range also in target precision pages (`CONFIRMED` as a specification class, not by physical measurement).

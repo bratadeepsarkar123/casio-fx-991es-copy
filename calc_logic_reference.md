@@ -130,6 +130,34 @@ Official 570/991 2nd-edition TABLE page: https://support.casio.com/global/en/cal
 
 Target official setup init does **not** list a TABLE f(x)/g(x) format. 115/C dual-function TABLE is not copied.
 
+## SRC-P56–57 / TGT-TOC CMPLX `[TARGET-OFFICIAL-DOC for examples; SRC-P56 CROSS-MODEL-SOURCE for 115/C overlap]`
+
+Official 570/991 2nd-edition CMPLX page: https://support.casio.com/global/en/calc/manual/fx-570ESPLUS_991ESPLUS_en/using_calculation_modes/cmplx.html
+
+| Behavior | Clone | Evidence |
+| --- | --- | --- |
+| Enter CMPLX | MODE `2`; same COMP editor | `TARGET-OFFICIAL-DOC` |
+| `i` | ALPHA+ENG | `EMPIRICAL` chassis alpha `"i"` |
+| `3i` | implied mul `3 × i` | existing COMP evalExpr |
+| `∠` | SHIFT+`(-)` binary polar | `EMPIRICAL` chassis shift `"∠"` |
+| `(2+6i)÷(2i)` | `3-i` | `TARGET-OFFICIAL-DOC` |
+| `2∠45` Deg a+bi | `√2+√2i` | `TARGET-OFFICIAL-DOC` |
+| `√2+√2i` with SETUP r∠θ | `2∠45` | `TARGET-OFFICIAL-DOC` |
+| `(1-i)⁻¹` | `1/2+1/2i` | `TARGET-OFFICIAL-DOC` |
+| `(1+i)²+(1-i)²` | `0` (packs to real) | `TARGET-OFFICIAL-DOC` |
+| Conjg(2+3i) | `2-3i` | `TARGET-OFFICIAL-DOC` |
+| Abs(1+i) | `√2` | `TARGET-OFFICIAL-DOC` |
+| arg(1+i) Deg | `45` | `TARGET-OFFICIAL-DOC` |
+| Override `r∠θ` / `a+bi` suffix | SHIFT+`2` then 3/4 | Commands `TARGET-OFFICIAL-DOC`. Menu numbering `CROSS-MODEL-SOURCE` **NHR** |
+| `i` / `∠` in COMP | Math ERROR | Official: enter CMPLX first. `∠` in COMP: `INFERRED` |
+| √(negative) even in CMPLX | Math ERROR | `INFERRED`; do not invent `√(−1)=i` |
+| sin/log/√ of non-real | Math ERROR | **DEFERRED** (not on official CMPLX page) |
+| Complex STO | Math ERROR if imag ≠ 0 | **PARTIAL** / `INFERRED` |
+| LineIO a and bi on separate lines | not implemented; two-line HTML LCD | **NEEDS-HUMAN-REVIEW** |
+| Persist | schema v1; `ansIm`/`preAnsIm` default `"0"` | documented default |
+
+Clone (D-018): `Sym.cplx` rectangular. Not a COMP display hack. Not mathjs. Not BASE-N.
+
 ## SRC-P66–69 / TGT-TOC BASE-N `[TARGET-OFFICIAL-DOC for widths, examples, logical ops; SRC-P66 CROSS-MODEL-SOURCE for 115/C overlap]`
 
 Official 570/991 2nd-edition BASE-N page: https://support.casio.com/global/en/calc/manual/fx-570ESPLUS_991ESPLUS_en/using_calculation_modes/base-n_calculations.html
@@ -167,4 +195,5 @@ Clone (D-017): `bigint` word with explicit 16/32-bit mask/sign. Not COMP `decima
 - Dual TABLE f,g on 991ES PLUS-2 vs 115/C (D-007). Target official TABLE page is **f(x) only**. Clone implements f(x); g(x) is not implemented. `[CONFLICT` / SETUP leftover `CROSS-MODEL-SOURCE`]
 - TABLE zero/negative Step vs hardware; per-row Math ERROR policy; TABLE persist across power-off; one-row LCD vs hardware table screen. `[NEEDS-HUMAN-REVIEW]`
 - BASE-N +/−/× overflow vs wrap; ÷ toward-zero; A–F vs `(-)` outside HEX; BASE menu page order for d/h/b/o; persist of BASE-N expression; invalid-digit ignore vs queued Syntax ERROR. `[NEEDS-HUMAN-REVIEW]`
+- CMPLX SHIFT+`2` menu numbering vs hardware; LineIO a/bi on separate lines; S⇔D vs polar/rect; complex STO; real results in r∠θ SETUP (clone does not print `r∠0`); PreAns imag across COMP. `[NEEDS-HUMAN-REVIEW]`
 - Visual keymap vs original chat binary (file not in repo). `[NEEDS-HUMAN-REVIEW]`

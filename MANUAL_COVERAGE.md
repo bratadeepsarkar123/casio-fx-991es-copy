@@ -46,7 +46,7 @@ Source: ToC of supplied PDF (printed pages 1–3 of the file, labeled 1–3 in t
 | CALC / SOLVE | 47–51 | in-scope | DEFERRED |
 | Scientific constants | 52 | in-scope | DEFERRED |
 | Metric conversion | 53–55 | in-scope | DEFERRED |
-| CMPLX | 56–57 | in-scope | P1 PARTIAL |
+| CMPLX | 56–57 | in-scope | P1 IMPLEMENTED (D-018) |
 | STAT | 57–66 | in-scope | P1 PARTIAL |
 | BASE-N | 66–69 | in-scope | P1 IMPLEMENTED (D-017) |
 | EQN | 70–72 | in-scope | P1 PARTIAL |

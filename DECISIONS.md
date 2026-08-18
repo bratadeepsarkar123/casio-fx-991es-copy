@@ -20,7 +20,7 @@ Verification token for ICM session rules was acknowledged; this project is an au
 
 ## D-003 — Numerical core: decimal.js only for scalars
 
-**Decision:** `decimal.js` 10.6.0 is the only scalar numeric type that affects display. mathjs is a pinned dependency for possible matrix/complex structure later and is **not** used for COMP scalar evaluation.
+**Decision:** `decimal.js` 10.6.0 is the only scalar numeric type that affects display. mathjs is a pinned dependency for possible matrix/vector structure later and is **not** used for COMP or CMPLX evaluation. Complex numbers are a first-class `Sym` variant (`k: "cplx"`), not mathjs.
 
 **Internal digits:** 15 (SRC-P97). Display: 10+2. Range: ±1e-99 … ±9.999999999e99 (SRC-P97).
 **π internal:** 3.14159265358980 (SRC-P36). **e internal:** 2.71828182845904 (SRC-P36).
@@ -54,7 +54,7 @@ Verification token for ICM session rules was acknowledged; this project is an au
 
 ## D-010 — P1 modes
 
-STAT/EQN/MATRIX/VECTOR/CMPLX: mode **entry** is implemented (MODE menu). Full subsystem editors remain `PARTIAL` / not VERIFIED. TABLE f(x) is implemented (D-016). BASE-N integer domain is implemented (D-017). COMP P0 is the v1 floor.
+STAT/EQN/MATRIX/VECTOR: mode **entry** is implemented (MODE menu). Full subsystem editors remain `PARTIAL` / not VERIFIED. TABLE f(x) is implemented (D-016). BASE-N integer domain is implemented (D-017). CMPLX extended numeric domain is implemented (D-018). COMP P0 is the v1 floor.
 
 ## D-011 — Integration / Σ / SOLVE
 
@@ -121,6 +121,23 @@ Future modes (TABLE first — see `docs/ARCHITECTURE.md` §12) must be **additiv
 - **Shifts:** not on the official BASE-N page → **DEFERRED**, not stubbed as COMP operations.
 
 **Status:** Recorded.
+
+## D-018 — CMPLX is an extended numeric domain on `Sym`, not a COMP special case
+
+**Decision:** Implement CMPLX by adding `{ k: "cplx"; re: Sym; im: Sym }` to `Sym` (`src/calc/symbolic.ts`, `src/calc/complex.ts`). Reuse the COMP AST/editor. Do **not** create a CMPLX-only parser, replace `decimal.js`, merge with BASE-N, or coerce complex values through `toDec` into `Math.*`.
+
+- **Domain:** rectangular `a+bi`. Zero imag packs to a real `Sym`. Polar `r∠θ` is input (`polarToRect`) and display of that value, not a second stored type.
+- **Entry:** MODE `2` (`TARGET-OFFICIAL-DOC`). ALPHA+ENG inserts existing `{ t: "sym", name: "i" }` (`EMPIRICAL` chassis). `3i` is implied multiplication (existing COMP rule). SHIFT+`(-)` inserts binary `∠` (`EMPIRICAL` legend).
+- **COMP isolation:** `complexOk` is `state.mode === "CMPLX"`. COMP and TABLE still Math ERROR on `i` and `∠`.
+- **Arithmetic:** + − × ÷, integer powers, `x⁻¹` on `Sym` parts (`TARGET-OFFICIAL-DOC` examples). ÷0 → Math ERROR.
+- **Functions implemented:** Abs (modulus), arg, Conjg. SHIFT+`2` menu numbering `1:arg 2:Conjg 3:r∠θ 4:a+bi` is `CROSS-MODEL-SOURCE` (115/C) **NEEDS-HUMAN-REVIEW**.
+- **Functions deferred:** sin/cos/tan/log/ln/√ of non-real → Math ERROR. √ of a negative real stays Math ERROR even in CMPLX (`INFERRED`; do not invent `√(−1)=i`).
+- **Display:** formatter only; `2+3i`, `3-i`, `5i`, `-4i`, `i`/`-i`. Polar `r∠θ` with −180° < θ ≤ 180°. LineIO separate a/bi lines **NEEDS-HUMAN-REVIEW**.
+- **Memory:** `ans`/`ansIm` and `preAns`/`preAnsIm`. Complex STO/M+ of nonzero imag → Math ERROR this phase (**PARTIAL**).
+- **Persist:** schema stays v1. `ansIm`/`preAnsIm` optional, default `"0"`.
+- **Did CMPLX rewrite COMP?** No.
+
+**Status:** Recorded. See `docs/CMPLX.md`.
 
 ## Risk register
 

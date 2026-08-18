@@ -18,17 +18,17 @@ Not VERIFIED in this bucket:
 ## B. Complete-clone required surface
 
 `REQUIRED-COMPLETE-CLONE` rows: **7** (CMPLX, STAT, BASE-N, EQN, MATRIX, TABLE, VECTOR)  
-VERIFIED: **2** (TABLE f(x); BASE-N; D-016 / D-017)  
-**2 / 7**
+VERIFIED: **3** (TABLE f(x); BASE-N; CMPLX; D-016 / D-017 / D-018)  
+**3 / 7**
 
-CMPLX, STAT, EQN, MATRIX, VECTOR remain Impl `PARTIAL` (MODE entry only), Ver `UNVERIFIED`. TABLE is Impl `IMPLEMENTED`, Ver `VERIFIED` for the official f(x) flow. BASE-N is Impl `IMPLEMENTED`, Ver `VERIFIED` for the official integer/logical flow. g(x) is not implemented. Bit shifts are DEFERRED.
+STAT, EQN, MATRIX, VECTOR remain Impl `PARTIAL` (MODE entry only), Ver `UNVERIFIED`. TABLE is Impl `IMPLEMENTED`, Ver `VERIFIED` for the official f(x) flow. BASE-N is Impl `IMPLEMENTED`, Ver `VERIFIED` for the official integer/logical flow. CMPLX is Impl `IMPLEMENTED`, Ver `VERIFIED` for official arithmetic/polar/arg/Conjg/Abs examples (not hardware). g(x) is not implemented. Bit shifts are DEFERRED. Complex STO and non-real trig/log/√ are PARTIAL/DEFERRED.
 
 ## Other buckets (not mixed into A or B)
 
 | Bucket | Count | IDs |
 | --- | --- | --- |
 | Identified (matrix rows) | 44 | |
-| PARTIAL (implementation) | 8 | 5× remaining P1 modes + INT + DIFF + SUM |
+| PARTIAL (implementation) | 7 | 4× remaining P1 modes + INT + DIFF + SUM |
 | BLOCKED (verification) | 1 | C-P0-PWA |
 | NEEDS-HUMAN-REVIEW (verification) | 3 | C-P0-PREANS, C-NHR-CAL, C-NHR-RND |
 | DEFERRED (priority) | 4 | C-P2-INT, DIFF, SUM, SOLVE |
@@ -42,7 +42,7 @@ This build must **not** be described as a complete clone. No physical differenti
 | Suite | Result |
 | --- | --- |
 | `npm ci` | pass |
-| Vitest (`npm test`) | **145 passed** (15 files). Pre-BASE-N baseline 102/12 files; BASE-N domain + reducer + goldens added. COMP `golden/acceptance.test.ts` still 30 passed. TABLE suites still green. |
+| Vitest (`npm test`) | **195 passed** (18 files). Pre-CMPLX baseline 145/15 files; CMPLX domain + reducer + goldens added. COMP `golden/acceptance.test.ts` still 30 passed. TABLE and BASE-N suites still green. |
 | `npm run lint` (`tsc --noEmit`) | pass |
 | `npm run build` (`tsc` + Vite PWA) | pass — Workbox precache 15 entries |
 | Playwright (`npx playwright install --with-deps chromium` then `npm run test:e2e`) | **18 passed** (was 15; +BASE-N on Chromium desktop, Pixel 7, iPad-sized Chromium). **Not** real iOS Safari. |

@@ -38,7 +38,7 @@ Evidence classes and TargetConfirm: `docs/EVIDENCE_CLASSES.md`.
 | C-P0-MULTI | Colon multi-statement | REQUIRED-FUNCTIONAL-V1 | SRC-P24; CHASSIS ALPHA : | CROSS-MODEL-SOURCE | CONFIRMED | IMPLEMENTED | VERIFIED | GT-P24 |
 | C-P0-PREANS | PreAns memory + ALPHA+Ans entry | OPTIONAL-V1 | SRC-P32–33; TGT-TOC omits | CROSS-MODEL-SOURCE | UNCONFIRMED | IMPLEMENTED | NEEDS-HUMAN-REVIEW | GT-P33 Fibonacci (clone) |
 | C-OPT-KBD | Physical keyboard map | OPTIONAL-V1 | spec §5 | INFERRED | N/A | IMPLEMENTED | UNVERIFIED | repeat ignored |
-| C-P1-CMPLX | CMPLX mode | REQUIRED-COMPLETE-CLONE | SRC-P56; TGT-TOC CMPLX | TARGET-OFFICIAL-DOC | CONFIRMED | PARTIAL | UNVERIFIED | mode entry only |
+| C-P1-CMPLX | CMPLX mode | REQUIRED-COMPLETE-CLONE | TGT-TOC CMPLX; SRC-P56 | TARGET-OFFICIAL-DOC | CONFIRMED | IMPLEMENTED | VERIFIED | complex.test.ts; cmplx-state.test.ts; GT-CX-*; e2e/cmplx.spec.ts |
 | C-P1-STAT | STAT mode | REQUIRED-COMPLETE-CLONE | SRC-P57; TGT-TOC STAT | TARGET-OFFICIAL-DOC | CONFIRMED | PARTIAL | UNVERIFIED | mode entry only |
 | C-P1-BASE | BASE-N | REQUIRED-COMPLETE-CLONE | TGT-TOC BASE-N; SRC-P66 | TARGET-OFFICIAL-DOC | CONFIRMED | IMPLEMENTED | VERIFIED | baseNNumeric.test.ts; baseN-state.test.ts; GT-BN-*; e2e/baseN.spec.ts |
 | C-P1-EQN | EQN | REQUIRED-COMPLETE-CLONE | SRC-P70; TGT-TOC EQN | TARGET-OFFICIAL-DOC | CONFIRMED | PARTIAL | UNVERIFIED | mode entry only |
@@ -55,7 +55,7 @@ Evidence classes and TargetConfirm: `docs/EVIDENCE_CLASSES.md`.
 | C-NHR-CAL | Visual keymap vs chat photo | OPTIONAL-V1 | chassis; chat binary missing | EMPIRICAL | N/A | IMPLEMENTED | NEEDS-HUMAN-REVIEW | `?debug=true` |
 | C-NHR-RND | Rounding ties vs hardware | OPTIONAL-V1 | SRC-P13 “rounded off” | CROSS-MODEL-SOURCE | UNCONFIRMED | IMPLEMENTED | NEEDS-HUMAN-REVIEW | HALF_UP policy tests |
 
-P1 modes are on the target device (`TARGET-OFFICIAL-DOC`) and are required for a **complete** clone. They are **not** part of the functional-v1 floor. TABLE f(x) (D-016) and BASE-N (D-017) are IMPLEMENTED/VERIFIED. CMPLX/STAT/EQN/MATRIX/VECTOR remain `PARTIAL` (mode switch only).
+P1 modes are on the target device (`TARGET-OFFICIAL-DOC`) and are required for a **complete** clone. They are **not** part of the functional-v1 floor. TABLE f(x) (D-016), BASE-N (D-017), and CMPLX (D-018) are IMPLEMENTED/VERIFIED. STAT/EQN/MATRIX/VECTOR remain `PARTIAL` (mode switch only).
 
 ## Counts
 
