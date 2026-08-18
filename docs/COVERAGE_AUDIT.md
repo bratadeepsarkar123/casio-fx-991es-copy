@@ -42,10 +42,10 @@ This build must **not** be described as a complete clone. No physical differenti
 | Suite | Result |
 | --- | --- |
 | `npm ci` | pass |
-| Vitest (`npm test`) | **102 passed** (12 files). Pre-TABLE baseline 74; TABLE implementation 97; wrap-up added 5 reducer tests (exit/SETUP/error LCD). |
+| Vitest (`npm test`) | **145 passed** (15 files). Pre-BASE-N baseline 102/12 files; BASE-N domain + reducer + goldens added. COMP `golden/acceptance.test.ts` still 30 passed. TABLE suites still green. |
 | `npm run lint` (`tsc --noEmit`) | pass |
 | `npm run build` (`tsc` + Vite PWA) | pass — Workbox precache 15 entries |
-| Playwright (`npx playwright install --with-deps chromium` then `npm run test:e2e`) | **15 passed** (was 12; +TABLE on Chromium desktop, Pixel 7, iPad-sized Chromium). **Not** real iOS Safari. |
+| Playwright (`npx playwright install --with-deps chromium` then `npm run test:e2e`) | **18 passed** (was 15; +BASE-N on Chromium desktop, Pixel 7, iPad-sized Chromium). **Not** real iOS Safari. |
 | Differential vs physical unit | N/A |
 
 ## Visual calibration
