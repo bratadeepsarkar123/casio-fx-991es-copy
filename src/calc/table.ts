@@ -78,6 +78,7 @@ function walkAtoms(atoms: Atom[], visit: (atom: Atom) => void): void {
       case "colon":
       case "comma":
       case "placeholder":
+      case "cplxfmt":
         break;
       case "frac":
         walkAtoms(atom.num, visit);

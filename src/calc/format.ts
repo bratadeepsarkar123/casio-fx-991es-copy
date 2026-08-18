@@ -2,12 +2,16 @@ import { Decimal } from "decimal.js";
 import { D, DISPLAY_DIGITS, PI } from "./numeric.ts";
 import type { ResultValue, SetupState } from "./types.ts";
 import {
+  asCplx,
+  isZeroReal,
   ratAbs,
   ratToDec,
+  symNeg,
   toDec,
   type Rat,
   type Sym,
 } from "./symbolic.ts";
+import { complexAbs, complexArg } from "./complex.ts";
 
 function stripTrailingZeros(s: string): string {
   if (!s.includes(".")) {
@@ -153,7 +157,49 @@ function formatQuad(s: Extract<Sym, { k: "quad" }>): string | null {
   return joined;
 }
 
-export function resultFromSym(s: Sym, setup: SetupState): ResultValue {
+function formatSignedImag(im: Sym, setup: SetupState): { sign: "+" | "-"; body: string } {
+  const neg = toDec(im).isNeg();
+  const absSym = neg ? symNeg(im) : im;
+  const coeff = resultFromSym(absSym, setup).display;
+  const body = coeff === "1" ? "i" : `${coeff}i`;
+  return { sign: neg ? "-" : "+", body };
+}
+
+function formatRectangular(re: Sym, im: Sym, setup: SetupState): string {
+  if (isZeroReal(im)) {
+    return resultFromSym(re, setup).display;
+  }
+  const { sign, body } = formatSignedImag(im, setup);
+  if (isZeroReal(re)) {
+    return sign === "-" ? `-${body}` : body;
+  }
+  const reDisp = resultFromSym(re, setup).display;
+  return sign === "-" ? `${reDisp}-${body}` : `${reDisp}+${body}`;
+}
+
+function formatPolar(re: Sym, im: Sym, setup: SetupState): string {
+  const z = { k: "cplx" as const, re, im };
+  const r = complexAbs(z);
+  const th = complexArg(z, setup.angleUnit);
+  const rDisp = resultFromSym(r, setup).display;
+  const thDisp = resultFromSym(th, setup).display;
+  return `${rDisp}∠${thDisp}`;
+}
+
+export function resultFromSym(s: Sym, setup: SetupState, complexFormat = setup.complexFormat): ResultValue {
+  if (s.k === "cplx") {
+    const { re, im } = asCplx(s);
+    const reApprox = formatBySetup(toDec(re), setup);
+    const imApprox = formatBySetup(toDec(im), setup);
+    const form = complexFormat;
+    const display = form === "r∠θ" ? formatPolar(re, im, setup) : formatRectangular(re, im, setup);
+    return {
+      approx: display,
+      display,
+      naturalKind: form === "r∠θ" ? "polar" : "complex",
+      complex: { re: reApprox, im: imApprox },
+    };
+  }
   const approxDec = toDec(s);
   const approx = formatBySetup(approxDec, setup);
   const matho = setup.displayFormat === "MthIO-MathO";
@@ -213,6 +259,9 @@ export function resultFromSym(s: Sym, setup: SetupState): ResultValue {
 }
 
 export function toggleDecimal(result: ResultValue): ResultValue {
+  if (result.naturalKind === "complex" || result.naturalKind === "polar") {
+    return result;
+  }
   if (result.naturalKind === "decimal") {
     if (result.fraction) {
       const mixed = result.fraction.mixed

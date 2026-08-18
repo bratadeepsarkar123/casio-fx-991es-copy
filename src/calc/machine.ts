@@ -10,6 +10,7 @@ import {
   insertColon,
   insertComma,
   insertCbrt,
+  insertCplxFmt,
   insertDigit,
   insertDot,
   insertFraction,
@@ -80,6 +81,8 @@ export function createInitialState(nowMs = 0): CalcState {
     resultDecimal: false,
     ans: "0",
     preAns: "0",
+    ansIm: "0",
+    preAnsIm: "0",
     variables: zeros,
     memoryM: "0",
     history: [],
@@ -99,7 +102,7 @@ function clearLatches(state: CalcState): CalcState {
   return { ...state, shift: false, alpha: false, hyp: false };
 }
 
-function withBinaryOp(state: CalcState, op: "+" | "-" | "×" | "÷" | "÷R" | "nPr" | "nCr"): CalcState {
+function withBinaryOp(state: CalcState, op: "+" | "-" | "×" | "÷" | "÷R" | "nPr" | "nCr" | "∠"): CalcState {
   const base = continueFromResult(state);
   return {
     ...clearLatches(base),
@@ -138,7 +141,8 @@ function handleMenu(state: CalcState, keyId: KeyId): CalcState | null {
         screen: { kind: "input" },
         result: null,
         history: [],
-        preAns: mode === "COMP" ? state.preAns : "0",
+        preAns: mode === "COMP" || mode === "CMPLX" ? state.preAns : "0",
+        preAnsIm: mode === "COMP" || mode === "CMPLX" ? state.preAnsIm : "0",
         table: mode === "TABLE" ? emptyTableSession() : null,
         baseN: emptyBaseN(10),
       };
@@ -300,7 +304,16 @@ function handleMenu(state: CalcState, keyId: KeyId): CalcState | null {
         return { ...base, menu: { kind: "none" } };
       }
     }
-    const value = base.result?.approx ?? base.ans;
+    const value = base.result?.complex?.re ?? base.result?.approx ?? base.ans;
+    const imag = base.result?.complex?.im ?? "0";
+    if (imag !== "0" && !D(imag).isZero()) {
+      return {
+        ...clearLatches(base),
+        menu: { kind: "none" },
+        screen: { kind: "error", code: "Math ERROR", expression: base.editor.root, errorIndex: 0 },
+        result: null,
+      };
+    }
     const variables = { ...base.variables, [name]: value };
     const memoryM = name === "M" ? value : base.memoryM;
     return { ...clearLatches(base), variables, memoryM, menu: { kind: "none" } };
@@ -344,6 +357,40 @@ function handleMenu(state: CalcState, keyId: KeyId): CalcState | null {
   if (menu.kind === "base-op") {
     return applyBaseOpMenu(state, keyId);
   }
+  if (menu.kind === "cmplx-op") {
+    switch (keyId) {
+      case "1":
+        return {
+          ...clearLatches(state),
+          menu: { kind: "none" },
+          editor: insertCall(beginInputIfResult(state).editor, "arg"),
+          screen: { kind: "input" },
+        };
+      case "2":
+        return {
+          ...clearLatches(state),
+          menu: { kind: "none" },
+          editor: insertCall(beginInputIfResult(state).editor, "conjg"),
+          screen: { kind: "input" },
+        };
+      case "3":
+        return {
+          ...clearLatches(state),
+          menu: { kind: "none" },
+          editor: insertCplxFmt(state.editor, "r∠θ"),
+          screen: { kind: "input" },
+        };
+      case "4":
+        return {
+          ...clearLatches(state),
+          menu: { kind: "none" },
+          editor: insertCplxFmt(state.editor, "a+bi"),
+          screen: { kind: "input" },
+        };
+      default:
+        return state;
+    }
+  }
   return state;
 }
 
@@ -376,6 +423,8 @@ function runConfirm(state: CalcState, action: "setup" | "memory" | "all"): CalcS
       memoryM: "0",
       ans: "0",
       preAns: "0",
+      ansIm: "0",
+      preAnsIm: "0",
     };
   }
   if (action === "setup") {
@@ -489,7 +538,9 @@ function onEquals(state: CalcState, nextUint32: () => number): CalcState {
       result,
       resultDecimal: result.naturalKind === "decimal",
       preAns: state.ans,
-      ans: result.approx,
+      preAnsIm: state.ansIm,
+      ans: result.complex?.re ?? result.approx,
+      ansIm: result.complex?.im ?? "0",
       history,
       rngSeed: state.rngSeed + 1,
     };
@@ -664,7 +715,9 @@ export function reduce(state: CalcState, event: KeyEvent): CalcState {
           result: approx,
           resultDecimal: true,
           preAns: s.ans,
-          ans: result.approx,
+          preAnsIm: s.ansIm,
+          ans: result.complex?.re ?? result.approx,
+          ansIm: result.complex?.im ?? "0",
           history: [...s.history, { expression: s.editor.root, result: approx }].slice(-40),
           rngSeed: s.rngSeed + 1,
         };
@@ -727,7 +780,15 @@ export function reduce(state: CalcState, event: KeyEvent): CalcState {
         return base;
       }
     }
-    const value = D(base.result?.approx ?? base.ans);
+    const imag = base.result?.complex?.im ?? "0";
+    if (imag !== "0" && !D(imag).isZero()) {
+      return {
+        ...clearLatches(base),
+        screen: { kind: "error", code: "Math ERROR", expression: base.editor.root, errorIndex: 0 },
+        result: null,
+      };
+    }
+    const value = D(base.result?.complex?.re ?? base.result?.approx ?? base.ans);
     const next = s.shift ? D(base.memoryM).minus(value) : D(base.memoryM).plus(value);
     const mStr = next.toString();
     return {
@@ -776,6 +837,9 @@ export function reduce(state: CalcState, event: KeyEvent): CalcState {
 
   if (s.shift && event.keyId === "9") {
     return { ...clearLatches(s), menu: { kind: "clr" } };
+  }
+  if (s.shift && event.keyId === "2" && s.mode === "CMPLX") {
+    return { ...clearLatches(s), menu: { kind: "cmplx-op" } };
   }
 
   if (event.keyId === "add") {
@@ -868,6 +932,9 @@ export function reduce(state: CalcState, event: KeyEvent): CalcState {
   if (event.keyId === "neg") {
     if (s.alpha) {
       return { ...clearLatches(s), editor: insertVar(beginInputIfResult(s).editor, "A"), screen: { kind: "input" } };
+    }
+    if (s.shift) {
+      return withBinaryOp(s, "∠");
     }
     return { ...clearLatches(s), editor: insertNeg(beginInputIfResult(s).editor), screen: { kind: "input" } };
   }

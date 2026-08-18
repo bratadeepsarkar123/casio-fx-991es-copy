@@ -18,7 +18,11 @@ import {
 import { resultFromSym } from "./format.ts";
 import { specialTrigFromSym } from "./specialTrig.ts";
 import {
+  asCplx,
+  cplxI,
   fromDec,
+  isNonReal,
+  packCplx,
   symAdd,
   symDiv,
   symMul,
@@ -30,15 +34,20 @@ import {
   toDec,
   type Sym,
 } from "./symbolic.ts";
-import type { AngleUnit, Atom, CalcState, ResultValue, VarName } from "./types.ts";
+import { complexAbs, complexArg, complexConj, polarToRect } from "./complex.ts";
+import type { AngleUnit, Atom, CalcState, ComplexFormat, ResultValue, VarName } from "./types.ts";
 
 export interface EvalContext {
   angle: AngleUnit;
   ans: Dec;
+  ansIm: Dec;
   preAns: Dec;
+  preAnsIm: Dec;
   variables: Record<VarName, Dec>;
   memoryM: Dec;
   nextUint32: () => number;
+  complexOk: boolean;
+  complexFormatOverride: ComplexFormat | null;
 }
 
 function ctxFromState(state: CalcState, nextUint32: () => number): EvalContext {
@@ -49,10 +58,14 @@ function ctxFromState(state: CalcState, nextUint32: () => number): EvalContext {
   return {
     angle: state.setup.angleUnit,
     ans: D(state.ans),
+    ansIm: D(state.ansIm ?? "0"),
     preAns: D(state.preAns),
+    preAnsIm: D(state.preAnsIm ?? "0"),
     variables: vars,
     memoryM: D(state.memoryM),
     nextUint32,
+    complexOk: state.mode === "CMPLX",
+    complexFormatOverride: null,
   };
 }
 
@@ -80,7 +93,25 @@ function evalSlot(atoms: Atom[], ctx: EvalContext): Sym {
 
 type Item =
   | { k: "val"; v: Sym }
-  | { k: "op"; op: "+" | "-" | "×" | "÷" | "÷R" | "nPr" | "nCr" | "implied" };
+  | { k: "op"; op: "+" | "-" | "×" | "÷" | "÷R" | "nPr" | "nCr" | "implied" | "∠" };
+
+function recallPair(re: Dec, im: Dec, ctx: EvalContext): Sym {
+  const real = fromDec(re);
+  if (im.isZero()) {
+    return real;
+  }
+  if (!ctx.complexOk) {
+    throw new CalcMathError();
+  }
+  return packCplx(real, fromDec(im));
+}
+
+function requireReal(s: Sym): Dec {
+  if (isNonReal(s)) {
+    throw new CalcMathError();
+  }
+  return toDec(s.k === "cplx" ? s.re : s);
+}
 
 function evalAtom(atom: Atom, ctx: EvalContext): Sym {
   switch (atom.t) {
@@ -116,10 +147,8 @@ function evalAtom(atom: Atom, ctx: EvalContext): Sym {
     case "pow":
       return symPow(evalSlot(atom.base, ctx), evalSlot(atom.exp, ctx));
     case "logb": {
-      const base = evalSlot(atom.base, ctx);
-      const arg = evalSlot(atom.arg, ctx);
-      const a = toDec(arg);
-      const b = toDec(base);
+      const a = requireReal(evalSlot(atom.arg, ctx));
+      const b = requireReal(evalSlot(atom.base, ctx));
       if (a.lte(0) || b.lte(0) || b.eq(1)) {
         throw new CalcMathError();
       }
@@ -138,11 +167,14 @@ function evalAtom(atom: Atom, ctx: EvalContext): Sym {
         case "e":
           return fromDec(E);
         case "ans":
-          return fromDec(ctx.ans);
+          return recallPair(ctx.ans, ctx.ansIm, ctx);
         case "preAns":
-          return fromDec(ctx.preAns);
+          return recallPair(ctx.preAns, ctx.preAnsIm, ctx);
         case "i":
-          throw new CalcMathError();
+          if (!ctx.complexOk) {
+            throw new CalcMathError();
+          }
+          return cplxI();
         default: {
           const _never: never = atom;
           throw new CalcSyntaxError();
@@ -160,11 +192,14 @@ function evalAtom(atom: Atom, ctx: EvalContext): Sym {
         case "inv":
           return symDiv(symRat(1n), inner);
         case "fact":
-          return fromDec(factorial(toDec(inner)));
+          return fromDec(factorial(requireReal(inner)));
         case "pct":
+          if (isNonReal(inner)) {
+            throw new CalcMathError();
+          }
           return symDiv(inner, symRat(100n));
         case "dms":
-          return fromDec(fromDms(toDec(inner)));
+          return fromDec(fromDms(requireReal(inner)));
         default: {
           const _never: never = atom;
           throw new CalcSyntaxError();
@@ -176,14 +211,19 @@ function evalAtom(atom: Atom, ctx: EvalContext): Sym {
       return symNeg(evalSlot(atom.inner.length ? atom.inner : [{ t: "num", s: "0" }], ctx));
     case "abs": {
       const v = evalSlot(atom.inner, ctx);
+      if (isNonReal(v)) {
+        return complexAbs(v);
+      }
       const d = toDec(v);
       return d.isNeg() ? symNeg(v) : v;
     }
     case "angle": {
-      const v = toDec(evalSlot(atom.inner, ctx));
+      const v = requireReal(evalSlot(atom.inner, ctx));
       const rad = toRad(v, atom.unit === "°" ? "Deg" : atom.unit === "r" ? "Rad" : "Gra");
       return fromDec(fromRadToCurrent(rad, ctx.angle));
     }
+    case "cplxfmt":
+      throw new CalcSyntaxError();
     default: {
       const _never: never = atom;
       return _never;
@@ -212,8 +252,18 @@ function fromRadToCurrent(rad: Dec, unit: AngleUnit): Dec {
 
 function evalCall(name: string, args: Atom[][], ctx: EvalContext): Sym {
   const vals = args.map((a) => evalSlot(a, ctx));
-  const x = vals[0] ? toDec(vals[0]) : D(0);
   switch (name) {
+    case "conjg":
+      return complexConj(vals[0] ?? symRat(0n));
+    case "arg":
+      return complexArg(vals[0] ?? symRat(0n), ctx.angle);
+    case "abs": {
+      const z = vals[0] ?? symRat(0n);
+      if (isNonReal(z)) {
+        return complexAbs(z);
+      }
+      return fromDec(toDec(z).abs());
+    }
     case "sin":
     case "cos":
     case "tan":
@@ -227,6 +277,9 @@ function evalCall(name: string, args: Atom[][], ctx: EvalContext): Sym {
     case "acosh":
     case "atanh": {
       const arg = vals[0] ?? symRat(0n);
+      if (isNonReal(arg)) {
+        throw new CalcMathError();
+      }
       const special = specialTrigFromSym(name, arg, ctx.angle);
       if (special) {
         return special;
@@ -235,29 +288,32 @@ function evalCall(name: string, args: Atom[][], ctx: EvalContext): Sym {
     }
     case "log": {
       if (vals.length >= 2 && vals[0] && vals[1]) {
-        const b = toDec(vals[0]);
-        const a = toDec(vals[1]);
+        const b = requireReal(vals[0]);
+        const a = requireReal(vals[1]);
         if (a.lte(0) || b.lte(0) || b.eq(1)) {
           throw new CalcMathError();
         }
         return fromDec(roundInternal(a.ln().div(b.ln())));
       }
-      if (x.lte(0)) {
-        throw new CalcMathError();
+      {
+        const x = vals[0] ? requireReal(vals[0]) : D(0);
+        if (x.lte(0)) {
+          throw new CalcMathError();
+        }
+        return fromDec(roundInternal(x.log(10)));
       }
-      return fromDec(roundInternal(x.log(10)));
     }
-    case "ln":
+    case "ln": {
+      const x = vals[0] ? requireReal(vals[0]) : D(0);
       if (x.lte(0)) {
         throw new CalcMathError();
       }
       return fromDec(roundInternal(x.ln()));
+    }
     case "exp10":
-      return fromDec(roundInternal(D(10).pow(x)));
+      return fromDec(roundInternal(D(10).pow(vals[0] ? requireReal(vals[0]) : D(0))));
     case "exp":
-      return fromDec(roundInternal(x.exp()));
-    case "abs":
-      return fromDec(x.abs());
+      return fromDec(roundInternal((vals[0] ? requireReal(vals[0]) : D(0)).exp()));
     case "Ran#":
       return fromDec(ranHash(ctx.nextUint32()));
     case "RanInt": {
@@ -266,10 +322,10 @@ function evalCall(name: string, args: Atom[][], ctx: EvalContext): Sym {
       if (!a || !b) {
         throw new CalcArgumentError();
       }
-      return fromDec(ranInt(toDec(a), toDec(b), ctx.nextUint32()));
+      return fromDec(ranInt(requireReal(a), requireReal(b), ctx.nextUint32()));
     }
     case "Rnd":
-      return fromDec(x.toSignificantDigits(10, 4));
+      return fromDec((vals[0] ? requireReal(vals[0]) : D(0)).toSignificantDigits(10, 4));
     default:
       throw new CalcSyntaxError();
   }
@@ -338,6 +394,10 @@ function evalExpr(atoms: Atom[], ctx: EvalContext): Sym {
     if (a.t === "comma") {
       continue;
     }
+    if (a.t === "cplxfmt") {
+      ctx.complexFormatOverride = a.fmt;
+      continue;
+    }
     const val = evalAtom(a, ctx);
     const prev = items[items.length - 1];
     if (prev && prev.k === "val") {
@@ -345,10 +405,10 @@ function evalExpr(atoms: Atom[], ctx: EvalContext): Sym {
     }
     items.push({ k: "val", v: val });
   }
-  return reduceItems(items);
+  return reduceItems(items, ctx);
 }
 
-function reduceItems(items: Item[]): Sym {
+function reduceItems(items: Item[], ctx: EvalContext): Sym {
   if (items.length === 0) {
     throw new CalcSyntaxError();
   }
@@ -356,6 +416,7 @@ function reduceItems(items: Item[]): Sym {
     implied: 7,
     nPr: 8,
     nCr: 8,
+    "∠": 8,
     "×": 10,
     "÷": 10,
     "÷R": 10,
@@ -371,7 +432,7 @@ function reduceItems(items: Item[]): Sym {
     if (!op || !a || !b || a.k !== "val" || b.k !== "val") {
       throw new CalcSyntaxError();
     }
-    output.push({ k: "val", v: applyOp(op.op, a.v, b.v) });
+    output.push({ k: "val", v: applyOp(op.op, a.v, b.v, ctx) });
   };
   for (const it of items) {
     if (it.k === "val") {
@@ -401,7 +462,7 @@ function reduceItems(items: Item[]): Sym {
   return last.v;
 }
 
-function applyOp(op: string, a: Sym, b: Sym): Sym {
+function applyOp(op: string, a: Sym, b: Sym, ctx: EvalContext): Sym {
   switch (op) {
     case "+":
       return symAdd(a, b);
@@ -422,9 +483,14 @@ function applyOp(op: string, a: Sym, b: Sym): Sym {
       return fromDec(q);
     }
     case "nPr":
-      return fromDec(nPr(toDec(a), toDec(b)));
+      return fromDec(nPr(requireReal(a), requireReal(b)));
     case "nCr":
-      return fromDec(nCr(toDec(a), toDec(b)));
+      return fromDec(nCr(requireReal(a), requireReal(b)));
+    case "∠":
+      if (!ctx.complexOk) {
+        throw new CalcMathError();
+      }
+      return polarToRect(a, b, ctx.angle);
     default:
       throw new CalcSyntaxError();
   }
@@ -442,12 +508,22 @@ export function evaluateAtoms(
       : state;
     const ctx = ctxFromState(bound, nextUint32);
     const sym = evalSlot(atoms, ctx);
+    const format = ctx.complexFormatOverride ?? state.setup.complexFormat;
+    if (sym.k === "cplx") {
+      if (!ctx.complexOk) {
+        throw new CalcMathError();
+      }
+      const { re, im } = asCplx(sym);
+      assertRange(toDec(re));
+      assertRange(toDec(im));
+      return resultFromSym(sym, state.setup, format);
+    }
     const raw = toDec(sym);
     const dec = assertRange(raw);
     if (raw.isZero() || (dec.isZero() && !raw.isZero())) {
       return resultFromSym(symRat(0n), state.setup);
     }
-    return resultFromSym(sym, state.setup);
+    return resultFromSym(sym, state.setup, format);
   } catch (err) {
     if (err instanceof CalcMathError || err instanceof CalcSyntaxError || err instanceof CalcArgumentError) {
       throw err;

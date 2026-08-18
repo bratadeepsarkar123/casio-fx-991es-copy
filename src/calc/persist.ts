@@ -190,6 +190,12 @@ export function isPersistedCalcState(value: unknown): value is CalcState {
   if (typeof value.ans !== "string" || typeof value.preAns !== "string") {
     return false;
   }
+  if (value.ansIm !== undefined && typeof value.ansIm !== "string") {
+    return false;
+  }
+  if (value.preAnsIm !== undefined && typeof value.preAnsIm !== "string") {
+    return false;
+  }
   if (!isVariables(value.variables)) {
     return false;
   }
@@ -237,8 +243,11 @@ export function deserializeState(raw: unknown, nowMs = 0): CalcState | null {
   if (!isPersistedCalcState(env.state)) {
     return null;
   }
+  const persisted = env.state as CalcState & { ansIm?: string; preAnsIm?: string };
   return {
-    ...env.state,
+    ...persisted,
+    ansIm: typeof persisted.ansIm === "string" ? persisted.ansIm : "0",
+    preAnsIm: typeof persisted.preAnsIm === "string" ? persisted.preAnsIm : "0",
     table: env.state.mode === "TABLE" ? emptyTableSession() : null,
     baseN: emptyBaseN(env.state.baseN.radix),
     lastActivityMs: nowMs,

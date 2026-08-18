@@ -56,6 +56,9 @@ export function lcdResult(state: CalcState): string {
       ? "1:and 2:or 3:xor 4:xnor 5:Not 6:Neg"
       : "1:d 2:h 3:b 4:o";
   }
+  if (state.menu.kind === "cmplx-op") {
+    return "1:arg 2:Conjg 3:r∠θ 4:a+bi";
+  }
   if (state.menu.kind !== "none") {
     return state.menu.kind.toUpperCase();
   }

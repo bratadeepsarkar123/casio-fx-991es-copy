@@ -50,7 +50,7 @@ export interface SetupState {
 
 export type Atom =
   | { t: "num"; s: string }
-  | { t: "op"; op: "+" | "-" | "×" | "÷" | "÷R" | "nPr" | "nCr" }
+  | { t: "op"; op: "+" | "-" | "×" | "÷" | "÷R" | "nPr" | "nCr" | "∠" }
   | { t: "frac"; num: Atom[]; den: Atom[] }
   | { t: "mixed"; whole: Atom[]; num: Atom[]; den: Atom[] }
   | { t: "sqrt"; inner: Atom[] }
@@ -68,7 +68,8 @@ export type Atom =
   | { t: "angle"; unit: "°" | "r" | "g"; inner: Atom[] }
   | { t: "colon" }
   | { t: "comma" }
-  | { t: "placeholder" };
+  | { t: "placeholder" }
+  | { t: "cplxfmt"; fmt: ComplexFormat };
 
 export interface Cursor {
   /** Path of slot indices from the root slot. */
@@ -85,7 +86,7 @@ export interface EditorState {
   insertMode: InsertMode;
 }
 
-export type NaturalKind = "decimal" | "fraction" | "mixed" | "sqrt" | "pi";
+export type NaturalKind = "decimal" | "fraction" | "mixed" | "sqrt" | "pi" | "complex" | "polar";
 
 export interface ResultValue {
   approx: string;
@@ -95,6 +96,8 @@ export interface ResultValue {
   pi?: { num: string; den: string };
   sqrt?: string;
   sexagesimal?: string;
+  /** Rectangular parts as decimal strings. Present when the value is (or was) complex. */
+  complex?: { re: string; im: string };
 }
 
 export interface HistoryEntry {
@@ -122,7 +125,8 @@ export type MenuState =
   | { kind: "rdec" }
   | { kind: "disp" }
   | { kind: "contrast" }
-  | { kind: "base-op"; page: number };
+  | { kind: "base-op"; page: number }
+  | { kind: "cmplx-op" };
 
 export type Screen =
   | { kind: "input" }
@@ -191,6 +195,10 @@ export interface CalcState {
   resultDecimal: boolean;
   ans: string;
   preAns: string;
+  /** Imaginary part of Ans as a decimal string. `"0"` when Ans is real. Optional on persist. */
+  ansIm: string;
+  /** Imaginary part of PreAns. `"0"` when PreAns is real. Optional on persist. */
+  preAnsIm: string;
   variables: Record<VarName, string>;
   memoryM: string;
   history: HistoryEntry[];

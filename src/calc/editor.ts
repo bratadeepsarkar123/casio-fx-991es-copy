@@ -1,4 +1,4 @@
-import type { Atom, DisplayFormat, EditorState, VarName } from "./types.ts";
+import type { Atom, ComplexFormat, DisplayFormat, EditorState, VarName } from "./types.ts";
 
 export const MAX_BYTES = 99;
 
@@ -275,8 +275,12 @@ export function insertDot(ed: EditorState): EditorState {
   return insertAtom(ed, { t: "num", s: "0." });
 }
 
-export function insertOp(ed: EditorState, op: "+" | "-" | "×" | "÷" | "÷R" | "nPr" | "nCr"): EditorState {
+export function insertOp(ed: EditorState, op: "+" | "-" | "×" | "÷" | "÷R" | "nPr" | "nCr" | "∠"): EditorState {
   return insertAtom(ed, { t: "op", op });
+}
+
+export function insertCplxFmt(ed: EditorState, fmt: ComplexFormat): EditorState {
+  return insertAtom(ed, { t: "cplxfmt", fmt });
 }
 
 function wrapPrevAs(ed: EditorState, make: (inner: Atom[]) => Atom, enter: SlotField): EditorState {
@@ -754,6 +758,9 @@ export function atomsToLinear(atoms: Atom[], format: DisplayFormat): string {
         case "sym":
           parts.push(a.name === "pi" ? "π" : a.name === "preAns" ? "PreAns" : a.name === "ans" ? "Ans" : a.name);
           break;
+        case "cplxfmt":
+          parts.push(a.fmt);
+          break;
         case "post":
           walk(a.inner);
           parts.push(
@@ -814,6 +821,7 @@ export function prepareForBinaryOp(ed: EditorState): EditorState {
     case "pow":
     case "logb":
     case "nthrt":
+    case "abs":
       return ed;
     case "frac":
     case "mixed":
@@ -823,7 +831,6 @@ export function prepareForBinaryOp(ed: EditorState): EditorState {
       return ed;
     case "sqrt":
     case "cbrt":
-    case "abs":
     case "neg":
     case "post":
     case "angle":

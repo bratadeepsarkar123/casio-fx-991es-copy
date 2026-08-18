@@ -78,7 +78,8 @@ export type Sym =
   | { k: "rat"; r: Rat }
   | { k: "quad"; q: Quad }
   | { k: "pi"; r: Rat }
-  | { k: "real"; v: Dec };
+  | { k: "real"; v: Dec }
+  | { k: "cplx"; re: Sym; im: Sym };
 
 export function symRat(n: bigint, d: bigint = 1n): Sym {
   return { k: "rat", r: rat(n, d) };
@@ -107,11 +108,67 @@ export function toDec(s: Sym): Dec {
       }
       return acc;
     }
+    case "cplx":
+      if (isZeroReal(s.im)) {
+        return toDec(s.re);
+      }
+      throw new Error("math");
     default: {
       const _never: never = s;
       return _never;
     }
   }
+}
+
+export function isZeroReal(s: Sym): boolean {
+  switch (s.k) {
+    case "rat":
+      return s.r.n === 0n;
+    case "pi":
+      return s.r.n === 0n;
+    case "real":
+      return s.v.isZero();
+    case "quad": {
+      for (const coef of s.q.values()) {
+        if (coef.n !== 0n) {
+          return false;
+        }
+      }
+      return true;
+    }
+    case "cplx":
+      return isZeroReal(s.re) && isZeroReal(s.im);
+    default: {
+      const _never: never = s;
+      return _never;
+    }
+  }
+}
+
+export function asCplx(s: Sym): { re: Sym; im: Sym } {
+  if (s.k === "cplx") {
+    return { re: s.re, im: s.im };
+  }
+  return { re: s, im: symRat(0n) };
+}
+
+/** Rectangular pack. Zero imaginary part collapses to a real Sym. */
+export function packCplx(re: Sym, im: Sym): Sym {
+  if (re.k === "cplx" || im.k === "cplx") {
+    throw new Error("math");
+  }
+  if (isZeroReal(im)) {
+    return re;
+  }
+  return { k: "cplx", re, im };
+}
+
+export function cplxI(): Sym {
+  return { k: "cplx", re: symRat(0n), im: symRat(1n) };
+}
+
+export function isNonReal(s: Sym): boolean {
+  return s.k === "cplx" && !isZeroReal(s.im);
 }
 
 function quadFromRat(r: Rat): Quad {
@@ -154,6 +211,11 @@ function normalizeQuad(q: Quad): Sym {
 }
 
 export function symAdd(a: Sym, b: Sym): Sym {
+  if (a.k === "cplx" || b.k === "cplx") {
+    const A = asCplx(a);
+    const B = asCplx(b);
+    return packCplx(symAdd(A.re, B.re), symAdd(A.im, B.im));
+  }
   if (a.k === "real" || b.k === "real") {
     return { k: "real", v: toDec(a).plus(toDec(b)) };
   }
@@ -194,6 +256,8 @@ export function symNeg(a: Sym): Sym {
       }
       return { k: "quad", q };
     }
+    case "cplx":
+      return packCplx(symNeg(a.re), symNeg(a.im));
     default: {
       const _never: never = a;
       return _never;
@@ -206,6 +270,14 @@ export function symSub(a: Sym, b: Sym): Sym {
 }
 
 export function symMul(a: Sym, b: Sym): Sym {
+  if (a.k === "cplx" || b.k === "cplx") {
+    const A = asCplx(a);
+    const B = asCplx(b);
+    return packCplx(
+      symSub(symMul(A.re, B.re), symMul(A.im, B.im)),
+      symAdd(symMul(A.re, B.im), symMul(A.im, B.re)),
+    );
+  }
   if (a.k === "real" || b.k === "real") {
     return { k: "real", v: toDec(a).times(toDec(b)) };
   }
@@ -233,6 +305,18 @@ export function symMul(a: Sym, b: Sym): Sym {
 }
 
 export function symDiv(a: Sym, b: Sym): Sym {
+  if (a.k === "cplx" || b.k === "cplx") {
+    const A = asCplx(a);
+    const B = asCplx(b);
+    const den = symAdd(symMul(B.re, B.re), symMul(B.im, B.im));
+    if (isZeroReal(den)) {
+      throw new Error("div0");
+    }
+    return packCplx(
+      symDiv(symAdd(symMul(A.re, B.re), symMul(A.im, B.im)), den),
+      symDiv(symSub(symMul(A.im, B.re), symMul(A.re, B.im)), den),
+    );
+  }
   const bd = toDec(b);
   if (bd.isZero()) {
     throw new Error("div0");
@@ -320,6 +404,26 @@ function ratNthRoot(r: Rat, n: bigint): Rat | null {
 }
 
 export function symPow(base: Sym, exp: Sym): Sym {
+  if (base.k === "cplx" || exp.k === "cplx") {
+    if (exp.k === "cplx" && !isZeroReal(exp.im)) {
+      throw new Error("math");
+    }
+    const e = exp.k === "cplx" ? exp.re : exp;
+    const ed = toDec(e);
+    if (!ed.isInteger() || ed.abs().gt(32)) {
+      throw new Error("math");
+    }
+    if (ed.isZero()) {
+      return symRat(1n);
+    }
+    let acc: Sym = symRat(1n);
+    let steps = ed.abs();
+    while (steps.gt(0)) {
+      acc = symMul(acc, base);
+      steps = steps.minus(1);
+    }
+    return ed.isNeg() ? symDiv(symRat(1n), acc) : acc;
+  }
   if (base.k === "rat" && exp.k === "rat" && exp.r.n === 1n && exp.r.d > 1n) {
     const odd = exp.r.d % 2n === 1n;
     if (base.r.n < 0n && !odd) {
@@ -361,6 +465,9 @@ export function symPow(base: Sym, exp: Sym): Sym {
 }
 
 export function symSqrt(a: Sym): Sym {
+  if (a.k === "cplx") {
+    throw new Error("math");
+  }
   if (a.k === "rat") {
     if (a.r.n < 0n) {
       throw new Error("math");
