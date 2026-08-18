@@ -42,7 +42,7 @@ This build must **not** be described as a complete clone. No physical differenti
 | Suite | Result |
 | --- | --- |
 | `npm ci` | pass |
-| Vitest (`npm test`) | **70 passed** (9 files) |
+| Vitest (`npm test`) | **74 passed** (9 files). Was 70; +2 persist-shape, +2 FLOW A/B goldens. |
 | `npm run lint` (`tsc --noEmit`) | pass |
 | `npm run build` (`tsc` + Vite PWA) | pass — Workbox precache 15 entries |
 | Playwright (`npx playwright install --with-deps chromium` then `npm run test:e2e`) | **12 passed** (Chromium desktop, Pixel 7, iPad-sized Chromium). **Not** real iOS Safari. |

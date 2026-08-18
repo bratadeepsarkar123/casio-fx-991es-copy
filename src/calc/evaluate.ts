@@ -144,7 +144,8 @@ function evalAtom(atom: Atom, ctx: EvalContext): Sym {
         case "i":
           throw new CalcMathError();
         default: {
-          const _never: never = atom.name;
+          const _never: never = atom;
+          throw new CalcSyntaxError();
           return _never;
         }
       }
@@ -165,7 +166,8 @@ function evalAtom(atom: Atom, ctx: EvalContext): Sym {
         case "dms":
           return fromDec(fromDms(toDec(inner)));
         default: {
-          const _never: never = atom.op;
+          const _never: never = atom;
+          throw new CalcSyntaxError();
           return _never;
         }
       }
