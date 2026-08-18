@@ -97,17 +97,36 @@ Internal 15 digits. Display precision ±1 at 10th digit typical. Function domain
 
 ## SRC-P76–78 / TGT-TOC TABLE `[TARGET-OFFICIAL-DOC for f(x) flow; SRC-P76 CROSS-MODEL-SOURCE for 115/C extras]`
 
-Official 570/991 2nd-edition TABLE:
+Official 570/991 2nd-edition TABLE page: https://support.casio.com/global/en/calc/manual/fx-570ESPLUS_991ESPLUS_en/using_calculation_modes/creating_number.html
 
-- Enter with MODE TABLE.
-- Input **f(x)** using variable X. Other variables are constants. Pol, Rec, ∫, d/dx, Σ cannot be used.
-- Prompts: Start? (default 1), End? (default 5; must be greater than Start), Step? (default 1, increment). `=` after Step generates the table.
-- End is inclusive (official example −1 ≦ x ≦ 1, step 0.5).
-- Maximum **30** X-values; more → **Insufficient MEM Error**.
-- Table is view-only. AC returns to f(x) input. Generation **changes variable X**.
-- Switching Natural/Linear in TABLE deletes the function.
-
-Clone (D-016): `TableSession` + COMP evaluator with X overlay. One row at a time on the two-line LCD (`INFERRED`). Ans not updated (`INFERRED`). Zero/negative Step → Argument ERROR (`INFERRED`, **NEEDS-HUMAN-REVIEW**). Per-row Math ERROR keeps other rows (`NEEDS-HUMAN-REVIEW`). g(x) not implemented. TABLE grid not persisted (`NEEDS-HUMAN-REVIEW` vs hardware).
+| Behavior | Clone | Evidence |
+| --- | --- | --- |
+| Enter TABLE | MODE `7` | `TARGET-OFFICIAL-DOC` |
+| f(x) input | COMP editor; X via ALPHA+`)` | `TARGET-OFFICIAL-DOC` |
+| g(x) | **Not implemented.** Target official TABLE is f(x) only. SETUP `f(x),g(x)` leftover is ignored | `TARGET-OFFICIAL-DOC` (scope); SETUP leftover `CROSS-MODEL-SOURCE` |
+| Start? / End? / Step? | `=` advances; defaults 1 / 5 / 1 prefilled | `TARGET-OFFICIAL-DOC` |
+| x generation | Start, Start+Step, … last x ≤ End | `TARGET-OFFICIAL-DOC` (increment until End) |
+| End inclusive | Official example −1 ≦ x ≦ 1 step 0.5 → 5 rows | `TARGET-OFFICIAL-DOC` |
+| Row order | Increasing X | `TARGET-OFFICIAL-DOC` |
+| Negative Step | Argument ERROR | `INFERRED` from “increment” + “End always greater than Start”; **NEEDS-HUMAN-REVIEW** |
+| Step = 0 | Argument ERROR | `INFERRED`; **NEEDS-HUMAN-REVIEW** |
+| End ≤ Start | Argument ERROR | `TARGET-OFFICIAL-DOC` (“End always greater than Start”); exact error name **NEEDS-HUMAN-REVIEW** |
+| Invalid Start/End/Step expression | existing Syntax/Math/Argument ERROR | Reuses COMP evaluator (`INFERRED` routing) |
+| Max rows | 30 X-values | `TARGET-OFFICIAL-DOC` |
+| Error when >30 | Insufficient MEM Error | Cap: `TARGET-OFFICIAL-DOC`. **Name:** `CROSS-MODEL-SOURCE` (SRC-P92 / 115/C). Target page says only “an error”. |
+| Precision / formatting | `resultFromSym` + current SETUP | Same evaluator (`INFERRED` reuse). Natural/Linear switch **deletes** f(x): `TARGET-OFFICIAL-DOC` |
+| Angle unit | Current SETUP Deg/Rad/Gra | Same evaluator (`INFERRED` reuse) |
+| Navigation | Up/down one row; clone LCD shows one row | Keys: `INFERRED`. One-row LCD: `INFERRED`; **NEEDS-HUMAN-REVIEW** vs hardware table screen |
+| Table is view-only | Digits/edit swallowed in `view` | `TARGET-OFFICIAL-DOC` |
+| AC on table view | Return to f(x), function kept | `TARGET-OFFICIAL-DOC` |
+| AC on Start/End/Step prompts | Clears the current editor (COMP AC) | `INFERRED`; **NEEDS-HUMAN-REVIEW** |
+| EXIT | No dedicated EXIT. MODE 1 → COMP; SHIFT+AC power off | `INFERRED` |
+| Shares X with COMP | Generation writes last X to `variables.X` | `TARGET-OFFICIAL-DOC` |
+| Shares Ans | **Not** updated by generation | `INFERRED`; **NEEDS-HUMAN-REVIEW** |
+| Row eval | `evaluateAtoms(fx, state, rng, { X })` overlay; persistent X unchanged until success | Overlay: implementation. Persistent-X-after-success: `TARGET-OFFICIAL-DOC` |
+| Pol/Rec/∫/d/dx/Σ in f(x) | Syntax ERROR (TABLE-only scan) | `TARGET-OFFICIAL-DOC` |
+| Per-row Math ERROR | Keep table; show error on that row | `INFERRED`; **NEEDS-HUMAN-REVIEW** |
+| Persist TABLE grid | **Not** saved (schema v1; `table` stripped) | `INFERRED`; hardware power-off **NEEDS-HUMAN-REVIEW** |
 
 Target official setup init does **not** list a TABLE f(x)/g(x) format. 115/C dual-function TABLE is not copied.
 

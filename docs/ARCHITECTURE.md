@@ -78,11 +78,11 @@ Authoritative type: `CalcState` in `src/calc/types.ts`.
 | --- | --- |
 | `schemaVersion` | Persist contract (currently `1`) |
 | `power` | `"on"` \| `"off"` |
-| `mode` | COMP plus seven target modes (entry only except COMP) |
+| `mode` | COMP plus seven target modes (TABLE f(x) implemented; others entry only) |
 | `setup` | Angle, I/O, Fix/Sci/Norm, fraction, CMPLX/STAT/TABLE format, Rdec, decimal mark, contrast |
 | `shift`, `alpha`, `hyp` | Latches. SHIFT and ALPHA clear each other. HYP is sticky until a consuming key |
 | `editor` | `root: Atom[]`, `cursor`, `insertMode` |
-| `screen` | `input` \| `result` \| `error` \| `replay` \| `off` |
+| `screen` | `input` \| `result` \| `error` \| `replay` \| `off` \| `table-view` |
 | `result` | Last `ResultValue` or `null` (cleared by AC) |
 | `resultDecimal` | Tracks S⇔D natural vs decimal |
 | `ans`, `preAns` | Independent memories (strings of formatted approx) |
@@ -154,7 +154,8 @@ savePersisted(next)
 4. If a menu is open, `handleMenu` (unmatched keys typically leave state unchanged).
 5. SHIFT / ALPHA / HYP latches.
 6. Error-screen recovery: AC clears; left/right restore the expression at `errorIndex`.
-7. Otherwise key-specific insert / eval / memory / SETUP.
+7. If `mode === "TABLE"`, `reduceTable` may consume the key (prompts, generation, row nav). Unhandled keys fall through.
+8. Otherwise key-specific insert / eval / memory / SETUP.
 
 ### FLOW A — `7 ÷ 6 =`
 
@@ -209,7 +210,7 @@ The AST **must not evaluate**. Evaluation is `evaluate.ts`. Formatting is `forma
 | STAT lists / frequencies | Parallel list store |
 | BASE-N digit alphabets / bitwise | Mode-gated integer editor; do not reuse COMP decimal `num` strings as hex without a gate |
 | EQN coefficient screens | Dedicated screens, not a COMP polynomial parser |
-| TABLE grid | New `screen` kind + range (start/end/step); `f(x)` can reuse COMP `Atom[]` + `variables.X` |
+| TABLE grid | **Implemented:** `TableSession` + `screen.kind === "table-view"`; f(x) reuses COMP `Atom[]` + X overlay |
 
 **Trap:** `call.name` is a free `string`. That is the COMP extension point and the way unimplemented ops already leak in. Before/with the first new mode, gate names by mode or close the set.
 
@@ -231,6 +232,8 @@ The AST **must not evaluate**. Evaluation is `evaluate.ts`. Formatting is `forma
 8. `resultFromSym(sym, setup)` → `ResultValue`.
 
 Errors become `screen.kind === "error"` in `onEquals`. M+ / STO call the same evaluator when not already on a result (D-014).
+
+TABLE rows call the same `evaluateAtoms` with a **temporary** `{ X }` overlay (D-016). Persistent `variables.X` is written only after a successful generation.
 
 `i` throws Math ERROR in COMP by design until CMPLX exists.
 
@@ -304,9 +307,9 @@ Persistence must not implement arithmetic. It currently does not.
 | A Numeric | `src/calc/numeric.test.ts` | decimal.js range, factorial, nPr/nCr, Ran#, ROUND_HALF_UP **policy** |
 | A Special angles | `src/calc/special-angles.test.ts` | exact shortcuts vs nearby floats |
 | B Editor | `src/calc/editor.test.ts` | cursor, DEL, operator-exit, nth-root template, replay edit |
-| C State | `src/calc/state-transitions.test.ts`, `machine.test.ts` | AC/MODE/SETUP/CLR/power/auto-off/latches/LCD indicators |
-| D Golden keys | `golden/acceptance.test.ts`, `golden/fixtures.test.ts` | key sequences → `lcdResult` / some state fields |
-| E Persist | `src/calc/persist.test.ts`, `e2e/persist.spec.ts` | schema reject/round-trip; reload in Chromium |
+| C State | `src/calc/state-transitions.test.ts`, `machine.test.ts`, `table-state.test.ts` | AC/MODE/SETUP/CLR/power/auto-off/latches/LCD indicators; TABLE prompts/rows/nav/exit |
+| D Golden keys | `golden/acceptance.test.ts`, `golden/fixtures.test.ts`, `golden/table.test.ts` | key sequences → `lcdResult` / TABLE state (mode, phase, rows, rowIndex) |
+| E Persist | `src/calc/persist.test.ts`, `e2e/persist.spec.ts` | schema reject/round-trip; reload in Chromium; TABLE grid stripped |
 | F UI overlay | `src/ui/coords.test.ts`, `e2e/overlay.spec.ts` | 50 keys, 0–100% boxes, debug overlay, pointer |
 | G PWA/build | `npm run build` + Workbox in CI | precache locally; **not** live origin |
 
@@ -316,13 +319,13 @@ Calculator-semantic tests dispatch `KeyId` through `reduce` — they do not clic
 
 A golden should specify starting state, key sequence, expected display/state, source, evidence class, target confidence.
 
-Reality: most goldens are inline Vitest `it(...)` with `SRC-P*` in the title, default `createInitialState(0)`, and `lcdResult` assertions. Only `golden/fixtures/GT-P22-EX1.json` is a structured fixture (`sourceEvidenceId`). **A passing golden is clone behavior, not `TARGET-MANUAL`.** File header in `acceptance.test.ts` states that.
+Reality: most COMP goldens are inline Vitest `it(...)` with `SRC-P*` in the title, default `createInitialState(0)`, and `lcdResult` assertions. Structured fixtures: `golden/fixtures/GT-P22-EX1.json` and `golden/fixtures/GT-TBL-XSQ-DEFAULTS.json` (`evidenceClass` + state fields). **A passing golden is clone behavior, not `TARGET-MANUAL`.** File header in `acceptance.test.ts` states that.
 
 **Gaps (quality, do not inflate count):**
 
-- Most goldens lack an `evidenceClass` field.
-- First new mode must not rely only on LCD string coincidence; assert mode-specific state.
-- Unimplemented tokens (`Pol`, `int`) are not explicitly tested as Syntax ERROR.
+- Most COMP goldens still lack an `evidenceClass` field.
+- TABLE goldens assert mode/phase/rows/rowIndex, not only LCD strings.
+- Unimplemented COMP tokens (`Pol`, `int`) still eval to Syntax ERROR; TABLE additionally **rejects** them in f(x) before eval.
 - `C-OPT-KBD` unverified.
 - `guessErrorIndex` is weakly tested beyond ÷0.
 

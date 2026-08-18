@@ -54,7 +54,7 @@ Verification token for ICM session rules was acknowledged; this project is an au
 
 ## D-010 — P1 modes
 
-STAT/EQN/MATRIX/VECTOR/CMPLX/BASE-N/TABLE: mode **entry** is implemented (MODE menu). Full subsystem editors are `PARTIAL` / not VERIFIED. COMP P0 is the v1 floor.
+STAT/EQN/MATRIX/VECTOR/CMPLX/BASE-N: mode **entry** is implemented (MODE menu). Full subsystem editors remain `PARTIAL` / not VERIFIED. TABLE f(x) is implemented (D-016). COMP P0 is the v1 floor.
 
 ## D-011 — Integration / Σ / SOLVE
 
@@ -96,7 +96,7 @@ Future modes (TABLE first — see `docs/ARCHITECTURE.md` §12) must be **additiv
 - **f(x) only.** Official 570/991 2nd-edition TABLE page and setup init list describe a single `f(x)` (no `f(x),g(x)`). Default Start=1, End=5, Step=1. `g(x)` is not implemented (SETUP item remains a 115/C leftover; D-007).
 - **Reuse COMP AST + `evaluateAtoms`.** Row evaluation passes `{ X: x.toString() }` as a **temporary overlay**. Persistent `variables.X` is written only after a successful generation, to the last X (`TARGET-OFFICIAL-DOC`: generation changes X). **Ans is not modified** by generating a table (`INFERRED`).
 - **End inclusive; Step > 0; End > Start.** Inclusive End is in the official example (−1 ≦ x ≦ 1). Zero/negative Step and End ≤ Start are **Argument ERROR** (`INFERRED` from “increment” + “End always greater than Start”; **NEEDS-HUMAN-REVIEW** vs hardware).
-- **Max 30 X-values → Insufficient MEM Error** (`TARGET-OFFICIAL-DOC`).
+- **Max 30 X-values.** Official 570/991 TABLE page: more than 30 X-values “causes an error” (`TARGET-OFFICIAL-DOC`). The clone uses **Insufficient MEM Error**, the name in SRC-P92 / 115/C error catalog for this condition (`CROSS-MODEL-SOURCE`). Not `TARGET-MANUAL`.
 - **AC on the table view** returns to the f(x) input (`TARGET-OFFICIAL-DOC`). Clone shows **one row at a time** on the existing two-line LCD (`INFERRED`; not a hardware pixel layout claim).
 - **Per-row Math ERROR** keeps the table and shows the error in that row (`NEEDS-HUMAN-REVIEW`).
 - **Persist:** TABLE session/rows are **not** saved. Schema stays v1; `table` is optional/null. Reload in TABLE mode returns an empty f(x) prompt. Hardware power-off TABLE behavior is **NEEDS-HUMAN-REVIEW**.
