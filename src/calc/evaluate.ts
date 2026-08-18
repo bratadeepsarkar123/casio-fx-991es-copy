@@ -430,9 +430,17 @@ function applyOp(op: string, a: Sym, b: Sym): Sym {
   }
 }
 
-export function evaluateAtoms(atoms: Atom[], state: CalcState, nextUint32: () => number): ResultValue {
+export function evaluateAtoms(
+  atoms: Atom[],
+  state: CalcState,
+  nextUint32: () => number,
+  variableOverlay?: Partial<Record<VarName, string>>,
+): ResultValue {
   try {
-    const ctx = ctxFromState(state, nextUint32);
+    const bound: CalcState = variableOverlay
+      ? { ...state, variables: { ...state.variables, ...variableOverlay } }
+      : state;
+    const ctx = ctxFromState(bound, nextUint32);
     const sym = evalSlot(atoms, ctx);
     const raw = toDec(sym);
     const dec = assertRange(raw);

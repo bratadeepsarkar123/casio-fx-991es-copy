@@ -32,6 +32,7 @@ import {
 import { evaluateEquals } from "./evaluate.ts";
 import { formatBySetup, toggleDecimal } from "./format.ts";
 import { D, createUint32Rng } from "./numeric.ts";
+import { emptyTableSession, reduceTable, tableReturnToFx } from "./table.ts";
 import type {
   Atom,
   CalcMode,
@@ -85,6 +86,7 @@ export function createInitialState(nowMs = 0): CalcState {
     lastActivityMs: nowMs,
     rngSeed: 1,
     baseN: { radix: 10 },
+    table: null,
   };
 }
 
@@ -136,6 +138,7 @@ function handleMenu(state: CalcState, keyId: KeyId): CalcState | null {
         result: null,
         history: [],
         preAns: mode === "COMP" ? state.preAns : "0",
+        table: mode === "TABLE" ? emptyTableSession() : null,
       };
     }
     return state;
@@ -340,12 +343,22 @@ function handleMenu(state: CalcState, keyId: KeyId): CalcState | null {
 }
 
 function applySetup(state: CalcState, patch: Partial<SetupState>): CalcState {
-  return {
+  const next: CalcState = {
     ...clearLatches(state),
     setup: { ...state.setup, ...patch },
     menu: { kind: "none" },
     history: [],
   };
+  if (next.mode === "TABLE" && patch.displayFormat !== undefined) {
+    return {
+      ...next,
+      table: emptyTableSession(),
+      editor: emptyEditor(),
+      screen: { kind: "input" },
+      result: null,
+    };
+  }
+  return next;
 }
 
 function runConfirm(state: CalcState, action: "setup" | "memory" | "all"): CalcState {
@@ -370,6 +383,7 @@ function runConfirm(state: CalcState, action: "setup" | "memory" | "all"): CalcS
       screen: { kind: "input" },
       result: null,
       history: [],
+      table: null,
     };
   }
   const cleared = runConfirm(state, "memory");
@@ -498,7 +512,19 @@ export function reduce(state: CalcState, event: KeyEvent): CalcState {
   }
   let s = withActivity(state, now);
   if (event.keyId === "on") {
-    return { ...s, power: "on", screen: { kind: "input" }, shift: false, alpha: false, hyp: false, menu: { kind: "none" } };
+    const next = {
+      ...s,
+      power: "on" as const,
+      screen: { kind: "input" as const },
+      shift: false,
+      alpha: false,
+      hyp: false,
+      menu: { kind: "none" as const },
+    };
+    if (next.mode === "TABLE" && next.table) {
+      return tableReturnToFx(next);
+    }
+    return next;
   }
 
   const menuHandled = handleMenu(s, event.keyId);
@@ -534,6 +560,11 @@ export function reduce(state: CalcState, event: KeyEvent): CalcState {
       };
     }
     return s;
+  }
+
+  const tableHandled = reduceTable(s, event);
+  if (tableHandled) {
+    return tableHandled;
   }
 
   if (event.keyId === "ac") {

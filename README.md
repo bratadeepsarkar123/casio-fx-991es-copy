@@ -4,7 +4,7 @@ Responsive, offline-capable web clone of the **Casio fx-991ES PLUS 2nd edition**
 
 ## Not a complete clone
 
-P0 COMP-mode behavior is covered by golden tests. P1 modes (STAT, TABLE, EQN, BASE-N, MATRIX, VECTOR, CMPLX) can be **entered** from MODE but are not verified editors. Functional-v1 vs complete-clone counts are separate; see `CAPABILITY_MATRIX.md` and `docs/COVERAGE_AUDIT.md`.
+P0 COMP-mode behavior is covered by golden tests. TABLE f(x) is implemented (D-016). Other P1 modes (STAT, EQN, BASE-N, MATRIX, VECTOR, CMPLX) can be **entered** from MODE but are not verified editors. Functional-v1 vs complete-clone counts are separate; see `CAPABILITY_MATRIX.md` and `docs/COVERAGE_AUDIT.md`.
 
 ## Requirements
 

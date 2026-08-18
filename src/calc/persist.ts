@@ -1,6 +1,7 @@
 import type { CalcState, VarName } from "./types.ts";
 import { VAR_NAMES } from "./types.ts";
 import { createInitialState } from "./machine.ts";
+import { emptyTableSession } from "./table.ts";
 
 export const PERSIST_KEY = "fx991es-plus2/v1";
 export const SCHEMA_VERSION = 1;
@@ -116,6 +117,8 @@ function isScreen(value: unknown): boolean {
       );
     case "replay":
       return typeof value.historyIndex === "number";
+    case "table-view":
+      return true;
     default:
       return false;
   }
@@ -208,7 +211,17 @@ export function isPersistedCalcState(value: unknown): value is CalcState {
 }
 
 export function serializeState(state: CalcState): PersistEnvelope {
-  return { schemaVersion: SCHEMA_VERSION, savedAt: Date.now(), state };
+  return {
+    schemaVersion: SCHEMA_VERSION,
+    savedAt: Date.now(),
+    state: {
+      ...state,
+      table: null,
+      editor: state.mode === "TABLE" ? createInitialState(0).editor : state.editor,
+      screen: state.mode === "TABLE" ? { kind: "input" } : state.screen,
+      result: state.mode === "TABLE" ? null : state.result,
+    },
+  };
 }
 
 export function deserializeState(raw: unknown, nowMs = 0): CalcState | null {
@@ -224,9 +237,10 @@ export function deserializeState(raw: unknown, nowMs = 0): CalcState | null {
   }
   return {
     ...env.state,
+    table: env.state.mode === "TABLE" ? emptyTableSession() : null,
     lastActivityMs: nowMs,
     power: "on",
-    screen: env.state.power === "off" ? { kind: "input" } : env.state.screen,
+    screen: env.state.power === "off" ? { kind: "input" } : env.state.mode === "TABLE" ? { kind: "input" } : env.state.screen,
   };
 }
 

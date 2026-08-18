@@ -95,10 +95,27 @@ Internal 15 digits. Display precision ±1 at 10th digit typical. Function domain
 
 11.1×77×161.5 mm, 95 g, solar+LR44. Matches official 991ES PLUS-2 mechanical spec.
 
+## SRC-P76–78 / TGT-TOC TABLE `[TARGET-OFFICIAL-DOC for f(x) flow; SRC-P76 CROSS-MODEL-SOURCE for 115/C extras]`
+
+Official 570/991 2nd-edition TABLE:
+
+- Enter with MODE TABLE.
+- Input **f(x)** using variable X. Other variables are constants. Pol, Rec, ∫, d/dx, Σ cannot be used.
+- Prompts: Start? (default 1), End? (default 5; must be greater than Start), Step? (default 1, increment). `=` after Step generates the table.
+- End is inclusive (official example −1 ≦ x ≦ 1, step 0.5).
+- Maximum **30** X-values; more → **Insufficient MEM Error**.
+- Table is view-only. AC returns to f(x) input. Generation **changes variable X**.
+- Switching Natural/Linear in TABLE deletes the function.
+
+Clone (D-016): `TableSession` + COMP evaluator with X overlay. One row at a time on the two-line LCD (`INFERRED`). Ans not updated (`INFERRED`). Zero/negative Step → Argument ERROR (`INFERRED`, **NEEDS-HUMAN-REVIEW**). Per-row Math ERROR keeps other rows (`NEEDS-HUMAN-REVIEW`). g(x) not implemented. TABLE grid not persisted (`NEEDS-HUMAN-REVIEW` vs hardware).
+
+Target official setup init does **not** list a TABLE f(x)/g(x) format. 115/C dual-function TABLE is not copied.
+
 ## NEEDS HUMAN REVIEW
 
 - Exact SETUP page-2 item numbers (glyphs dropped). `[NEEDS-HUMAN-REVIEW]`
 - PreAns on FX-991ESPLUS-2: omitted from target official memory ToC; no PreAns legend on chassis Ans key. `[CROSS-MODEL-SOURCE` vs `TARGET-OFFICIAL-DOC` → UNCONFIRMED]
 - Rounding-to-even vs half-up. Clone uses `ROUND_HALF_UP`. `[NEEDS-HUMAN-REVIEW]`
-- Dual TABLE f,g on 991ES PLUS-2 vs 115/C (D-007). `[CONFLICT]`
+- Dual TABLE f,g on 991ES PLUS-2 vs 115/C (D-007). Target official TABLE page is **f(x) only**. Clone implements f(x); g(x) is not implemented. `[CONFLICT` / SETUP leftover `CROSS-MODEL-SOURCE`]
+- TABLE zero/negative Step vs hardware; per-row Math ERROR policy; TABLE persist across power-off; one-row LCD vs hardware table screen. `[NEEDS-HUMAN-REVIEW]`
 - Visual keymap vs original chat binary (file not in repo). `[NEEDS-HUMAN-REVIEW]`

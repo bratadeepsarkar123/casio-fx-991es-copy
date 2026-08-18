@@ -128,7 +128,29 @@ export type Screen =
   | { kind: "result" }
   | { kind: "error"; code: ErrorCode; expression: Atom[]; errorIndex: number }
   | { kind: "replay"; historyIndex: number }
-  | { kind: "off" };
+  | { kind: "off" }
+  | { kind: "table-view" };
+
+export type TablePhase = "fx" | "start" | "end" | "step" | "view";
+
+export interface TableRow {
+  xApprox: string;
+  xDisplay: string;
+  fxApprox: string | null;
+  fxDisplay: string | null;
+  fxError: ErrorCode | null;
+}
+
+/** Additive TABLE session. Not a COMP Atom[] encoding of the grid. */
+export interface TableSession {
+  phase: TablePhase;
+  fx: Atom[];
+  startAtoms: Atom[];
+  endAtoms: Atom[];
+  stepAtoms: Atom[];
+  rows: TableRow[];
+  rowIndex: number;
+}
 
 export interface CalcState {
   schemaVersion: 1;
@@ -151,6 +173,7 @@ export interface CalcState {
   lastActivityMs: number;
   rngSeed: number;
   baseN: { radix: 2 | 8 | 10 | 16 };
+  table: TableSession | null;
 }
 
 export interface DispatchOptions {

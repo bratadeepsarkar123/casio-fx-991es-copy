@@ -89,6 +89,21 @@ Future modes (TABLE first — see `docs/ARCHITECTURE.md` §12) must be **additiv
 
 **Status:** Recorded. See `docs/ARCHITECTURE.md`.
 
+## D-016 — TABLE is additive f(x) only; evaluate with a temporary X overlay
+
+**Decision:** Implement TABLE as a `TableSession` on `CalcState` (`src/calc/table.ts`), orchestrated by `reduce` via `reduceTable`. Do **not** encode the grid as COMP `Atom[]`.
+
+- **f(x) only.** Official 570/991 2nd-edition TABLE page and setup init list describe a single `f(x)` (no `f(x),g(x)`). Default Start=1, End=5, Step=1. `g(x)` is not implemented (SETUP item remains a 115/C leftover; D-007).
+- **Reuse COMP AST + `evaluateAtoms`.** Row evaluation passes `{ X: x.toString() }` as a **temporary overlay**. Persistent `variables.X` is written only after a successful generation, to the last X (`TARGET-OFFICIAL-DOC`: generation changes X). **Ans is not modified** by generating a table (`INFERRED`).
+- **End inclusive; Step > 0; End > Start.** Inclusive End is in the official example (−1 ≦ x ≦ 1). Zero/negative Step and End ≤ Start are **Argument ERROR** (`INFERRED` from “increment” + “End always greater than Start”; **NEEDS-HUMAN-REVIEW** vs hardware).
+- **Max 30 X-values → Insufficient MEM Error** (`TARGET-OFFICIAL-DOC`).
+- **AC on the table view** returns to the f(x) input (`TARGET-OFFICIAL-DOC`). Clone shows **one row at a time** on the existing two-line LCD (`INFERRED`; not a hardware pixel layout claim).
+- **Per-row Math ERROR** keeps the table and shows the error in that row (`NEEDS-HUMAN-REVIEW`).
+- **Persist:** TABLE session/rows are **not** saved. Schema stays v1; `table` is optional/null. Reload in TABLE mode returns an empty f(x) prompt. Hardware power-off TABLE behavior is **NEEDS-HUMAN-REVIEW**.
+- **Forbidden in f(x):** Pol, Rec, ∫, d/dx, Σ (`TARGET-OFFICIAL-DOC`) → Syntax ERROR. This is TABLE-only, not a COMP `call.name` rewrite.
+
+**Status:** Recorded.
+
 ## Risk register
 
 See `RISK_REGISTER.md`.

@@ -30,4 +30,28 @@ describe("independent golden fixtures", () => {
     const s = dispatchKeys(createInitialState(0), keys, 0);
     expect(lcdResult(s).replace(/\s/g, "")).toContain(fx.expectedDisplay.replace(/\s/g, ""));
   });
+
+  it("GT-TBL-XSQ-DEFAULTS JSON fixture matches TABLE state TARGET-OFFICIAL-DOC", () => {
+    const raw = readFileSync(new URL("./fixtures/GT-TBL-XSQ-DEFAULTS.json", import.meta.url), "utf8");
+    const fx = JSON.parse(raw) as {
+      evidenceClass: string;
+      targetConfirm: string;
+      keys: string[];
+      expected: { mode: string; phase: string; rowIndex: number; xs: string[]; fx: string[] };
+    };
+    expect(fx.evidenceClass).toBe("TARGET-OFFICIAL-DOC");
+    expect(fx.targetConfirm).toBe("CONFIRMED");
+    const keys = fx.keys.map((k) => {
+      if (!isKeyId(k)) {
+        throw new Error(k);
+      }
+      return k;
+    }) as KeyId[];
+    const s = dispatchKeys(createInitialState(0), keys, 0);
+    expect(s.mode).toBe(fx.expected.mode);
+    expect(s.table?.phase).toBe(fx.expected.phase);
+    expect(s.table?.rowIndex).toBe(fx.expected.rowIndex);
+    expect(s.table?.rows.map((r) => r.xApprox)).toEqual(fx.expected.xs);
+    expect(s.table?.rows.map((r) => r.fxApprox)).toEqual(fx.expected.fx);
+  });
 });

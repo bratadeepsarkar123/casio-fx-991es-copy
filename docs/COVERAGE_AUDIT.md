@@ -18,17 +18,17 @@ Not VERIFIED in this bucket:
 ## B. Complete-clone required surface
 
 `REQUIRED-COMPLETE-CLONE` rows: **7** (CMPLX, STAT, BASE-N, EQN, MATRIX, TABLE, VECTOR)  
-VERIFIED: **0**  
-**0 / 7**
+VERIFIED: **1** (TABLE f(x); D-016)  
+**1 / 7**
 
-All seven are Impl `PARTIAL` (MODE entry only), Ver `UNVERIFIED`. This pass does **not** implement those editors.
+CMPLX, STAT, BASE-N, EQN, MATRIX, VECTOR remain Impl `PARTIAL` (MODE entry only), Ver `UNVERIFIED`. TABLE is Impl `IMPLEMENTED`, Ver `VERIFIED` for the official f(x) flow. g(x) is not implemented.
 
 ## Other buckets (not mixed into A or B)
 
 | Bucket | Count | IDs |
 | --- | --- | --- |
 | Identified (matrix rows) | 44 | |
-| PARTIAL (implementation) | 10 | 7× P1 modes + INT + DIFF + SUM |
+| PARTIAL (implementation) | 9 | 6× remaining P1 modes + INT + DIFF + SUM |
 | BLOCKED (verification) | 1 | C-P0-PWA |
 | NEEDS-HUMAN-REVIEW (verification) | 3 | C-P0-PREANS, C-NHR-CAL, C-NHR-RND |
 | DEFERRED (priority) | 4 | C-P2-INT, DIFF, SUM, SOLVE |

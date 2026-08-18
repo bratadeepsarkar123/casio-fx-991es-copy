@@ -31,8 +31,8 @@ pointer / optional keyboard / test
 
 Zustand (`src/store.ts`) holds one `CalcState`, injects `Date.now()` into events, and writes localStorage. React does not implement calculator semantics.
 
-**What this clone is:** a hardened COMP-mode foundation with MODE *entry* for the other seven target modes.
-**What this clone is not:** a complete clone. CMPLX / STAT / BASE-N / EQN / MATRIX / TABLE / VECTOR editors are incomplete. Live PWA install/offline is **BLOCKED** until GitHub Pages is enabled. Visual keymap vs the original chat photo is **NEEDS-HUMAN-REVIEW**.
+**What this clone is:** a hardened COMP-mode foundation plus **TABLE f(x)** (additive `TableSession`). MODE *entry* remains for CMPLX / STAT / BASE-N / EQN / MATRIX / VECTOR.
+**What this clone is not:** a complete clone. Live PWA install/offline is **BLOCKED** until GitHub Pages is enabled. Visual keymap vs the original chat photo is **NEEDS-HUMAN-REVIEW**.
 
 ---
 
@@ -93,6 +93,7 @@ Authoritative type: `CalcState` in `src/calc/types.ts`.
 | `lastActivityMs` | Auto-off clock |
 | `rngSeed` | Deterministic Ran# / RanInt |
 | `baseN.radix` | Placeholder for BASE-N (no editor yet) |
+| `table` | Additive TABLE session (`null` outside TABLE). Grid is **not** COMP `Atom[]`. |
 
 ### Derived (never persist separately)
 
@@ -102,7 +103,7 @@ Authoritative type: `CalcState` in `src/calc/types.ts`.
 
 The entire `CalcState` inside envelope `{ schemaVersion: 1, savedAt, state }` at localStorage key `fx991es-plus2/v1`.
 
-On load: nested state must pass `isPersistedCalcState`; `power` is forced `"on"`; `lastActivityMs` is reset; if the saved `power` was `"off"`, `screen` becomes `{ kind: "input" }`.
+On load: nested state must pass `isPersistedCalcState`; `power` is forced `"on"`; `lastActivityMs` is reset; if the saved `power` was `"off"`, `screen` becomes `{ kind: "input" }`. **TABLE session/rows are stripped on serialize** (D-016). A saved TABLE mode rehydrates to an empty f(x) prompt. COMP envelopes that omit `table` still load (`table: null`).
 
 ### Transient
 
@@ -329,11 +330,11 @@ Reality: most goldens are inline Vitest `it(...)` with `SRC-P*` in the title, de
 
 ## 12. Future-mode readiness
 
-Do **not** implement these modes in this audit. Question: can COMP core stay, and what would be additive?
+TABLE f(x) is implemented additively (`src/calc/table.ts`, D-016). Remaining modes must still not rewrite COMP.
 
 | Mode | Clean fit? | Reuse | New abstraction | Rewrite trap | P0/P1 blocker |
 | --- | --- | --- | --- | --- | --- |
-| **TABLE** | Yes | COMP editor for `f(x)`; `evaluateAtoms` with `variables.X`; `setup.tableFormat` (D-007 default `f(x)`) | `screen` variant + start/end/step UI; optional `g(x)` | Encoding the value table as COMP `Atom[]` | No P0. P1: new screen kind |
+| **TABLE** | **Implemented (f(x))** | COMP editor; `evaluateAtoms(..., { X })`; `TableSession` | One-row LCD view; Start/End/Step prompts | Encoding the grid as COMP `Atom[]` | g(x) not in scope. Dual SETUP TABLE format is unused. |
 | **BASE-N** | Yes if gated | `baseN.radix`; MODE entry | Integer editor, A–F digits, bitwise ops, integer display | Using decimal.js hex as if it were COMP `num` | No P0. P1: parallel integer domain |
 | **CMPLX** | Yes with a value type | `complexFormat`; ALPHA `i` token; ErrorCode | `Sym` complex (or mathjs **structure only**, D-003) | Treating `i` as Math ERROR forever, or switching the scalar engine | No P0. P1: `i` must become a value; close `call.name` |
 | **STAT** | Additive | `statFreq`; MODE | List/frequency store, STAT menus | STAT lists inside COMP `editor.root` | No P0. P1: new store |
@@ -341,11 +342,9 @@ Do **not** implement these modes in this audit. Question: can COMP core stay, an
 | **MATRIX** | Additive | MODE; `Dimension ERROR` | Matrix registers + dim editor | Nested `Atom[]` matrices; replacing decimal.js | No P0. P1: new store. mathjs optional later |
 | **VECTOR** | Same as MATRIX | MODE | Vector registers | Same trap | No P0. P1: new store |
 
-**Recommended first incomplete mode: TABLE.**
+**Recommended next mode: BASE-N** (closed integer domain, existing `baseN.radix`) or **CMPLX** (`i` token already inserts).
 
-Why: smallest new algebra (still real COMP `f(x)`), setup flag already exists and already disagrees with 115/C `f(x),g(x)` on purpose (D-007), evaluator already computes a scalar given X, new UI is a grid not a new number type. BASE-N is the next-smallest closed domain but needs a different digit/eval policy. CMPLX is a reasonable second (token already inserts). STAT/EQN/MATRIX/VECTOR need new stores — later.
-
-**Answer:** Yes — begin TABLE without redesigning the COMP core, after keeping persist validation and not stuffing tables into `Atom[]`.
+`call.name` is still a free string in COMP. TABLE only rejects Pol/Rec/int/diff/Σ inside **f(x)**. Broad COMP gating remains a follow-up P1.
 
 ---
 
@@ -356,7 +355,7 @@ Why: smallest new algebra (still real COMP `f(x)`), setup flag already exists an
 | 115/C PDF treated as target manual | provenance | Mitigated by evidence classes; keep labeling |
 | Golden tests become “target truth” | provenance | Titles cite SRC-P*; passing ≠ TARGET-MANUAL |
 | Persist injection of impossible state | P1 | Shape check added; atoms still unchecked |
-| Unbounded `call.name` | P1 | Gate when first mode ships |
+| Unbounded `call.name` | P1 | TABLE rejects Pol/int/Σ in f(x) only; COMP still free-string |
 | Dual `memoryM` / `variables.M` | P1 hygiene | Keep dual-write until a mode needs a split |
 | `reduce` god-function | P1 for scale | Split by mode later, keep single `reduce` entry |
 | ENG shift discarded (`void shifted`) | P2 | Documented; not COMP-core |
@@ -368,4 +367,4 @@ Why: smallest new algebra (still real COMP `f(x)`), setup flag already exists an
 | Playwright “tablet” is Chromium | honesty | Not iOS Safari |
 | No physical differential testing | accepted | N/A |
 
-**P0 architecture blockers for starting TABLE: none.**
+**P0 architecture blockers for further modes:** none identified for BASE-N/CMPLX as additive work. TABLE f(x) is in.

@@ -1,9 +1,33 @@
 import type { CalcState } from "../calc/types.ts";
 import { atomsToLinear } from "../calc/editor.ts";
 
+function tablePromptLabel(phase: "fx" | "start" | "end" | "step"): string {
+  switch (phase) {
+    case "fx":
+      return "f(x)=";
+    case "start":
+      return "Start?";
+    case "end":
+      return "End?";
+    case "step":
+      return "Step?";
+    default: {
+      const _never: never = phase;
+      return _never;
+    }
+  }
+}
+
 export function lcdExpression(state: CalcState): string {
   if (state.screen.kind === "error") {
     return atomsToLinear(state.screen.expression, state.setup.displayFormat);
+  }
+  if (state.mode === "TABLE" && state.table?.phase === "view") {
+    const row = state.table.rows[state.table.rowIndex];
+    if (!row) {
+      return "";
+    }
+    return `X=${row.xDisplay}`;
   }
   return atomsToLinear(state.editor.root, state.setup.displayFormat);
 }
@@ -25,6 +49,16 @@ export function lcdResult(state: CalcState): string {
   }
   if (state.menu.kind !== "none") {
     return state.menu.kind.toUpperCase();
+  }
+  if (state.mode === "TABLE" && state.table) {
+    if (state.table.phase === "view") {
+      const row = state.table.rows[state.table.rowIndex];
+      if (!row) {
+        return "";
+      }
+      return row.fxError ?? row.fxDisplay ?? "";
+    }
+    return tablePromptLabel(state.table.phase);
   }
   if (state.result && (state.screen.kind === "result" || state.screen.kind === "replay")) {
     return state.result.display;
