@@ -42,10 +42,10 @@ This build must **not** be described as a complete clone. No physical differenti
 | Suite | Result |
 | --- | --- |
 | `npm ci` | pass |
-| Vitest (`npm test`) | **74 passed** (9 files). Was 70; +2 persist-shape, +2 FLOW A/B goldens. |
+| Vitest (`npm test`) | **97 passed** (12 files). Baseline was 74; TABLE added planning, reducer, goldens, persist. |
 | `npm run lint` (`tsc --noEmit`) | pass |
 | `npm run build` (`tsc` + Vite PWA) | pass — Workbox precache 15 entries |
-| Playwright (`npx playwright install --with-deps chromium` then `npm run test:e2e`) | **12 passed** (Chromium desktop, Pixel 7, iPad-sized Chromium). **Not** real iOS Safari. |
+| Playwright (`npx playwright install --with-deps chromium` then `npm run test:e2e`) | **15 passed** (was 12; +TABLE on Chromium desktop, Pixel 7, iPad-sized Chromium). **Not** real iOS Safari. |
 | Differential vs physical unit | N/A |
 
 ## Visual calibration
