@@ -67,4 +67,27 @@ describe("persist schema v1", () => {
     expect(back?.table?.phase).toBe("fx");
     expect(back?.table?.rows).toEqual([]);
   });
+
+  it("loads a v1 COMP envelope whose baseN is radix-only", () => {
+    const s = createInitialState(0);
+    const rest = { ...s, baseN: { radix: 10 as const } };
+    const back = deserializeState({ schemaVersion: 1, savedAt: 0, state: rest }, 1);
+    expect(back?.mode).toBe("COMP");
+    expect(back?.baseN.radix).toBe(10);
+    expect(back?.baseN.tokens).toEqual([]);
+  });
+
+  it("does not persist BASE-N tokens (INFERRED; NHR vs hardware)", () => {
+    const filled = dispatchKeys(createInitialState(0), ["mode", "4", "log", "1", "1", "add", "1", "equals"], 0);
+    expect(filled.baseN.value).toBe("4");
+    const env = serializeState(filled);
+    expect(env.state.baseN.tokens).toEqual([]);
+    expect(env.state.baseN.value).toBeNull();
+    expect(env.state.baseN.radix).toBe(2);
+    const back = deserializeState(JSON.parse(JSON.stringify(env)), 0);
+    expect(back?.mode).toBe("BASE-N");
+    expect(back?.baseN.radix).toBe(2);
+    expect(back?.baseN.tokens).toEqual([]);
+    expect(back?.screen.kind).toBe("input");
+  });
 });
