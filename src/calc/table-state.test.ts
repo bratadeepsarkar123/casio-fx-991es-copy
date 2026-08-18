@@ -133,13 +133,82 @@ describe("TABLE reducer / evaluation", () => {
 
   it("a Math ERROR row does not wipe Ans or abort the table", () => {
     const prior = run(["8", "equals"]);
-    const s = run(
-      ["mode", "7", "1", "div", "alpha", "rparen", "equals", "neg", "equals", "del", "1", "equals", "equals"],
+    let s = run(
+      [
+        "mode",
+        "7",
+        "1",
+        "div",
+        "alpha",
+        "rparen",
+        "equals",
+        "del",
+        "0",
+        "equals",
+        "del",
+        "1",
+        "equals",
+        "equals",
+      ],
       prior,
     );
     expect(s.table?.phase).toBe("view");
     expect(s.ans).toMatch(/^8/);
-    expect(s.table?.rows.some((r) => r.fxError === "Math ERROR")).toBe(true);
-    expect(s.table?.rows.some((r) => r.fxError === null)).toBe(true);
+    expect(s.table?.rows.map((r) => r.xApprox)).toEqual(["0", "1"]);
+    expect(s.table?.rows[0]?.fxError).toBe("Math ERROR");
+    expect(s.table?.rows[1]?.fxError).toBeNull();
+    expect(lcdExpression(s)).toBe("X=0");
+    expect(lcdResult(s)).toBe("Math ERROR");
+    s = dispatchKeys(s, ["down"], 0);
+    expect(s.table?.rowIndex).toBe(1);
+    expect(lcdExpression(s)).toBe("X=1");
+    expect(lcdResult(s)).toMatch(/^1/);
+    expect(s.ans).toMatch(/^8/);
+  });
+
+  it("MODE 1 leaves TABLE and clears the session", () => {
+    const s = run(["mode", "7", "alpha", "rparen", "square", "equals", "equals", "equals", "equals", "mode", "1"]);
+    expect(s.mode).toBe("COMP");
+    expect(s.table).toBeNull();
+    expect(s.screen.kind).toBe("input");
+  });
+
+  it("SETUP Fix n=2 formats table approx strings without changing COMP Ans", () => {
+    const prior = run(["7", "equals", "shift", "mode", "6", "2"]);
+    expect(prior.setup.numberFormat).toEqual({ kind: "Fix", n: 2 });
+    const s = run(["mode", "7", "alpha", "rparen", "square", "equals", "equals", "equals", "equals"], prior);
+    expect(s.table?.rows.map((r) => r.fxApprox)).toEqual(["1.00", "4.00", "9.00", "16.00", "25.00"]);
+    expect(s.ans).toMatch(/^7/);
+  });
+
+  it("switching Natural/Linear in TABLE deletes the function (TARGET-OFFICIAL-DOC)", () => {
+    let s = run(["mode", "7", "alpha", "rparen", "square", "equals"]);
+    expect(s.table?.phase).toBe("start");
+    expect(s.table?.fx.length).toBeGreaterThan(0);
+    s = dispatchKeys(s, ["shift", "mode", "2"], 0);
+    expect(s.setup.displayFormat).toBe("LineIO");
+    expect(s.table?.phase).toBe("fx");
+    expect(s.table?.fx).toEqual([]);
+    expect(lcdResult(s)).toBe("f(x)=");
+    expect(lcdExpression(s)).toBe("");
+  });
+
+  it("SETUP tableFormat f(x),g(x) is ignored; TABLE still generates a single f(x)", () => {
+    const prior = run(["shift", "mode", "down", "5", "2"]);
+    expect(prior.setup.tableFormat).toBe("f(x),g(x)");
+    const s = run(["mode", "7", "alpha", "rparen", "add", "1", "equals", "equals", "equals", "equals"], prior);
+    expect(s.table?.rows.map((r) => r.fxApprox)).toEqual(["2", "3", "4", "5", "6"]);
+    expect(s.table?.rows[0]).not.toHaveProperty("gxApprox");
+  });
+
+  it("AC after Argument ERROR does not wipe Ans or persistent X", () => {
+    const prior = run(["6", "equals", "shift", "rcl", "rparen"]);
+    let s = run(["mode", "7", "alpha", "rparen", "equals", "equals", "equals", "del", "0", "equals"], prior);
+    expect(s.screen.kind).toBe("error");
+    s = dispatchKeys(s, ["ac"], 0);
+    expect(s.screen.kind).toBe("input");
+    expect(s.ans).toMatch(/^6/);
+    expect(s.variables.X).toMatch(/^6/);
+    expect(s.table?.phase).toBe("step");
   });
 });
