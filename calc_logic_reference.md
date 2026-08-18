@@ -130,6 +130,34 @@ Official 570/991 2nd-edition TABLE page: https://support.casio.com/global/en/cal
 
 Target official setup init does **not** list a TABLE f(x)/g(x) format. 115/C dual-function TABLE is not copied.
 
+## SRC-P66–69 / TGT-TOC BASE-N `[TARGET-OFFICIAL-DOC for widths, examples, logical ops; SRC-P66 CROSS-MODEL-SOURCE for 115/C overlap]`
+
+Official 570/991 2nd-edition BASE-N page: https://support.casio.com/global/en/calc/manual/fx-570ESPLUS_991ESPLUS_en/using_calculation_modes/base-n_calculations.html
+
+| Behavior | Clone | Evidence |
+| --- | --- | --- |
+| Enter BASE-N | MODE `4`; default DEC | `TARGET-OFFICIAL-DOC` |
+| Switch radix | `x²` DEC, `^` HEX, `log` BIN, `ln` OCT (no ALPHA) | `TARGET-OFFICIAL-DOC` + `EMPIRICAL` chassis legends |
+| A–F | HEX: unshifted `(-)`…`tan`. Else ALPHA+key | `TARGET-OFFICIAL-DOC` that A–F keys exist; when ALPHA is required: `INFERRED` **NHR** |
+| Width | BIN 16-bit; DEC/HEX/OCT 32-bit two's complement | `TARGET-OFFICIAL-DOC` |
+| Signed DEC range | −2147483648 … 2147483647 | `TARGET-OFFICIAL-DOC` |
+| BIN/OCT/HEX display | two's-complement bit pattern, padded; DEC uses minus | `TARGET-OFFICIAL-DOC` |
+| No fractions/exponents | keys ignored / not in grammar | `TARGET-OFFICIAL-DOC` |
+| ÷ fractional part | truncated toward 0 | Cut-off: `TARGET-OFFICIAL-DOC`. Toward 0: `INFERRED` **NHR** |
+| + − × overflow | Math ERROR if signed result leaves the word | `INFERRED` **NHR** (not silent wrap) |
+| and/or/xor/xnor/Not/Neg | SHIFT+`3` BASE page 0; mask to current width | Ops: `TARGET-OFFICIAL-DOC`. Menu 1=and…6=Neg: `CROSS-MODEL-SOURCE` FAQ |
+| d/h/b/o suffixes | SHIFT+`3` BASE page 1 (down) | Commands: `TARGET-OFFICIAL-DOC`. Page layout: `INFERRED` **NHR** |
+| Mixed 10d+10h+10b+10o | 36 in DEC | `TARGET-OFFICIAL-DOC` |
+| 15×37 then HEX/BIN/OCT | 555 / 0000022B / 0000001000101011 / 00000001053 | `TARGET-OFFICIAL-DOC` |
+| Invalid digit | Syntax ERROR at `=` | `INFERRED` |
+| Out of word / ÷0 | Math ERROR | `INFERRED` / overlapping SRC-P92 names `CROSS-MODEL-SOURCE` |
+| Bit shifts | **Not implemented** | Official BASE-N page does not list them → **DEFERRED** |
+| Ans | Signed decimal string; survives MODE 1 | Memories survive mode change: `TARGET-OFFICIAL-DOC`. BASE-N writes that string: `INFERRED` **NHR** |
+| COMP editor | Unused in BASE-N (`BaseNToken[]`) | Architecture (D-017) |
+| Persist | Radix kept; tokens/value stripped | `INFERRED` **NHR** |
+
+Clone (D-017): `bigint` word with explicit 16/32-bit mask/sign. Not COMP `decimal.js` shown as hex.
+
 ## NEEDS HUMAN REVIEW
 
 - Exact SETUP page-2 item numbers (glyphs dropped). `[NEEDS-HUMAN-REVIEW]`
@@ -137,4 +165,5 @@ Target official setup init does **not** list a TABLE f(x)/g(x) format. 115/C dua
 - Rounding-to-even vs half-up. Clone uses `ROUND_HALF_UP`. `[NEEDS-HUMAN-REVIEW]`
 - Dual TABLE f,g on 991ES PLUS-2 vs 115/C (D-007). Target official TABLE page is **f(x) only**. Clone implements f(x); g(x) is not implemented. `[CONFLICT` / SETUP leftover `CROSS-MODEL-SOURCE`]
 - TABLE zero/negative Step vs hardware; per-row Math ERROR policy; TABLE persist across power-off; one-row LCD vs hardware table screen. `[NEEDS-HUMAN-REVIEW]`
+- BASE-N +/−/× overflow vs wrap; ÷ toward-zero; A–F vs `(-)` outside HEX; BASE menu page order for d/h/b/o; persist of BASE-N expression. `[NEEDS-HUMAN-REVIEW]`
 - Visual keymap vs original chat binary (file not in repo). `[NEEDS-HUMAN-REVIEW]`

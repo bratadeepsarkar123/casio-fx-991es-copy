@@ -54,7 +54,7 @@ Verification token for ICM session rules was acknowledged; this project is an au
 
 ## D-010 — P1 modes
 
-STAT/EQN/MATRIX/VECTOR/CMPLX/BASE-N: mode **entry** is implemented (MODE menu). Full subsystem editors remain `PARTIAL` / not VERIFIED. TABLE f(x) is implemented (D-016). COMP P0 is the v1 floor.
+STAT/EQN/MATRIX/VECTOR/CMPLX: mode **entry** is implemented (MODE menu). Full subsystem editors remain `PARTIAL` / not VERIFIED. TABLE f(x) is implemented (D-016). BASE-N integer domain is implemented (D-017). COMP P0 is the v1 floor.
 
 ## D-011 — Integration / Σ / SOLVE
 
@@ -101,6 +101,24 @@ Future modes (TABLE first — see `docs/ARCHITECTURE.md` §12) must be **additiv
 - **Per-row Math ERROR** keeps the table and shows the error in that row (`NEEDS-HUMAN-REVIEW`).
 - **Persist:** TABLE session/rows are **not** saved. Schema stays v1; `table` is optional/null. Reload in TABLE mode returns an empty f(x) prompt. Hardware power-off TABLE behavior is **NEEDS-HUMAN-REVIEW**.
 - **Forbidden in f(x):** Pol, Rec, ∫, d/dx, Σ (`TARGET-OFFICIAL-DOC`) → Syntax ERROR. This is TABLE-only, not a COMP `call.name` rewrite.
+
+**Status:** Recorded.
+
+## D-017 — BASE-N is a fixed-width integer domain, not COMP decimals
+
+**Decision:** Implement BASE-N as an additive `BaseNState` (`src/calc/baseN.ts`, `src/calc/baseNNumeric.ts`) orchestrated by `reduce` via `reduceBaseN`. Do **not** display COMP `decimal.js` values as hex/bin/oct.
+
+- **Domain:** signed two's-complement integers. **16-bit in BIN**, **32-bit in DEC/HEX/OCT** (`TARGET-OFFICIAL-DOC`). Canonical value is a signed `bigint`; display formats that word. JavaScript `Number` / `parseInt` are not the semantic authority.
+- **Default:** MODE 4 enters DEC (`TARGET-OFFICIAL-DOC`). Chassis DEC/HEX/BIN/OCT keys (`x²` / `^` / `log` / `ln`) switch radix **without ALPHA** (`TARGET-OFFICIAL-DOC` + `EMPIRICAL` legends).
+- **A–F:** unshifted in HEX; ALPHA+key otherwise (`INFERRED`; **NEEDS-HUMAN-REVIEW** vs hardware when HEX is not the current radix).
+- **Grammar:** linear `BaseNToken[]`, not COMP `Atom[]`. No fractions/exponents (`TARGET-OFFICIAL-DOC`). Invalid digits → Syntax ERROR at `=`.
+- **Arithmetic + − ×:** exact signed `bigint`; out of signed word range → Math ERROR. **Not** silent wrap. (**NEEDS-HUMAN-REVIEW** vs hardware wrap.)
+- **÷:** integer, fractional part cut off toward zero (`TARGET-OFFICIAL-DOC` cut-off; toward-zero `INFERRED`).
+- **Bitwise and/or/xor/xnor, Not, Neg:** mask to the **current** word width (`TARGET-OFFICIAL-DOC` examples). SHIFT+`3` (BASE) page 0 = logical ops (`CROSS-MODEL-SOURCE` FAQ 2=or); page 1 = d/h/b/o suffixes (`INFERRED` layout; commands `TARGET-OFFICIAL-DOC`).
+- **Result display:** BIN 16-digit, OCT 11-digit, HEX 8-digit uppercase padded; DEC signed ASCII minus (`TARGET-OFFICIAL-DOC` examples).
+- **Ans:** signed decimal string so COMP can reuse it after MODE 1 (`INFERRED`; memories survive mode change `TARGET-OFFICIAL-DOC`). BASE-N does not write COMP replay history.
+- **Persist:** schema stays v1. Radix is kept; tokens/value stripped. Reload in BASE-N → empty input. **NEEDS-HUMAN-REVIEW** vs hardware power-off.
+- **Shifts:** not on the official BASE-N page → **DEFERRED**, not stubbed as COMP operations.
 
 **Status:** Recorded.
 

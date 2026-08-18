@@ -17,21 +17,19 @@ The calculator is a **pure state machine** with a React/PWA shell.
 pointer / optional keyboard / test
         ↓  KeyEvent { keyId, source, nowMs? }
    reduce(state, event)     src/calc/machine.ts   ← sole semantic authority
-        ↓  CalcState
-   editor AST + cursor      src/calc/editor.ts    ← structure only
-        ↓  on = / M+ / STO
-   evaluator                src/calc/evaluate.ts
-        ↓  Sym
-   numeric + symbolic       src/calc/numeric.ts, symbolic.ts, specialTrig.ts
-        ↓  ResultValue
-   display model            src/ui/lcdModel.ts    ← pure projection
         ↓
-   Lcd.tsx / Chassis.tsx    layout + painting only
+        ├─ COMP: editor AST → evaluateAtoms → decimal.js / rationals
+        ├─ TABLE: TableSession + COMP evaluator (X overlay)
+        └─ BASE-N: BaseNToken[] → evaluateBaseN → w-bit bigint
+        ↓
+   lcdModel → Lcd.tsx / Chassis.tsx
 ```
+
+TABLE reuses `evaluateAtoms`; it is not a third numeric domain. BASE-N does **not** reuse COMP decimals.
 
 Zustand (`src/store.ts`) holds one `CalcState`, injects `Date.now()` into events, and writes localStorage. React does not implement calculator semantics.
 
-**What this clone is:** a hardened COMP-mode foundation plus **TABLE f(x)** (additive `TableSession`). MODE *entry* remains for CMPLX / STAT / BASE-N / EQN / MATRIX / VECTOR.
+**What this clone is:** a hardened COMP-mode foundation plus **TABLE f(x)** and **BASE-N** (additive integer domain). MODE *entry* remains for CMPLX / STAT / EQN / MATRIX / VECTOR.
 **What this clone is not:** a complete clone. Live PWA install/offline is **BLOCKED** until GitHub Pages is enabled. Visual keymap vs the original chat photo is **NEEDS-HUMAN-REVIEW**.
 
 ---
@@ -78,7 +76,7 @@ Authoritative type: `CalcState` in `src/calc/types.ts`.
 | --- | --- |
 | `schemaVersion` | Persist contract (currently `1`) |
 | `power` | `"on"` \| `"off"` |
-| `mode` | COMP plus seven target modes (TABLE f(x) implemented; others entry only) |
+| `mode` | COMP plus seven target modes (TABLE f(x) and BASE-N implemented; others entry only) |
 | `setup` | Angle, I/O, Fix/Sci/Norm, fraction, CMPLX/STAT/TABLE format, Rdec, decimal mark, contrast |
 | `shift`, `alpha`, `hyp` | Latches. SHIFT and ALPHA clear each other. HYP is sticky until a consuming key |
 | `editor` | `root: Atom[]`, `cursor`, `insertMode` |
@@ -92,7 +90,7 @@ Authoritative type: `CalcState` in `src/calc/types.ts`.
 | `menu` | SETUP/MODE/CLR/STO/RCL/… overlay; `{ kind: "none" }` when idle |
 | `lastActivityMs` | Auto-off clock |
 | `rngSeed` | Deterministic Ran# / RanInt |
-| `baseN.radix` | Placeholder for BASE-N (no editor yet) |
+| `baseN` | Additive BASE-N session: `radix`, linear `tokens`, `cursor`, canonical signed `value`. Not COMP `Atom[]`. |
 | `table` | Additive TABLE session (`null` outside TABLE). Grid is **not** COMP `Atom[]`. |
 
 ### Derived (never persist separately)
@@ -103,7 +101,7 @@ Authoritative type: `CalcState` in `src/calc/types.ts`.
 
 The entire `CalcState` inside envelope `{ schemaVersion: 1, savedAt, state }` at localStorage key `fx991es-plus2/v1`.
 
-On load: nested state must pass `isPersistedCalcState`; `power` is forced `"on"`; `lastActivityMs` is reset; if the saved `power` was `"off"`, `screen` becomes `{ kind: "input" }`. **TABLE session/rows are stripped on serialize** (D-016). A saved TABLE mode rehydrates to an empty f(x) prompt. COMP envelopes that omit `table` still load (`table: null`).
+On load: nested state must pass `isPersistedCalcState`; `power` is forced `"on"`; `lastActivityMs` is reset; if the saved `power` was `"off"`, `screen` becomes `{ kind: "input" }`. **TABLE session/rows are stripped on serialize** (D-016). **BASE-N tokens/value are stripped; radix is kept** (D-017). A saved TABLE mode rehydrates to an empty f(x) prompt. A saved BASE-N mode rehydrates to an empty integer input in the saved radix. COMP envelopes that omit `table` or use radix-only `baseN` still load.
 
 ### Transient
 
@@ -155,7 +153,8 @@ savePersisted(next)
 5. SHIFT / ALPHA / HYP latches.
 6. Error-screen recovery: AC clears; left/right restore the expression at `errorIndex`.
 7. If `mode === "TABLE"`, `reduceTable` may consume the key (prompts, generation, row nav). Unhandled keys fall through.
-8. Otherwise key-specific insert / eval / memory / SETUP.
+8. If `mode === "BASE-N"`, `reduceBaseN` consumes the key (does not fall through into COMP editing), except MODE / SHIFT+AC.
+9. Otherwise key-specific insert / eval / memory / SETUP.
 
 ### FLOW A — `7 ÷ 6 =`
 
@@ -208,9 +207,9 @@ The AST **must not evaluate**. Evaluation is `evaluate.ts`. Formatting is `forma
 | `i` as a value | New `Sym` variant or CMPLX value type — **not** stuffing complex arithmetic into `Atom` |
 | Matrices / vectors | Parallel stores + mode editors — **not** nested COMP `Atom[]` encoding of arrays |
 | STAT lists / frequencies | Parallel list store |
-| BASE-N digit alphabets / bitwise | Mode-gated integer editor; do not reuse COMP decimal `num` strings as hex without a gate |
 | EQN coefficient screens | Dedicated screens, not a COMP polynomial parser |
 | TABLE grid | **Implemented:** `TableSession` + `screen.kind === "table-view"`; f(x) reuses COMP `Atom[]` + X overlay |
+| BASE-N digit alphabets / bitwise | **Implemented:** `BaseNToken[]` + w-bit `bigint` (D-017). Do not reuse COMP decimal `num` strings as hex. |
 
 **Trap:** `call.name` is a free `string`. That is the COMP extension point and the way unimplemented ops already leak in. Before/with the first new mode, gate names by mode or close the set.
 
@@ -235,6 +234,8 @@ Errors become `screen.kind === "error"` in `onEquals`. M+ / STO call the same ev
 
 TABLE rows call the same `evaluateAtoms` with a **temporary** `{ X }` overlay (D-016). Persistent `variables.X` is written only after a successful generation.
 
+BASE-N equals calls `evaluateBaseN` on `BaseNToken[]` (D-017). Word width is 16-bit BIN / 32-bit otherwise. Canonical value is a signed `bigint`. COMP `evaluateAtoms` is not used.
+
 `i` throws Math ERROR in COMP by design until CMPLX exists.
 
 ---
@@ -250,6 +251,7 @@ TABLE rows call the same `evaluateAtoms` with a **temporary** `{ X }` overlay (D
 - Special angles: exact table only (`specialTrig.ts`). Conservative: 30.001° is not 1/2.
 - Ran#: decimal thousandths from uint32 LCG (`Math.imul` is 32-bit control state, not IEEE calculator math). Algorithm vs hardware: `INFERRED`.
 - mathjs is pinned and **unused** for COMP scalars (D-003). Recommendation for later structure, not a current rewrite.
+- BASE-N integers: `bigint` with explicit width mask/sign (`src/calc/baseNNumeric.ts`). Not IEEE-754 and not COMP `decimal.js`.
 
 **Legitimate non-semantic `Number`/`Math.*`:** array indices, Fix/Sci digit `Number(keyId)`, `Math.min`/`max` for contrast/replay, layout in `src/ui`.
 
@@ -304,12 +306,12 @@ Persistence must not implement arithmetic. It currently does not.
 
 | Layer | Suite | What it actually tests |
 | --- | --- | --- |
-| A Numeric | `src/calc/numeric.test.ts` | decimal.js range, factorial, nPr/nCr, Ran#, ROUND_HALF_UP **policy** |
+| A Numeric | `src/calc/numeric.test.ts`, `src/calc/baseNNumeric.test.ts` | decimal.js range; BASE-N 16/32-bit bigint domain |
 | A Special angles | `src/calc/special-angles.test.ts` | exact shortcuts vs nearby floats |
 | B Editor | `src/calc/editor.test.ts` | cursor, DEL, operator-exit, nth-root template, replay edit |
-| C State | `src/calc/state-transitions.test.ts`, `machine.test.ts`, `table-state.test.ts` | AC/MODE/SETUP/CLR/power/auto-off/latches/LCD indicators; TABLE prompts/rows/nav/exit |
-| D Golden keys | `golden/acceptance.test.ts`, `golden/fixtures.test.ts`, `golden/table.test.ts` | key sequences → `lcdResult` / TABLE state (mode, phase, rows, rowIndex) |
-| E Persist | `src/calc/persist.test.ts`, `e2e/persist.spec.ts` | schema reject/round-trip; reload in Chromium; TABLE grid stripped |
+| C State | `src/calc/state-transitions.test.ts`, `machine.test.ts`, `table-state.test.ts`, `baseN-state.test.ts` | AC/MODE/SETUP/CLR/power; TABLE; BASE-N radix/ops/errors/exit |
+| D Golden keys | `golden/acceptance.test.ts`, `golden/fixtures.test.ts`, `golden/table.test.ts`, `golden/baseN.test.ts` | key sequences → display + mode-specific state |
+| E Persist | `src/calc/persist.test.ts`, `e2e/persist.spec.ts` | schema reject/round-trip; TABLE grid and BASE-N tokens stripped |
 | F UI overlay | `src/ui/coords.test.ts`, `e2e/overlay.spec.ts` | 50 keys, 0–100% boxes, debug overlay, pointer |
 | G PWA/build | `npm run build` + Workbox in CI | precache locally; **not** live origin |
 
@@ -319,7 +321,7 @@ Calculator-semantic tests dispatch `KeyId` through `reduce` — they do not clic
 
 A golden should specify starting state, key sequence, expected display/state, source, evidence class, target confidence.
 
-Reality: most COMP goldens are inline Vitest `it(...)` with `SRC-P*` in the title, default `createInitialState(0)`, and `lcdResult` assertions. Structured fixtures: `golden/fixtures/GT-P22-EX1.json` and `golden/fixtures/GT-TBL-XSQ-DEFAULTS.json` (`evidenceClass` + state fields). **A passing golden is clone behavior, not `TARGET-MANUAL`.** File header in `acceptance.test.ts` states that.
+Reality: most COMP goldens are inline Vitest `it(...)` with `SRC-P*` in the title, default `createInitialState(0)`, and `lcdResult` assertions. Structured fixtures: `golden/fixtures/GT-P22-EX1.json`, `golden/fixtures/GT-TBL-XSQ-DEFAULTS.json`, `golden/fixtures/GT-BN-OFFICIAL-EX1.json`. **A passing golden is clone behavior, not `TARGET-MANUAL`.** File header in `acceptance.test.ts` states that.
 
 **Gaps (quality, do not inflate count):**
 
@@ -333,21 +335,21 @@ Reality: most COMP goldens are inline Vitest `it(...)` with `SRC-P*` in the titl
 
 ## 12. Future-mode readiness
 
-TABLE f(x) is implemented additively (`src/calc/table.ts`, D-016). Remaining modes must still not rewrite COMP.
+TABLE f(x) and BASE-N are implemented additively. Remaining modes must still not rewrite COMP.
 
 | Mode | Clean fit? | Reuse | New abstraction | Rewrite trap | P0/P1 blocker |
 | --- | --- | --- | --- | --- | --- |
 | **TABLE** | **Implemented (f(x))** | COMP editor; `evaluateAtoms(..., { X })`; `TableSession` | One-row LCD view; Start/End/Step prompts | Encoding the grid as COMP `Atom[]` | g(x) not in scope. Dual SETUP TABLE format is unused. |
-| **BASE-N** | Yes if gated | `baseN.radix`; MODE entry | Integer editor, A–F digits, bitwise ops, integer display | Using decimal.js hex as if it were COMP `num` | No P0. P1: parallel integer domain |
+| **BASE-N** | **Implemented** | MODE entry; error codes; SHIFT/ALPHA latches; persist envelope | `BaseNToken[]` + 16/32-bit `bigint` (`baseNNumeric.ts`) | Using decimal.js hex as if it were COMP `num` | Bit shifts deferred. Arithmetic overflow vs wrap NHR. |
 | **CMPLX** | Yes with a value type | `complexFormat`; ALPHA `i` token; ErrorCode | `Sym` complex (or mathjs **structure only**, D-003) | Treating `i` as Math ERROR forever, or switching the scalar engine | No P0. P1: `i` must become a value; close `call.name` |
 | **STAT** | Additive | `statFreq`; MODE | List/frequency store, STAT menus | STAT lists inside COMP `editor.root` | No P0. P1: new store |
 | **EQN** | Additive | MODE; ErrorCode `Can't Solve` | Coefficient screens + solver UI | Parsing a COMP polynomial AST as simultaneous EQN | No P0. P1: dedicated UI |
 | **MATRIX** | Additive | MODE; `Dimension ERROR` | Matrix registers + dim editor | Nested `Atom[]` matrices; replacing decimal.js | No P0. P1: new store. mathjs optional later |
 | **VECTOR** | Same as MATRIX | MODE | Vector registers | Same trap | No P0. P1: new store |
 
-**Recommended next mode: BASE-N** (closed integer domain, existing `baseN.radix`) or **CMPLX** (`i` token already inserts).
+**Recommended next mode: CMPLX** (`i` token already inserts). Do not start it until asked.
 
-`call.name` is still a free string in COMP. TABLE only rejects Pol/Rec/int/diff/Σ inside **f(x)**. Broad COMP gating remains a follow-up P1.
+`call.name` is still a free string in COMP. TABLE only rejects Pol/Rec/int/diff/Σ inside **f(x)**. BASE-N does not use `call.name`. Broad COMP gating remains a follow-up P1.
 
 ---
 
@@ -370,4 +372,4 @@ TABLE f(x) is implemented additively (`src/calc/table.ts`, D-016). Remaining mod
 | Playwright “tablet” is Chromium | honesty | Not iOS Safari |
 | No physical differential testing | accepted | N/A |
 
-**P0 architecture blockers for further modes:** none identified for BASE-N/CMPLX as additive work. TABLE f(x) is in.
+**P0 architecture blockers for further modes:** none identified for CMPLX as additive work. TABLE f(x) and BASE-N are in.

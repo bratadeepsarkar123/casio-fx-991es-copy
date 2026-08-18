@@ -48,7 +48,7 @@ Source: ToC of supplied PDF (printed pages 1–3 of the file, labeled 1–3 in t
 | Metric conversion | 53–55 | in-scope | DEFERRED |
 | CMPLX | 56–57 | in-scope | P1 PARTIAL |
 | STAT | 57–66 | in-scope | P1 PARTIAL |
-| BASE-N | 66–69 | in-scope | P1 PARTIAL |
+| BASE-N | 66–69 | in-scope | P1 IMPLEMENTED (D-017) |
 | EQN | 70–72 | in-scope | P1 PARTIAL |
 | MATRIX | 73–75 | in-scope | P1 PARTIAL |
 | TABLE | 76–78 | in-scope | P1 IMPLEMENTED (f(x); D-016) |
