@@ -77,6 +77,25 @@ describe("persist schema v1", () => {
     expect(back?.baseN.tokens).toEqual([]);
   });
 
+  it("loads a v1 COMP envelope that omits ansIm/preAnsIm", () => {
+    const { ansIm: _ignoredIm, preAnsIm: _ignoredPre, ...rest } = createInitialState(0);
+    const back = deserializeState({ schemaVersion: 1, savedAt: 0, state: rest }, 1);
+    expect(back?.ansIm).toBe("0");
+    expect(back?.preAnsIm).toBe("0");
+  });
+
+  it("round-trips CMPLX Ans imag on schema v1", () => {
+    const filled = dispatchKeys(createInitialState(0), ["mode", "2", "2", "add", "3", "alpha", "eng", "equals"], 0);
+    expect(filled.ansIm).toBe("3");
+    const env = serializeState(filled);
+    expect(env.schemaVersion).toBe(1);
+    expect(env.state.ansIm).toBe("3");
+    const back = deserializeState(JSON.parse(JSON.stringify(env)), 0);
+    expect(back?.mode).toBe("CMPLX");
+    expect(back?.ans).toBe("2");
+    expect(back?.ansIm).toBe("3");
+  });
+
   it("does not persist BASE-N tokens (INFERRED; NHR vs hardware)", () => {
     const filled = dispatchKeys(createInitialState(0), ["mode", "4", "log", "1", "1", "add", "1", "equals"], 0);
     expect(filled.baseN.value).toBe("4");

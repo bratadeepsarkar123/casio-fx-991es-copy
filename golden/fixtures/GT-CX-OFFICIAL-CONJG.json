@@ -1,0 +1,19 @@
+{
+  "id": "GT-CX-OFFICIAL-CONJG",
+  "sourceEvidenceId": "TGT-TOC-CMPLX",
+  "evidenceClass": "TARGET-OFFICIAL-DOC",
+  "targetConfirm": "CONFIRMED",
+  "page": null,
+  "section": "CMPLX Mode Calculation Examples",
+  "source": "https://support.casio.com/global/en/calc/manual/fx-570ESPLUS_991ESPLUS_en/using_calculation_modes/cmplx.html",
+  "keys": ["mode", "2", "shift", "2", "2", "2", "add", "3", "alpha", "eng", "equals"],
+  "expected": {
+    "mode": "CMPLX",
+    "screen": "result",
+    "display": "2-3i",
+    "ans": "2",
+    "ansIm": "-3",
+    "naturalKind": "complex",
+    "complex": { "re": "2", "im": "-3" }
+  }
+}

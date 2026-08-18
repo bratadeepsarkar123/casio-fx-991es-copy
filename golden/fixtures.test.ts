@@ -55,6 +55,51 @@ describe("independent golden fixtures", () => {
     expect(s.table?.rows.map((r) => r.fxApprox)).toEqual(fx.expected.fx);
   });
 
+  it.each(["GT-CX-OFFICIAL-EX1", "GT-CX-OFFICIAL-POLAR", "GT-CX-OFFICIAL-INV", "GT-CX-OFFICIAL-CONJG"])(
+    "%s JSON fixture matches CMPLX state TARGET-OFFICIAL-DOC",
+    (id) => {
+      const raw = readFileSync(new URL(`./fixtures/${id}.json`, import.meta.url), "utf8");
+      const fx = JSON.parse(raw) as {
+        id: string;
+        evidenceClass: string;
+        targetConfirm: string;
+        keys: string[];
+        expected: {
+          mode: string;
+          screen: string;
+          display: string;
+          ans?: string;
+          ansIm?: string;
+          naturalKind: string;
+          complex?: { re: string; im: string };
+        };
+      };
+      expect(fx.id).toBe(id);
+      expect(fx.evidenceClass).toBe("TARGET-OFFICIAL-DOC");
+      expect(fx.targetConfirm).toBe("CONFIRMED");
+      const keys = fx.keys.map((k) => {
+        if (!isKeyId(k)) {
+          throw new Error(k);
+        }
+        return k;
+      }) as KeyId[];
+      const s = dispatchKeys(createInitialState(0), keys, 0);
+      expect(s.mode).toBe(fx.expected.mode);
+      expect(s.screen.kind).toBe(fx.expected.screen);
+      expect(lcdResult(s)).toBe(fx.expected.display);
+      expect(s.result?.naturalKind).toBe(fx.expected.naturalKind);
+      if (fx.expected.ans !== undefined) {
+        expect(s.ans).toBe(fx.expected.ans);
+      }
+      if (fx.expected.ansIm !== undefined) {
+        expect(s.ansIm).toBe(fx.expected.ansIm);
+      }
+      if (fx.expected.complex) {
+        expect(s.result?.complex).toEqual(fx.expected.complex);
+      }
+    },
+  );
+
   it.each(["GT-BN-OFFICIAL-EX1", "GT-BN-OFFICIAL-AND", "GT-BN-OFFICIAL-OR"])(
     "%s JSON fixture matches BASE-N state TARGET-OFFICIAL-DOC",
     (id) => {
