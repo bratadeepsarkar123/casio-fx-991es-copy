@@ -4,6 +4,9 @@ import { lcdExpression, lcdResult } from "../src/ui/lcdModel.ts";
 import type { KeyId } from "../src/calc/keys.ts";
 import type { CalcState } from "../src/calc/types.ts";
 
+// SRC-P* citations are CROSS-MODEL-SOURCE (fx-115ES PLUS / fx-991ES PLUS C PDF).
+// A passing golden does not promote that behavior to TARGET-MANUAL.
+
 function run(keys: KeyId[], setup?: (s: CalcState) => CalcState): CalcState {
   let s = createInitialState(0);
   if (setup) {
@@ -200,5 +203,31 @@ describe("canonical acceptance (manual-derived)", () => {
     expect(overflow.screen.kind).toBe("error");
     const under = run(["exp10", "neg", "1", "0", "0", "equals"], lineIo);
     expect(lcdResult(under)).toBe("0");
+  });
+
+  it("FLOW A 7÷6 = is Natural Display 7/6 (architecture audit; SRC-P21/P22 overlap)", () => {
+    const s = run(["7", "div", "6", "equals"]);
+    expect(s.editor.root).toEqual([
+      { t: "num", s: "7" },
+      { t: "op", op: "÷" },
+      { t: "num", s: "6" },
+    ]);
+    expect(s.screen.kind).toBe("result");
+    expect(s.result?.naturalKind).toBe("fraction");
+    expect(lcdResult(s).replace(/\s/g, "")).toBe("7/6");
+    // 10-digit Norm-1 approx, ROUND_HALF_UP — not a hardware-tie claim.
+    expect(s.ans).toBe("1.166666667");
+    expect(s.result?.approx).toBe("1.166666667");
+  });
+
+  it("FLOW B SHIFT SIN 30 = is asin(30) Math ERROR, not sin(30) (architecture audit)", () => {
+    const inverse = run(["shift", "sin", "3", "0", "equals"]);
+    expect(inverse.screen.kind).toBe("error");
+    if (inverse.screen.kind === "error") {
+      expect(inverse.screen.code).toBe("Math ERROR");
+    }
+    const forward = run(["sin", "3", "0", "equals"]);
+    expect(forward.screen.kind).toBe("result");
+    expect(lcdResult(forward).replace(/\s/g, "")).toMatch(/1\/2/);
   });
 });

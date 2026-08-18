@@ -1,5 +1,7 @@
 # Coverage audit (hardening pass)
 
+Architecture/readiness map: `docs/ARCHITECTURE.md` (COMP-core freeze, FLOW A/B, future-mode readiness). Do not treat that document as a complete-clone claim.
+
 Statuses follow the three-axis model in `CAPABILITY_MATRIX.md`.
 **VERIFIED** = Impl `IMPLEMENTED` and Ver `VERIFIED`.
 

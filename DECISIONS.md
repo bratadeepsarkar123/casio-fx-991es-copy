@@ -72,6 +72,23 @@ Classified P2. Integration call token exists; Gauss-Kronrod fidelity is not VERI
 
 **Decision:** M+ / M− / STO evaluate the input expression when not already on a result, then update M or the variable, matching target official memory examples (`TARGET-OFFICIAL-DOC` 10×5 M+ → 50).
 
+## D-015 — COMP-core freeze; mode work is additive
+
+**Decision:** The COMP-core architecture is the baseline for later mode work and must **not** be replaced:
+
+- `reduce` in `src/calc/machine.ts`
+- custom AST + path cursor in `src/calc/editor.ts`
+- `decimal.js` scalar policy (`src/calc/numeric.ts` / `symbolic.ts`)
+- Zustand as a view/persist holder only (`src/store.ts`)
+
+Future modes (TABLE first — see `docs/ARCHITECTURE.md` §12) must be **additive**: mode-owned screens/stores/handlers orchestrated by `reduce`. Do not introduce MathLive, a second parser, a second React source of truth, or IEEE-754 scalars.
+
+**Persist:** `deserializeState` rejects nested state that fails the schema-v1 structural check (`isPersistedCalcState`). Corrupt localStorage falls back to `createInitialState`. New fields later bump `schemaVersion` or document a default.
+
+**Why:** Architecture audit of the working COMP core found no P0 rewrite blocker. The remaining P1 risks (unbounded `call.name`, dual M, large `reduce` switch) are solvable inside this architecture. Replacing the core would discard golden coverage without enabling modes.
+
+**Status:** Recorded. See `docs/ARCHITECTURE.md`.
+
 ## Risk register
 
 See `RISK_REGISTER.md`.

@@ -1,6 +1,8 @@
 {
   "id": "GT-P22-EX1",
   "sourceEvidenceId": "SRC-P22",
+  "evidenceClass": "CROSS-MODEL-SOURCE",
+  "targetConfirm": "CONFIRMED",
   "page": 22,
   "section": "Fraction Calculations",
   "initialMode": "COMP",

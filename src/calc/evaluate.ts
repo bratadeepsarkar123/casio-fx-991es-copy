@@ -131,7 +131,7 @@ function evalAtom(atom: Atom, ctx: EvalContext): Sym {
       return evalSlot(atom.inner, ctx);
     case "var":
       return fromDec(ctx.variables[atom.name] ?? D(0));
-    case "sym":
+    case "sym": {
       switch (atom.name) {
         case "pi":
           return { k: "pi", r: { n: 1n, d: 1n } };
@@ -143,7 +143,12 @@ function evalAtom(atom: Atom, ctx: EvalContext): Sym {
           return fromDec(ctx.preAns);
         case "i":
           throw new CalcMathError();
+        default: {
+          const _never: never = atom.name;
+          return _never;
+        }
       }
+    }
     case "post": {
       const inner = evalSlot(atom.inner, ctx);
       switch (atom.op) {
@@ -159,6 +164,10 @@ function evalAtom(atom: Atom, ctx: EvalContext): Sym {
           return symDiv(inner, symRat(100n));
         case "dms":
           return fromDec(fromDms(toDec(inner)));
+        default: {
+          const _never: never = atom.op;
+          return _never;
+        }
       }
     }
     case "neg":

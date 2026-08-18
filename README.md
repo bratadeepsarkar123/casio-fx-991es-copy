@@ -35,9 +35,11 @@ npm run test:e2e  # Playwright (build + preview)
 - `src/store.ts` — Zustand holds `CalcState` only.
 - `public/keymap.json` — percent hit-zones.
 - `golden/` — manual-derived tests.
+- Full layer map, FLOW A/B traces, and future-mode readiness: `docs/ARCHITECTURE.md`.
 
 ## Docs
 
+- `docs/ARCHITECTURE.md` — system layers, state model, event flows, mode readiness
 - `TARGET_SPEC.md` — model lock, PDF hash, variant conflict, evidence hierarchy
 - `docs/EVIDENCE_CLASSES.md` — TARGET-MANUAL / TARGET-OFFICIAL-DOC / CROSS-MODEL-SOURCE / …
 - `docs/NUMERIC_AUDIT.md` — native Number/Math classification

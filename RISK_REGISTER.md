@@ -16,3 +16,5 @@
 | Physical reference unavailable | Medium | Medium | TARGET_SPEC | Differential = N/A | Accepted |
 | Browser/platform mismatch | Medium | Medium | Honest coverage | Chromium + Playwright devices | Partial |
 | Documentation drift | Medium | Medium | Stable IDs | Incremental docs | Process |
+| Corrupt persist injected as CalcState | Medium | High | persist.test.ts | `isPersistedCalcState` rejects unknown/incomplete nested state (D-015) | Mitigated for schema-v1 shape; Atom trees still unchecked |
+| Unbounded `call.name` / mode data in COMP AST | Medium | High | Architecture audit | Gate names and use parallel stores when TABLE/CMPLX/… start | Open — P1 before first mode editor |
