@@ -42,7 +42,7 @@ This build must **not** be described as a complete clone. No physical differenti
 | Suite | Result |
 | --- | --- |
 | `npm ci` | pass |
-| Vitest (`npm test`) | **97 passed** (12 files). Baseline was 74; TABLE added planning, reducer, goldens, persist. |
+| Vitest (`npm test`) | **102 passed** (12 files). Pre-TABLE baseline 74; TABLE implementation 97; wrap-up added 5 reducer tests (exit/SETUP/error LCD). |
 | `npm run lint` (`tsc --noEmit`) | pass |
 | `npm run build` (`tsc` + Vite PWA) | pass — Workbox precache 15 entries |
 | Playwright (`npx playwright install --with-deps chromium` then `npm run test:e2e`) | **15 passed** (was 12; +TABLE on Chromium desktop, Pixel 7, iPad-sized Chromium). **Not** real iOS Safari. |
