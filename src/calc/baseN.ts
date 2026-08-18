@@ -161,6 +161,9 @@ function continueBaseFromResult(state: CalcState): CalcState {
 
 function appendDigit(state: CalcState, ch: string): CalcState {
   const base = beginBaseInput(state);
+  if (!isValidDigit(ch, base.baseN.radix)) {
+    return clearLatches(base);
+  }
   const tokens = base.baseN.tokens.slice();
   const cur = base.baseN.cursor;
   const prev = tokens[cur - 1];
@@ -507,7 +510,7 @@ export function reduceBaseN(state: CalcState, event: KeyEvent): CalcState | null
   }
 
   const hexLetter = HEX_LETTER[keyId];
-  if (hexLetter && (state.baseN.radix === 16 || state.alpha)) {
+  if (hexLetter && !state.shift && (state.baseN.radix === 16 || state.alpha)) {
     return appendDigit(beginBaseInput(state), hexLetter);
   }
 

@@ -55,26 +55,31 @@ describe("independent golden fixtures", () => {
     expect(s.table?.rows.map((r) => r.fxApprox)).toEqual(fx.expected.fx);
   });
 
-  it("GT-BN-OFFICIAL-EX1 JSON fixture matches BASE-N state TARGET-OFFICIAL-DOC", () => {
-    const raw = readFileSync(new URL("./fixtures/GT-BN-OFFICIAL-EX1.json", import.meta.url), "utf8");
-    const fx = JSON.parse(raw) as {
-      evidenceClass: string;
-      targetConfirm: string;
-      keys: string[];
-      expected: { mode: string; radix: number; value: string; display: string };
-    };
-    expect(fx.evidenceClass).toBe("TARGET-OFFICIAL-DOC");
-    expect(fx.targetConfirm).toBe("CONFIRMED");
-    const keys = fx.keys.map((k) => {
-      if (!isKeyId(k)) {
-        throw new Error(k);
-      }
-      return k;
-    }) as KeyId[];
-    const s = dispatchKeys(createInitialState(0), keys, 0);
-    expect(s.mode).toBe(fx.expected.mode);
-    expect(s.baseN.radix).toBe(fx.expected.radix);
-    expect(s.baseN.value).toBe(fx.expected.value);
-    expect(lcdResult(s)).toBe(fx.expected.display);
-  });
+  it.each(["GT-BN-OFFICIAL-EX1", "GT-BN-OFFICIAL-AND", "GT-BN-OFFICIAL-OR"])(
+    "%s JSON fixture matches BASE-N state TARGET-OFFICIAL-DOC",
+    (id) => {
+      const raw = readFileSync(new URL(`./fixtures/${id}.json`, import.meta.url), "utf8");
+      const fx = JSON.parse(raw) as {
+        id: string;
+        evidenceClass: string;
+        targetConfirm: string;
+        keys: string[];
+        expected: { mode: string; radix: number; value: string; display: string };
+      };
+      expect(fx.id).toBe(id);
+      expect(fx.evidenceClass).toBe("TARGET-OFFICIAL-DOC");
+      expect(fx.targetConfirm).toBe("CONFIRMED");
+      const keys = fx.keys.map((k) => {
+        if (!isKeyId(k)) {
+          throw new Error(k);
+        }
+        return k;
+      }) as KeyId[];
+      const s = dispatchKeys(createInitialState(0), keys, 0);
+      expect(s.mode).toBe(fx.expected.mode);
+      expect(s.baseN.radix).toBe(fx.expected.radix);
+      expect(s.baseN.value).toBe(fx.expected.value);
+      expect(lcdResult(s)).toBe(fx.expected.display);
+    },
+  );
 });

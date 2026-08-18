@@ -1,0 +1,15 @@
+{
+  "id": "GT-BN-OFFICIAL-OR",
+  "sourceEvidenceId": "TGT-TOC-BASE-N",
+  "evidenceClass": "TARGET-OFFICIAL-DOC",
+  "targetConfirm": "CONFIRMED",
+  "page": null,
+  "section": "Logical and Negation Operations",
+  "keys": ["mode", "4", "log", "1", "0", "1", "1", "shift", "3", "2", "1", "1", "0", "1", "0", "equals"],
+  "expected": {
+    "mode": "BASE-N",
+    "radix": 2,
+    "value": "27",
+    "display": "0000000000011011"
+  }
+}
