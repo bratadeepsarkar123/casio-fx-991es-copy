@@ -1,0 +1,21 @@
+{
+  "id": "GT-MX-OFFICIAL-EX6",
+  "sourceEvidenceId": "TGT-TOC-MATRIX",
+  "evidenceClass": "TARGET-OFFICIAL-DOC",
+  "targetConfirm": "CONFIRMED",
+  "page": null,
+  "section": "Matrix Calculations Example 6 — MatA inverse",
+  "source": "https://support.casio.com/global/en/calc/manual/fx-570ESPLUS_991ESPLUS_en/using_calculation_modes/matrix.html",
+  "keys": [
+    "mode", "6", "1", "5",
+    "2", "equals", "1", "equals", "1", "equals", "1", "equals", "ac",
+    "shift", "4", "3", "xinv", "equals"
+  ],
+  "expected": {
+    "mode": "MATRIX",
+    "phase": "matans",
+    "matAns": [["1", "-1"], ["-1", "2"]],
+    "expression": "Ans11=",
+    "display": "1"
+  }
+}

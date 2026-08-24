@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { createInitialState, dispatchKeys } from "../src/calc/machine.ts";
 import { lcdExpression, lcdResult } from "../src/ui/lcdModel.ts";
+import { matrixToDecGrid } from "../src/calc/matrixNumeric.ts";
 import type { KeyId } from "../src/calc/keys.ts";
 import { isKeyId } from "../src/calc/keys.ts";
 
@@ -169,6 +170,41 @@ describe("independent golden fixtures", () => {
         }));
         expect(got).toEqual(fx.expected.dataset);
       }
+    },
+  );
+
+  it.each(["GT-MX-OFFICIAL-EX1", "GT-MX-OFFICIAL-EX3", "GT-MX-OFFICIAL-EX6"])(
+    "%s JSON fixture matches MATRIX register state TARGET-OFFICIAL-DOC",
+    (id) => {
+      const raw = readFileSync(new URL(`./fixtures/${id}.json`, import.meta.url), "utf8");
+      const fx = JSON.parse(raw) as {
+        id: string;
+        evidenceClass: string;
+        targetConfirm: string;
+        keys: string[];
+        expected: {
+          mode: string;
+          phase: string;
+          matAns: string[][];
+          expression: string;
+          display: string;
+        };
+      };
+      expect(fx.id).toBe(id);
+      expect(fx.evidenceClass).toBe("TARGET-OFFICIAL-DOC");
+      expect(fx.targetConfirm).toBe("CONFIRMED");
+      const keys = fx.keys.map((k) => {
+        if (!isKeyId(k)) {
+          throw new Error(k);
+        }
+        return k;
+      }) as KeyId[];
+      const s = dispatchKeys(createInitialState(0), keys, 0);
+      expect(s.mode).toBe(fx.expected.mode);
+      expect(s.matrix?.phase).toBe(fx.expected.phase);
+      expect(s.matrix?.registers.Ans ? matrixToDecGrid(s.matrix.registers.Ans) : null).toEqual(fx.expected.matAns);
+      expect(lcdExpression(s)).toBe(fx.expected.expression);
+      expect(lcdResult(s)).toBe(fx.expected.display);
     },
   );
 

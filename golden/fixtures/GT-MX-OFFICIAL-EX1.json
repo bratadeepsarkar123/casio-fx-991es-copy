@@ -1,0 +1,26 @@
+{
+  "id": "GT-MX-OFFICIAL-EX1",
+  "sourceEvidenceId": "TGT-TOC-MATRIX",
+  "evidenceClass": "TARGET-OFFICIAL-DOC",
+  "targetConfirm": "CONFIRMED",
+  "page": null,
+  "section": "Matrix Calculations Example 1 — MatA×MatB",
+  "source": "https://support.casio.com/global/en/calc/manual/fx-570ESPLUS_991ESPLUS_en/using_calculation_modes/matrix.html",
+  "keys": [
+    "mode", "6", "1", "5",
+    "2", "equals", "1", "equals", "1", "equals", "1", "equals", "ac",
+    "shift", "4", "1", "2", "5",
+    "2", "equals", "1", "equals", "1", "equals", "2", "equals", "ac",
+    "shift", "4", "3", "mul", "shift", "4", "4", "equals"
+  ],
+  "expected": {
+    "mode": "MATRIX",
+    "phase": "matans",
+    "ans11": "5",
+    "matA": [["2", "1"], ["1", "1"]],
+    "matB": [["2", "1"], ["1", "2"]],
+    "matAns": [["5", "4"], ["3", "3"]],
+    "expression": "Ans11=",
+    "display": "5"
+  }
+}
