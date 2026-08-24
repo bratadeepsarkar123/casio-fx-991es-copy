@@ -37,6 +37,7 @@ import { emptyTableSession, reduceTable, tableReturnToFx } from "./table.ts";
 import { applyBaseOpMenu, emptyBaseN, reduceBaseN, reduceBaseNError } from "./baseN.ts";
 import { emptyStatSession, handleStatMenu, isStatMenuKind, reduceStat, wipeStatData } from "./stat.ts";
 import { emptyEqnSession, reduceEqn } from "./eqn.ts";
+import { emptyMatrixSession, handleMatrixMenu, isMatrixMenuKind, reduceMatrix, wipeMatrixRegisters } from "./matrix.ts";
 import type {
   Atom,
   CalcMode,
@@ -95,6 +96,7 @@ export function createInitialState(nowMs = 0): CalcState {
     table: null,
     stat: null,
     eqn: null,
+    matrix: null,
   };
 }
 
@@ -150,6 +152,7 @@ function handleMenu(state: CalcState, keyId: KeyId): CalcState | null {
         table: mode === "TABLE" ? emptyTableSession() : null,
         stat: mode === "STAT" ? emptyStatSession() : null,
         eqn: mode === "EQN" ? emptyEqnSession() : null,
+        matrix: mode === "MATRIX" ? emptyMatrixSession() : null,
         baseN: emptyBaseN(10),
       };
     }
@@ -400,6 +403,9 @@ function handleMenu(state: CalcState, keyId: KeyId): CalcState | null {
   if (isStatMenuKind(menu.kind)) {
     return handleStatMenu(state, keyId);
   }
+  if (isMatrixMenuKind(menu.kind)) {
+    return handleMatrixMenu(state, keyId);
+  }
   return state;
 }
 
@@ -437,6 +443,10 @@ function runConfirm(state: CalcState, action: "setup" | "memory" | "all"): CalcS
       preAns: "0",
       ansIm: "0",
       preAnsIm: "0",
+      matrix: state.matrix ? wipeMatrixRegisters(state.matrix) : null,
+      editor: state.mode === "MATRIX" ? emptyEditor() : state.editor,
+      screen: state.mode === "MATRIX" ? { kind: "input" as const } : state.screen,
+      result: state.mode === "MATRIX" ? null : state.result,
     };
   }
   if (action === "setup") {
@@ -452,6 +462,7 @@ function runConfirm(state: CalcState, action: "setup" | "memory" | "all"): CalcS
       table: null,
       stat: null,
       eqn: null,
+      matrix: null,
       baseN: emptyBaseN(10),
     };
   }
@@ -631,6 +642,13 @@ export function reduce(state: CalcState, event: KeyEvent): CalcState {
     const eqnHandled = reduceEqn(s, event);
     if (eqnHandled) {
       return eqnHandled;
+    }
+  }
+
+  if (s.mode === "MATRIX") {
+    const matrixHandled = reduceMatrix(s, event);
+    if (matrixHandled) {
+      return matrixHandled;
     }
   }
 

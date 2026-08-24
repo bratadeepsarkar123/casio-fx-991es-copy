@@ -11,6 +11,18 @@ import {
   eqnSolutionValue,
   eqnTypeMenuText,
 } from "../calc/eqn.ts";
+import {
+  matrixCellPrompt,
+  matrixDataRegText,
+  matrixDimRegText,
+  matrixDimSizeExpr,
+  matrixDimSizeResult,
+  matrixEditorExpression,
+  matrixEditorValue,
+  matrixMenuText,
+  matrixStoDestText,
+  relabelMatrixCalls,
+} from "../calc/matrix.ts";
 
 function relabelStatCalls(expr: string): string {
   let out = expr;
@@ -69,6 +81,27 @@ export function lcdExpression(state: CalcState): string {
       return "EQN";
     }
   }
+  if (state.mode === "MATRIX" && state.matrix) {
+    const mx = state.matrix;
+    if (mx.phase === "dim-reg") {
+      return "MATRIX";
+    }
+    if (mx.phase === "dim-size" && mx.dimTarget) {
+      return matrixDimSizeExpr(mx.dimTarget);
+    }
+    if (mx.phase === "data-reg") {
+      return "MATRIX";
+    }
+    if (mx.phase === "sto-dest") {
+      return "STO";
+    }
+    if (mx.phase === "editor") {
+      return matrixEditorExpression(state);
+    }
+    if (mx.phase === "matans") {
+      return matrixCellPrompt("Ans", mx.row, mx.col);
+    }
+  }
   if (state.mode === "TABLE" && state.table?.phase === "view") {
     const row = state.table.rows[state.table.rowIndex];
     if (!row) {
@@ -79,6 +112,9 @@ export function lcdExpression(state: CalcState): string {
   const expr = atomsToLinear(state.editor.root, state.setup.displayFormat);
   if (state.mode === "STAT") {
     return relabelStatCalls(expr);
+  }
+  if (state.mode === "MATRIX") {
+    return relabelMatrixCalls(expr);
   }
   return expr;
 }
@@ -105,6 +141,9 @@ export function lcdResult(state: CalcState): string {
   }
   if (state.menu.kind === "cmplx-op") {
     return "1:arg 2:Conjg 3:r∠θ 4:a+bi";
+  }
+  if (state.menu.kind === "matrix-op") {
+    return matrixMenuText();
   }
   const statMenu = statMenuText(state);
   if (statMenu) {
@@ -133,6 +172,27 @@ export function lcdResult(state: CalcState): string {
     }
     if (state.eqn.phase === "message") {
       return eqnMessageText(state.eqn);
+    }
+  }
+  if (state.mode === "MATRIX" && state.matrix) {
+    const mx = state.matrix;
+    if (mx.phase === "dim-reg") {
+      return matrixDimRegText();
+    }
+    if (mx.phase === "dim-size") {
+      return matrixDimSizeResult();
+    }
+    if (mx.phase === "data-reg") {
+      return matrixDataRegText();
+    }
+    if (mx.phase === "sto-dest") {
+      return matrixStoDestText();
+    }
+    if (mx.phase === "editor") {
+      return matrixEditorValue(state);
+    }
+    if (mx.phase === "matans") {
+      return state.result?.display ?? matrixEditorValue(state);
     }
   }
   if (state.mode === "TABLE" && state.table) {

@@ -135,7 +135,8 @@ export type MenuState =
   | { kind: "stat-var"; page: number }
   | { kind: "stat-reg" }
   | { kind: "stat-distr" }
-  | { kind: "stat-minmax" };
+  | { kind: "stat-minmax" }
+  | { kind: "matrix-op" };
 
 export type Screen =
   | { kind: "input" }
@@ -246,6 +247,47 @@ export interface EqnSession {
   readyToSolve: boolean;
 }
 
+export type MatReg = "A" | "B" | "C" | "Ans";
+
+export type MatrixDim = 1 | 2 | 3;
+
+export type MatrixPhase =
+  | "dim-reg"
+  | "dim-size"
+  | "data-reg"
+  | "editor"
+  | "calc"
+  | "matans"
+  | "sto-dest";
+
+/**
+ * Structured matrix value. Cells are existing `Sym` scalars — not `number[][]`,
+ * not COMP `Atom[]`, and not a second floating-point system.
+ */
+export interface MatrixValue {
+  rows: MatrixDim;
+  cols: MatrixDim;
+  cells: Sym[][];
+}
+
+/**
+ * Additive MATRIX session. Register contents live here — never as COMP Atom[] matrices.
+ * Transient; not persisted (D-021).
+ */
+export interface MatrixSession {
+  phase: MatrixPhase;
+  dimTarget: "A" | "B" | "C" | null;
+  editorReg: MatReg | null;
+  row: number;
+  col: number;
+  registers: {
+    A: MatrixValue | null;
+    B: MatrixValue | null;
+    C: MatrixValue | null;
+    Ans: MatrixValue | null;
+  };
+}
+
 /** Additive TABLE session. Not a COMP Atom[] encoding of the grid. */
 export interface TableSession {
   phase: TablePhase;
@@ -287,6 +329,8 @@ export interface CalcState {
   stat: StatSession | null;
   /** Additive EQN session. `null` outside EQN. Coefficients are not a COMP polynomial AST. */
   eqn: EqnSession | null;
+  /** Additive MATRIX session. `null` outside MATRIX. Register cells are not COMP Atom[]. */
+  matrix: MatrixSession | null;
 }
 
 export interface DispatchOptions {
