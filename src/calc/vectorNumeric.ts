@@ -1,5 +1,4 @@
-import { assertRange, CalcMathError } from "./numeric.ts";
-import { CalcDimensionError } from "./matrixNumeric.ts";
+import { assertRange, CalcDimensionError, CalcMathError } from "./numeric.ts";
 import { isNonReal, isZeroReal, symAdd, symMul, symNeg, symRat, symSqrt, toDec, type Sym } from "./symbolic.ts";
 import type { VectorDim, VectorValue } from "./types.ts";
 

@@ -70,6 +70,19 @@ export class CalcStackError extends Error {
   }
 }
 
+/**
+ * Shared Dimension ERROR. MATRIX and VECTOR both use this code
+ * (`TARGET-OFFICIAL-DOC`). The class lives here so VECTOR algebra does not
+ * import MATRIX algebra.
+ */
+export class CalcDimensionError extends Error {
+  readonly code = "Dimension ERROR" as const;
+  constructor(message = "Dimension ERROR") {
+    super(message);
+    this.name = "CalcDimensionError";
+  }
+}
+
 export function isZero(x: Decimal): boolean {
   return x.isZero();
 }

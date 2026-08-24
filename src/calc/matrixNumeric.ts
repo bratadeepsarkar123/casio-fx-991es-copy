@@ -1,19 +1,13 @@
-import { assertRange, CalcMathError, CalcSyntaxError } from "./numeric.ts";
+import { assertRange, CalcDimensionError, CalcMathError, CalcSyntaxError } from "./numeric.ts";
 import { isNonReal, isZeroReal, symAdd, symDiv, symMul, symNeg, symRat, toDec, type Sym } from "./symbolic.ts";
 import type { MatrixDim, MatrixValue } from "./types.ts";
+
+export { CalcDimensionError };
 
 export const MATRIX_MAX_DIM = 3 as const;
 
 const ZERO: Sym = symRat(0n);
 const ONE: Sym = symRat(1n);
-
-export class CalcDimensionError extends Error {
-  readonly code = "Dimension ERROR" as const;
-  constructor(message = "Dimension ERROR") {
-    super(message);
-    this.name = "CalcDimensionError";
-  }
-}
 
 export function isMatrixDim(n: number): n is MatrixDim {
   return n === 1 || n === 2 || n === 3;

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { CalcMathError } from "./numeric.ts";
-import { CalcDimensionError } from "./matrixNumeric.ts";
+import { CalcDimensionError } from "./numeric.ts";
 import { isNonReal, packCplx, symRat, toDec } from "./symbolic.ts";
 import {
   emptyVector,
