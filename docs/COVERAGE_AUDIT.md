@@ -43,10 +43,10 @@ This build must **not** be described as a complete clone or as hardware-equivale
 | Suite | Result |
 | --- | --- |
 | `npm ci` | pass |
-| Vitest (`npm test`) | **353 passed** (31 files). Pre-audit VECTOR-gate 336/30 files; +17 COMP `call.name` gate tests (`call-name-gate.test.ts`). COMP `golden/acceptance.test.ts` still 30 passed. Persistence `persist.test.ts` 17 passed. Golden suites still green. |
+| Vitest (`npm test`) | **378 passed** (34 files). COMP leftovers + Natural Display goldens added. COMP `golden/acceptance.test.ts` still 30 passed. |
 | `npm run lint` (`tsc --noEmit`) | pass |
-| `npm run build` (`tsc` + Vite PWA) | pass — Workbox precache **15** entries; manifest `start_url`/`scope` `/casio-fx-991es-copy/` |
-| Playwright (`npx playwright install --with-deps chromium` then `CI=true npm run test:e2e`) | **33 passed** (Chromium desktop, Pixel 7, iPad-sized Chromium). **Not** real iOS Safari. |
+| `npm run build` (`tsc` + Vite PWA) | pass |
+| Playwright (`CI=true npm run test:e2e`) | **42 passed** (Chromium desktop, Pixel 7, iPad-sized Chromium), including Natural Display frac/root/power. **Not** real iOS Safari. |
 | Differential vs physical unit | N/A |
 | GitHub Pages API | enabled (`legacy` / branch root). Live `/` is Vite source `index.html`; `/src/main.tsx` **404**. `C-P0-PWA` still BLOCKED |
 
