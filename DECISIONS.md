@@ -217,6 +217,14 @@ Future modes (TABLE first — see `docs/ARCHITECTURE.md` §12) must be **additiv
 
 **Status:** Recorded. See `docs/POST_MAJOR_MODE_AUDIT.md`.
 
+## D-024 — Natural Textbook Display is HTML/CSS, not a 31×96 framebuffer
+
+**Decision:** In MthIO, the expression line (and MathO fraction results) render as structured HTML/CSS: stacked `a/b`, radical + vinculum, raised exponents. Hardware mode labels on the LCD are **MAT** / **VCT** (not `MATRIX` / `VECTOR`). Overflow `>` / `▾` uses a clone character budget, not a simulated 31×96 grid. `lcdExpression()` stays a caret-free linear string for goldens.
+
+**Not claimed:** pixel-perfect dot-matrix authenticity (still a README non-goal). Glyph weight and green-gray metrics stay `NEEDS-HUMAN-REVIEW` until user LCD stills arrive.
+
+**Status:** Recorded.
+
 ## Risk register
 
 See `RISK_REGISTER.md`.

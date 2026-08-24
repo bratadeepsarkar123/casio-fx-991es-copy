@@ -5,7 +5,7 @@ test.describe("VECTOR mode", () => {
     await page.goto("./");
     await page.locator('[data-key="mode"]').click();
     await page.locator('[data-key="8"]').click();
-    await expect(page.getByTestId("ind-mode")).toHaveText("VECTOR");
+    await expect(page.getByTestId("ind-mode")).toHaveText("VCT");
     await expect(page.getByTestId("lcd-result")).toContainText("VctA");
     await page.locator('[data-key="1"]').click();
     await page.locator('[data-key="2"]').click();

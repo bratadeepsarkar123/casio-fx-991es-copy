@@ -5,7 +5,7 @@ test.describe("MATRIX mode", () => {
     await page.goto("./");
     await page.locator('[data-key="mode"]').click();
     await page.locator('[data-key="6"]').click();
-    await expect(page.getByTestId("ind-mode")).toHaveText("MATRIX");
+    await expect(page.getByTestId("ind-mode")).toHaveText("MAT");
     await expect(page.getByTestId("lcd-result")).toContainText("MatA");
     await page.locator('[data-key="1"]').click();
     await page.locator('[data-key="5"]').click();

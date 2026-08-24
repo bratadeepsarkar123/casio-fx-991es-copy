@@ -5,7 +5,7 @@ export default defineConfig({
   plugins: [react()],
   test: {
     environment: "node",
-    include: ["src/**/*.test.ts", "golden/**/*.test.ts"],
+    include: ["src/**/*.test.ts", "src/**/*.test.tsx", "golden/**/*.test.ts"],
     restoreMocks: true,
   },
 });

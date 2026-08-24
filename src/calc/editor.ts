@@ -30,7 +30,7 @@ function parsePath(path: number[]): PathStep[] {
   return steps;
 }
 
-function fieldToCode(field: SlotField): number {
+export function fieldToCode(field: SlotField): number {
   switch (field) {
     case "num":
       return 0;
@@ -815,14 +815,14 @@ export function atomsToLinear(atoms: Atom[], format: DisplayFormat): string {
   return parts.join("");
 }
 
-function pathsEqual(a: number[], b: number[]): boolean {
+export function pathsEqual(a: number[], b: number[]): boolean {
   if (a.length !== b.length) {
     return false;
   }
   return a.every((value, i) => value === b[i]);
 }
 
-function childPath(slotPath: number[], atomIndex: number, field: SlotField): number[] {
+export function childPath(slotPath: number[], atomIndex: number, field: SlotField): number[] {
   return [...slotPath, atomIndex, fieldToCode(field)];
 }
 

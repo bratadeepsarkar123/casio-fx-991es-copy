@@ -345,6 +345,107 @@ export interface LcdIndicators {
   sto: boolean;
   rcl: boolean;
   baseN: "BIN" | "OCT" | "DEC" | "HEX" | null;
+  disp: boolean;
+  exprOverflow: boolean;
+  resultOverflow: boolean;
+}
+
+/** Clone character budget for overflow arrows. Not a 31×96 column count (D-024). */
+export const LCD_EXPR_VISIBLE_CHARS = 16;
+export const LCD_RESULT_VISIBLE_CHARS = 12;
+
+function modeIndicator(mode: CalcState["mode"]): string | null {
+  switch (mode) {
+    case "COMP":
+      return null;
+    case "MATRIX":
+      return "MAT";
+    case "VECTOR":
+      return "VCT";
+    case "CMPLX":
+    case "STAT":
+    case "BASE-N":
+    case "EQN":
+    case "TABLE":
+      return mode;
+    default: {
+      const _never: never = mode;
+      return _never;
+    }
+  }
+}
+
+function hasColon(state: CalcState): boolean {
+  const walk = (xs: typeof state.editor.root): boolean => {
+    for (const a of xs) {
+      if (a.t === "colon") {
+        return true;
+      }
+      switch (a.t) {
+        case "frac":
+          if (walk(a.num) || walk(a.den)) {
+            return true;
+          }
+          break;
+        case "mixed":
+          if (walk(a.whole) || walk(a.num) || walk(a.den)) {
+            return true;
+          }
+          break;
+        case "sqrt":
+        case "cbrt":
+        case "neg":
+        case "abs":
+        case "group":
+        case "post":
+        case "angle":
+          if (walk(a.inner)) {
+            return true;
+          }
+          break;
+        case "nthrt":
+          if (walk(a.n) || walk(a.inner)) {
+            return true;
+          }
+          break;
+        case "pow":
+          if (walk(a.base) || walk(a.exp)) {
+            return true;
+          }
+          break;
+        case "logb":
+          if (walk(a.base) || walk(a.arg)) {
+            return true;
+          }
+          break;
+        case "call":
+          if (a.args.some((arg) => walk(arg))) {
+            return true;
+          }
+          break;
+        default:
+          break;
+      }
+    }
+    return false;
+  };
+  return walk(state.editor.root);
+}
+
+/** True when the expression line is the editor AST (Natural HTML), not a mode prompt. */
+export function lcdShowsNatural(state: CalcState): boolean {
+  if (state.power === "off" || state.mode === "BASE-N") {
+    return false;
+  }
+  if (state.setup.displayFormat === "LineIO") {
+    return false;
+  }
+  if (state.screen.kind === "error" || state.menu.kind !== "none") {
+    return false;
+  }
+  const expr = lcdExpression(state);
+  const linear = relabelForMode(atomsToLinear(state.editor.root, state.setup.displayFormat), state);
+  return expr === linear;
 }
 
 export function lcdIndicators(state: CalcState): LcdIndicators {
@@ -357,10 +458,13 @@ export function lcdIndicators(state: CalcState): LcdIndicators {
     math: state.mode === "BASE-N" ? false : state.setup.displayFormat !== "LineIO",
     fix: state.setup.numberFormat.kind === "Fix",
     sci: state.setup.numberFormat.kind === "Sci",
-    mode: state.mode === "COMP" ? null : state.mode,
+    mode: modeIndicator(state.mode),
     replay: state.history.length > 0,
     sto: state.menu.kind === "sto",
     rcl: state.menu.kind === "rcl",
     baseN: state.mode === "BASE-N" ? radixLabel(state.baseN.radix) : null,
+    disp: hasColon(state),
+    exprOverflow: lcdExpression(state).length > LCD_EXPR_VISIBLE_CHARS,
+    resultOverflow: lcdResult(state).length > LCD_RESULT_VISIBLE_CHARS,
   };
 }

@@ -1,6 +1,8 @@
 import type { CSSProperties } from "react";
 import type { CalcState } from "../calc/types.ts";
-import { angleIndicator, lcdExpressionParts, lcdIndicators, lcdResult } from "./lcdModel.ts";
+import { angleIndicator, lcdExpressionParts, lcdIndicators, lcdResult, lcdShowsNatural } from "./lcdModel.ts";
+import { NaturalExpression, NaturalResultView } from "./naturalView.tsx";
+import "./lcd.css";
 
 interface LcdProps {
   state: CalcState;
@@ -13,6 +15,8 @@ export function Lcd({ state, style }: LcdProps) {
   const ang = angleIndicator(state);
   const ind = lcdIndicators(state);
   const math = ind.math;
+  const natural = lcdShowsNatural(state);
+  const mathO = state.setup.displayFormat === "MthIO-MathO";
   const contrast = 0.75 + state.setup.contrast * 0.05;
 
   return (
@@ -29,36 +33,65 @@ export function Lcd({ state, style }: LcdProps) {
       data-testid="lcd"
       aria-live="polite"
     >
-      <div className="flex h-[18%] items-center gap-2 text-[0.55em] font-bold tracking-wide">
-        {ind.shift ? <span data-testid="ind-s">S</span> : null}
-        {ind.alpha ? <span data-testid="ind-a">A</span> : null}
-        {ind.hyp ? <span data-testid="ind-hyp">HYP</span> : null}
-        {ind.memory ? <span data-testid="ind-m">M</span> : null}
-        {ind.sto ? <span data-testid="ind-sto">STO</span> : null}
-        {ind.rcl ? <span data-testid="ind-rcl">RCL</span> : null}
-        <span data-testid="ind-angle">{ang}</span>
-        {math ? <span data-testid="ind-math">Math</span> : null}
-        {ind.fix ? <span data-testid="ind-fix">FIX</span> : null}
-        {ind.sci ? <span data-testid="ind-sci">SCI</span> : null}
-        {ind.mode ? <span data-testid="ind-mode">{ind.mode}</span> : null}
-        {ind.baseN ? <span data-testid="ind-basen">{ind.baseN}</span> : null}
-        {ind.replay ? <span data-testid="ind-replay">▲</span> : null}
+      <div className="lcd-ind">
+        <div className="lcd-ind-left">
+          {ind.shift ? <span data-testid="ind-s">S</span> : null}
+          {ind.alpha ? <span data-testid="ind-a">A</span> : null}
+          {ind.hyp ? <span data-testid="ind-hyp">HYP</span> : null}
+          {ind.memory ? <span data-testid="ind-m">M</span> : null}
+          {ind.sto ? <span data-testid="ind-sto">STO</span> : null}
+          {ind.rcl ? <span data-testid="ind-rcl">RCL</span> : null}
+          {ind.disp ? <span data-testid="ind-disp">Disp</span> : null}
+        </div>
+        <div className="lcd-ind-mid">
+          <span className="lcd-angle" data-testid="ind-angle">
+            {ang}
+          </span>
+          {math ? <span data-testid="ind-math">Math</span> : null}
+          {ind.fix ? <span data-testid="ind-fix">FIX</span> : null}
+          {ind.sci ? <span data-testid="ind-sci">SCI</span> : null}
+        </div>
+        <div className="lcd-ind-right">
+          {ind.mode ? <span data-testid="ind-mode">{ind.mode}</span> : null}
+          {ind.baseN ? <span data-testid="ind-basen">{ind.baseN}</span> : null}
+          {ind.replay ? <span data-testid="ind-replay">▲</span> : null}
+          {ind.exprOverflow ? (
+            <span className="lcd-scroll" data-testid="ind-scroll-expr">
+              &gt;
+            </span>
+          ) : null}
+          {ind.resultOverflow ? (
+            <span className="lcd-scroll" data-testid="ind-scroll-result">
+              ▾
+            </span>
+          ) : null}
+        </div>
       </div>
-      <div
-        className="h-[52%] overflow-hidden text-[0.95em] leading-tight"
-        data-testid="lcd-expr"
-        style={{ opacity: state.power === "off" ? 0 : 1 }}
-      >
-        {parts.before}
-        {parts.showCaret ? <span data-testid="lcd-caret" className="lcd-caret" aria-hidden="true" /> : null}
-        {parts.after}
-        {!parts.before && !parts.after && !parts.showCaret ? "\u00a0" : null}
+      <div className="lcd-expr" data-testid="lcd-expr" style={{ opacity: state.power === "off" ? 0 : 1 }}>
+        <div className="lcd-expr-inner">
+          {natural ? (
+            <NaturalExpression
+              atoms={state.editor.root}
+              format={state.setup.displayFormat}
+              cursor={parts.showCaret ? state.editor.cursor : null}
+              showCaret={parts.showCaret}
+            />
+          ) : (
+            <>
+              {parts.before}
+              {parts.showCaret ? <span data-testid="lcd-caret" className="lcd-caret" aria-hidden="true" /> : null}
+              {parts.after}
+              {!parts.before && !parts.after && !parts.showCaret ? "\u00a0" : null}
+            </>
+          )}
+        </div>
       </div>
-      <div
-        className="h-[30%] text-right text-[1.15em] font-semibold"
-        data-testid="lcd-result"
-      >
-        {result}
+      <div className="lcd-result" data-testid="lcd-result">
+        {state.result && mathO && (state.screen.kind === "result" || state.screen.kind === "replay") ? (
+          <NaturalResultView result={state.result} mathO={mathO} />
+        ) : (
+          result
+        )}
       </div>
     </div>
   );
