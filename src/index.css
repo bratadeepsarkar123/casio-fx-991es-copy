@@ -32,3 +32,23 @@ button:focus-visible {
   white-space: nowrap;
   border: 0;
 }
+
+.lcd-caret {
+  display: inline-block;
+  width: 2px;
+  height: 0.95em;
+  margin: 0 1px;
+  background: #1a221c;
+  vertical-align: -0.12em;
+  animation: lcd-caret-pulse 1s ease-in-out infinite;
+}
+
+@keyframes lcd-caret-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.28;
+  }
+}

@@ -1,4 +1,4 @@
-import type { Atom, ComplexFormat, DisplayFormat, EditorState, VarName } from "./types.ts";
+import type { Atom, ComplexFormat, Cursor, DisplayFormat, EditorState, VarName } from "./types.ts";
 
 export const MAX_BYTES = 99;
 
@@ -813,6 +813,168 @@ export function atomsToLinear(atoms: Atom[], format: DisplayFormat): string {
   };
   walk(atoms);
   return parts.join("");
+}
+
+function pathsEqual(a: number[], b: number[]): boolean {
+  if (a.length !== b.length) {
+    return false;
+  }
+  return a.every((value, i) => value === b[i]);
+}
+
+function childPath(slotPath: number[], atomIndex: number, field: SlotField): number[] {
+  return [...slotPath, atomIndex, fieldToCode(field)];
+}
+
+/** Split `atomsToLinear` at the editor cursor. `before + after` equals the linear string. */
+export function atomsToLinearSplit(
+  atoms: Atom[],
+  format: DisplayFormat,
+  cursor: Cursor,
+): { before: string; after: string } {
+  const before: string[] = [];
+  const after: string[] = [];
+  let side: "before" | "after" = "before";
+  const emit = (text: string) => {
+    (side === "before" ? before : after).push(text);
+  };
+
+  const walk = (xs: Atom[], slotPath: number[]) => {
+    const atSlot = pathsEqual(slotPath, cursor.path);
+    for (let i = 0; i < xs.length; i += 1) {
+      const a = xs[i];
+      if (!a) {
+        continue;
+      }
+      if (atSlot && a.t === "num" && i === cursor.index - 1 && cursor.offset !== null) {
+        emit(a.s.slice(0, cursor.offset));
+        side = "after";
+        emit(a.s.slice(cursor.offset));
+        continue;
+      }
+      if (atSlot && i === cursor.index && side === "before") {
+        side = "after";
+      }
+      switch (a.t) {
+        case "num":
+          emit(a.s);
+          break;
+        case "op":
+          emit(a.op);
+          break;
+        case "frac":
+          emit("(");
+          walk(a.num, childPath(slotPath, i, "num"));
+          emit(format === "LineIO" ? "┘" : "/");
+          walk(a.den, childPath(slotPath, i, "den"));
+          emit(")");
+          break;
+        case "mixed":
+          walk(a.whole, childPath(slotPath, i, "whole"));
+          emit(" ");
+          walk(a.num, childPath(slotPath, i, "num"));
+          emit("/");
+          walk(a.den, childPath(slotPath, i, "den"));
+          break;
+        case "sqrt":
+          emit("√(");
+          walk(a.inner, childPath(slotPath, i, "inner"));
+          emit(")");
+          break;
+        case "cbrt":
+          emit("∛(");
+          walk(a.inner, childPath(slotPath, i, "inner"));
+          emit(")");
+          break;
+        case "nthrt":
+          emit("(");
+          walk(a.n, childPath(slotPath, i, "n"));
+          emit("√");
+          walk(a.inner, childPath(slotPath, i, "inner"));
+          emit(")");
+          break;
+        case "pow":
+          emit("(");
+          walk(a.base, childPath(slotPath, i, "base"));
+          emit(")^(");
+          walk(a.exp, childPath(slotPath, i, "exp"));
+          emit(")");
+          break;
+        case "logb":
+          emit("log(");
+          walk(a.base, childPath(slotPath, i, "base"));
+          emit(",");
+          walk(a.arg, childPath(slotPath, i, "arg"));
+          emit(")");
+          break;
+        case "call":
+          emit(a.name);
+          emit("(");
+          a.args.forEach((arg, argIndex) => {
+            if (argIndex) {
+              emit(",");
+            }
+            const path =
+              argIndex === 0 ? childPath(slotPath, i, "args0") : [...childPath(slotPath, i, "args0"), argIndex, 99];
+            walk(arg, path);
+          });
+          emit(a.closed ? ")" : "");
+          break;
+        case "group":
+          emit("(");
+          walk(a.inner, childPath(slotPath, i, "inner"));
+          emit(a.closed ? ")" : "");
+          break;
+        case "var":
+          emit(a.name);
+          break;
+        case "sym":
+          emit(a.name === "pi" ? "π" : a.name === "preAns" ? "PreAns" : a.name === "ans" ? "Ans" : a.name);
+          break;
+        case "cplxfmt":
+          emit(a.fmt);
+          break;
+        case "post":
+          walk(a.inner, childPath(slotPath, i, "inner"));
+          emit(
+            a.op === "sq" ? "²" : a.op === "cube" ? "³" : a.op === "inv" ? "⁻¹" : a.op === "fact" ? "!" : a.op === "pct" ? "%" : "°′″",
+          );
+          break;
+        case "neg":
+          emit("(-)");
+          walk(a.inner, childPath(slotPath, i, "inner"));
+          break;
+        case "abs":
+          emit("|");
+          walk(a.inner, childPath(slotPath, i, "inner"));
+          emit("|");
+          break;
+        case "angle":
+          walk(a.inner, childPath(slotPath, i, "inner"));
+          emit(a.unit);
+          break;
+        case "colon":
+          emit(":");
+          break;
+        case "comma":
+          emit(",");
+          break;
+        case "placeholder":
+          emit("□");
+          break;
+        default: {
+          const _never: never = a;
+          return _never;
+        }
+      }
+    }
+    if (atSlot && cursor.index >= xs.length && side === "before") {
+      side = "after";
+    }
+  };
+
+  walk(atoms, []);
+  return { before: before.join(""), after: after.join("") };
 }
 
 export function prepareForBinaryOp(ed: EditorState): EditorState {

@@ -37,40 +37,40 @@
       "primary": "▲",
       "shift": null,
       "alpha": null,
-      "x": 45.1,
-      "y": 36.2,
-      "w": 8.5,
-      "h": 2.4
+      "x": 45.0,
+      "y": 37.4,
+      "w": 10.0,
+      "h": 4.4
     },
     {
       "id": "down",
       "primary": "▼",
       "shift": null,
       "alpha": null,
-      "x": 45.1,
-      "y": 39.4,
-      "w": 8.5,
-      "h": 2.4
+      "x": 45.0,
+      "y": 42.2,
+      "w": 10.0,
+      "h": 5.2
     },
     {
       "id": "left",
       "primary": "◀",
       "shift": null,
       "alpha": null,
-      "x": 39.6,
-      "y": 37.6,
-      "w": 6.5,
-      "h": 2.8
+      "x": 35.2,
+      "y": 38.4,
+      "w": 10.4,
+      "h": 5.4
     },
     {
       "id": "right",
       "primary": "▶",
       "shift": null,
       "alpha": null,
-      "x": 52.6,
-      "y": 37.6,
-      "w": 6.5,
-      "h": 2.8
+      "x": 54.4,
+      "y": 38.4,
+      "w": 10.4,
+      "h": 5.4
     },
     {
       "id": "mode",
@@ -514,5 +514,5 @@
     }
   ],
   "calibrationStatus": "NEEDS_HUMAN_REVIEW",
-  "calibrationNotes": "Geometric fit from official Casio FX-991ESPLUS-2BU product photo (cropped). Chat-attached chassis binary was not persisted as a file. Visual verification required via ?debug=true."
+  "calibrationNotes": "Geometric fit from official Casio FX-991ESPLUS-2BU product photo (cropped). D-pad boxes retuned to the four teardrop quadrants (still NEEDS_HUMAN_REVIEW). Overlay is on by default; hide with ?debug=false."
 }

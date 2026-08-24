@@ -1,5 +1,5 @@
 import type { CalcState } from "../calc/types.ts";
-import { atomsToLinear } from "../calc/editor.ts";
+import { atomsToLinear, atomsToLinearSplit } from "../calc/editor.ts";
 import { formatBaseNExpression, radixLabel } from "../calc/baseN.ts";
 import { STAT_CALL_LABELS } from "../calc/statNumeric.ts";
 import { statEditorExpression, statEditorValue, statMenuText, statTypeMenuText } from "../calc/stat.ts";
@@ -153,6 +153,51 @@ export function lcdExpression(state: CalcState): string {
     return relabelVectorCalls(expr);
   }
   return expr;
+}
+
+export interface LcdExprParts {
+  before: string;
+  after: string;
+  showCaret: boolean;
+}
+
+function relabelForMode(expr: string, state: CalcState): string {
+  if (state.mode === "STAT") {
+    return relabelStatCalls(expr);
+  }
+  if (state.mode === "MATRIX") {
+    return relabelMatrixCalls(expr);
+  }
+  if (state.mode === "VECTOR") {
+    return relabelVectorCalls(expr);
+  }
+  return expr;
+}
+
+/** Display-only split. Must not be used by goldens — `lcdExpression` stays caret-free. */
+export function lcdExpressionParts(state: CalcState): LcdExprParts {
+  if (state.power === "off") {
+    return { before: lcdExpression(state), after: "", showCaret: false };
+  }
+  if (state.mode === "BASE-N" && state.screen.kind === "input" && state.menu.kind === "none") {
+    return {
+      before: formatBaseNExpression(state.baseN.tokens.slice(0, state.baseN.cursor)),
+      after: formatBaseNExpression(state.baseN.tokens.slice(state.baseN.cursor)),
+      showCaret: true,
+    };
+  }
+  const expr = lcdExpression(state);
+  const linear = relabelForMode(atomsToLinear(state.editor.root, state.setup.displayFormat), state);
+  const showCaret = state.screen.kind === "input" && state.menu.kind === "none" && expr === linear;
+  if (!showCaret) {
+    return { before: expr, after: "", showCaret: false };
+  }
+  const split = atomsToLinearSplit(state.editor.root, state.setup.displayFormat, state.editor.cursor);
+  return {
+    before: relabelForMode(split.before, state),
+    after: relabelForMode(split.after, state),
+    showCaret: true,
+  };
 }
 
 export function lcdResult(state: CalcState): string {

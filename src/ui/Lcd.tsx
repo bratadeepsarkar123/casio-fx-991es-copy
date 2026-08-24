@@ -1,6 +1,6 @@
 import type { CSSProperties } from "react";
 import type { CalcState } from "../calc/types.ts";
-import { angleIndicator, lcdExpression, lcdIndicators, lcdResult } from "./lcdModel.ts";
+import { angleIndicator, lcdExpressionParts, lcdIndicators, lcdResult } from "./lcdModel.ts";
 
 interface LcdProps {
   state: CalcState;
@@ -8,7 +8,7 @@ interface LcdProps {
 }
 
 export function Lcd({ state, style }: LcdProps) {
-  const expr = lcdExpression(state);
+  const parts = lcdExpressionParts(state);
   const result = lcdResult(state);
   const ang = angleIndicator(state);
   const ind = lcdIndicators(state);
@@ -49,7 +49,10 @@ export function Lcd({ state, style }: LcdProps) {
         data-testid="lcd-expr"
         style={{ opacity: state.power === "off" ? 0 : 1 }}
       >
-        {expr || "\u00a0"}
+        {parts.before}
+        {parts.showCaret ? <span data-testid="lcd-caret" className="lcd-caret" aria-hidden="true" /> : null}
+        {parts.after}
+        {!parts.before && !parts.after && !parts.showCaret ? "\u00a0" : null}
       </div>
       <div
         className="h-[30%] text-right text-[1.15em] font-semibold"
