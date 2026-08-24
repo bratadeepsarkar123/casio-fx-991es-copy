@@ -20,7 +20,7 @@ Verification token for ICM session rules was acknowledged; this project is an au
 
 ## D-003 — Numerical core: decimal.js only for scalars
 
-**Decision:** `decimal.js` 10.6.0 is the only scalar numeric type that affects display. mathjs is a pinned dependency and is **not** used for COMP, CMPLX, STAT, EQN, or MATRIX evaluation. MATRIX cells are existing `Sym` values. Complex numbers are a first-class `Sym` variant (`k: "cplx"`), not mathjs.
+**Decision:** `decimal.js` 10.6.0 is the only scalar numeric type that affects display. mathjs is a pinned dependency and is **not** used for COMP, CMPLX, STAT, EQN, MATRIX, or VECTOR evaluation. MATRIX and VECTOR cells are existing `Sym` values. Complex numbers are a first-class `Sym` variant (`k: "cplx"`), not mathjs.
 
 **Internal digits:** 15 (SRC-P97). Display: 10+2. Range: ±1e-99 … ±9.999999999e99 (SRC-P97).
 **π internal:** 3.14159265358980 (SRC-P36). **e internal:** 2.71828182845904 (SRC-P36).
@@ -54,7 +54,7 @@ Verification token for ICM session rules was acknowledged; this project is an au
 
 ## D-010 — P1 modes
 
-STAT/EQN/MATRIX/VECTOR: mode **entry** is implemented (MODE menu). TABLE f(x) is implemented (D-016). BASE-N integer domain is implemented (D-017). CMPLX extended numeric domain is implemented (D-018). STAT dataset + statistics domain is implemented (D-019). EQN coefficient solver is implemented (D-020). MATRIX register domain is implemented (D-021). VECTOR remains `PARTIAL` / not VERIFIED. COMP P0 is the v1 floor.
+STAT/EQN/MATRIX/VECTOR: mode **entry** is implemented (MODE menu). TABLE f(x) is implemented (D-016). BASE-N integer domain is implemented (D-017). CMPLX extended numeric domain is implemented (D-018). STAT dataset + statistics domain is implemented (D-019). EQN coefficient solver is implemented (D-020). MATRIX register domain is implemented (D-021). VECTOR register domain is implemented (D-022). COMP P0 is the v1 floor.
 
 ## D-011 — Integration / Σ / SOLVE
 
@@ -183,10 +183,27 @@ Future modes (TABLE first — see `docs/ARCHITECTURE.md` §12) must be **additiv
 - **Numeric:** existing `Sym` / decimal.js. Explicit add/sub/mul/scale/det/inverse/transpose/x²/x³/Abs. mathjs unused.
 - **Errors:** unspecified dim / incompatible dims → Dimension ERROR (`TARGET-OFFICIAL-DOC`). Singular inverse → Math ERROR (**INFERRED**). Complex entries rejected.
 - **Persist:** schema stays v1. MATRIX session stripped. Reload in MATRIX → dim-reg. Hardware power-off **NEEDS-HUMAN-REVIEW**.
-- **Unsupported on this target:** Ref/Rref (115/C HTML only). VECTOR (separate phase).
+- **Unsupported on this target:** Ref/Rref (115/C HTML only). VECTOR is a separate domain (D-022), not part of MATRIX.
 - **Did MATRIX rewrite COMP / TABLE / BASE-N / CMPLX / STAT / EQN?** No.
 
 **Status:** Recorded. See `docs/MATRIX.md`.
+
+## D-022 — VECTOR is a dedicated register domain, not COMP AST and not MATRIX
+
+**Decision:** Implement VECTOR as an additive `VectorSession` on `CalcState` (`src/calc/vector.ts`, `src/calc/vectorNumeric.ts`, `src/calc/vectorEval.ts`) orchestrated by `reduce` via `reduceVector`. Do **not** encode vectors as COMP `Atom[]`, `number[]`, expression strings, `Sym.vec`, `MatrixValue`, or mathjs values. Do **not** implement a dedicated Angle command, vector powers, or MATRIX↔VECTOR mixing.
+
+- **Registers:** VctA, VctB, VctC, VctAns (`TARGET-OFFICIAL-DOC`). Dimensions **2 and 3 only**.
+- **Enter:** MODE `8` then Dim register + size `2`/`3` (`CROSS-MODEL-SOURCE` numbering / **NHR**). SHIFT+`5` opens the VECTOR menu while already in VECTOR (`EMPIRICAL` chassis legend; not a global COMP mode-switch).
+- **Editor:** one component at a time; COMP editor is the current cell. Blank = 0. AC → calc (keep registers; **INFERRED** / **NHR**).
+- **Calc:** insert VctA/B/C/Ans and Dot via VECTOR menu. `×` of two vectors is **cross product**. Abs(vector) is **Euclidean magnitude**. `=` runs `evaluateVectorExpr`. Vector results open VctAns; Dot/Abs/angle-formula are scalars (update Comp Ans).
+- **Numeric:** existing `Sym` / decimal.js. Explicit add/sub/scale/dot/cross/abs. mathjs unused. 2D×2D cross → `(0,0,a1b2−a2b1)` (**INFERRED** / **NHR**; official Ex5 printed vector dropped).
+- **Angle:** user formula `cos⁻¹((A·B)/(|A||B|))` with global Deg/Rad/Gra. No VECTOR Angle menu item.
+- **Errors:** unspecified dim / incompatible dims → Dimension ERROR (`TARGET-OFFICIAL-DOC`). Complex components → Math ERROR (**INFERRED**).
+- **Persist:** schema stays v1. VECTOR session stripped. Reload in VECTOR → dim-reg. Hardware power-off **NEEDS-HUMAN-REVIEW**.
+- **MATRIX / CMPLX:** isolated. No matrix-vector ops. No `i` in components.
+- **Did VECTOR rewrite COMP / TABLE / BASE-N / CMPLX / STAT / EQN / MATRIX?** No.
+
+**Status:** Recorded. See `docs/VECTOR.md`.
 
 ## Risk register
 

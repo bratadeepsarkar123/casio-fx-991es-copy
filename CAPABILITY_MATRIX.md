@@ -44,7 +44,7 @@ Evidence classes and TargetConfirm: `docs/EVIDENCE_CLASSES.md`.
 | C-P1-EQN | EQN | REQUIRED-COMPLETE-CLONE | TGT-TOC EQN; SRC-P70 | TARGET-OFFICIAL-DOC | CONFIRMED | IMPLEMENTED | VERIFIED | eqnSolve.test.ts; eqn-state.test.ts; GT-EQ-*; e2e/eqn.spec.ts |
 | C-P1-MAT | MATRIX | REQUIRED-COMPLETE-CLONE | TGT-TOC MATRIX | TARGET-OFFICIAL-DOC | CONFIRMED | IMPLEMENTED | VERIFIED | matrixNumeric.test.ts; matrix-state.test.ts; GT-MX-*; e2e/matrix.spec.ts |
 | C-P1-TBL | TABLE | REQUIRED-COMPLETE-CLONE | TGT-TOC TABLE; SRC-P76 | TARGET-OFFICIAL-DOC | CONFIRMED | IMPLEMENTED | VERIFIED | table.test.ts; table-state.test.ts; GT-TBL-*; e2e/table.spec.ts |
-| C-P1-VCT | VECTOR | REQUIRED-COMPLETE-CLONE | SRC-P79; TGT-TOC VECTOR | TARGET-OFFICIAL-DOC | CONFIRMED | PARTIAL | UNVERIFIED | mode entry only |
+| C-P1-VCT | VECTOR | REQUIRED-COMPLETE-CLONE | SRC-P79; TGT-TOC VECTOR | TARGET-OFFICIAL-DOC | CONFIRMED | IMPLEMENTED | VERIFIED | vectorNumeric.test.ts; vector-state.test.ts; GT-VC-*; e2e/vector.spec.ts |
 | C-P2-INT | Numerical integration | DEFERRED | SRC-P39; TGT-TOC | CROSS-MODEL-SOURCE | CONFIRMED | PARTIAL | UNVERIFIED | token only |
 | C-P2-DIFF | d/dx | DEFERRED | SRC-P41; TGT-TOC | CROSS-MODEL-SOURCE | CONFIRMED | PARTIAL | UNVERIFIED | token only |
 | C-P2-SUM | Σ / Π | DEFERRED | SRC-P42–43; TGT-TOC | CROSS-MODEL-SOURCE | CONFIRMED | PARTIAL | UNVERIFIED | token only |
@@ -55,7 +55,7 @@ Evidence classes and TargetConfirm: `docs/EVIDENCE_CLASSES.md`.
 | C-NHR-CAL | Visual keymap vs chat photo | OPTIONAL-V1 | chassis; chat binary missing | EMPIRICAL | N/A | IMPLEMENTED | NEEDS-HUMAN-REVIEW | `?debug=true` |
 | C-NHR-RND | Rounding ties vs hardware | OPTIONAL-V1 | SRC-P13 “rounded off” | CROSS-MODEL-SOURCE | UNCONFIRMED | IMPLEMENTED | NEEDS-HUMAN-REVIEW | HALF_UP policy tests |
 
-P1 modes are on the target device (`TARGET-OFFICIAL-DOC`) and are required for a **complete** clone. They are **not** part of the functional-v1 floor. TABLE f(x) (D-016), BASE-N (D-017), CMPLX (D-018), STAT (D-019), EQN (D-020), and MATRIX (D-021) are IMPLEMENTED/VERIFIED (source-derived, not hardware). VECTOR remains `PARTIAL` (mode switch only).
+P1 modes are on the target device (`TARGET-OFFICIAL-DOC`) and are required for a **complete** clone. They are **not** part of the functional-v1 floor. TABLE f(x) (D-016), BASE-N (D-017), CMPLX (D-018), STAT (D-019), EQN (D-020), MATRIX (D-021), and VECTOR (D-022) are IMPLEMENTED/VERIFIED (source-derived, not hardware). VECTOR 2D×2D cross result is **NEEDS-HUMAN-REVIEW** (official HTML dropped Ex5). GitHub Pages/PWA remains BLOCKED.
 
 ## Counts
 

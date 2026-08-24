@@ -61,7 +61,7 @@ KeyEvent → reduce() → reduceMatrix
 | **Dimension ERROR**: MATRIX/VECTOR only; unspecified dimension or incompatible dims | Official errors page | TARGET-OFFICIAL-DOC |
 | Complex entries | Official MATRIX page does not mention `i` | **INFERRED** reject (`Math ERROR`) |
 | Ref / Rref | 115/C HTML Ex9–Ex10 only; **absent** from target HTML | **UNSUPPORTED-BY-HARDWARE** on this target (115/C-only) |
-| VECTOR operations | Separate mode | **not this phase** |
+| VECTOR operations | Separate mode | **implemented D-022**; isolated from MATRIX |
 
 ---
 
@@ -204,7 +204,7 @@ Not used for MATRIX: Can't Solve, Variable ERROR (SOLVE-only).
 | Dimension ERROR / singular inverse | REQUIRED-COMPLETE-CLONE | IMPLEMENTED | VERIFIED (clone); singular class **INFERRED** |
 | Complex matrix entries | — | rejected | **INFERRED** |
 | Ref / Rref | UNSUPPORTED-BY-HARDWARE | UNSUPPORTED | N/A (115/C) |
-| VECTOR | — | not this phase | — |
+| VECTOR | — | separate domain D-022 | isolated |
 | Physical differential | — | — | N/A |
 | Live PWA | — | — | BLOCKED |
 
@@ -223,4 +223,4 @@ Not used for MATRIX: Can't Solve, Variable ERROR (SOLVE-only).
 9. Algebra separated from reducer: yes (`matrixNumeric.ts` / `matrixEval.ts`).
 10. `CalcState` gains one optional field (`matrix`), same pattern as `table` / `stat` / `eqn`.
 11. Session domains remain separate (STAT dataset, EQN coeffs, MATRIX registers).
-12. VECTOR can follow the same register + session pattern without a rewrite.
+12. VECTOR followed the same register + session pattern without a MATRIX rewrite.

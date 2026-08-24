@@ -18,17 +18,17 @@ Not VERIFIED in this bucket:
 ## B. Complete-clone required surface
 
 `REQUIRED-COMPLETE-CLONE` rows: **7** (CMPLX, STAT, BASE-N, EQN, MATRIX, TABLE, VECTOR)  
-VERIFIED: **6** (TABLE f(x); BASE-N; CMPLX; STAT; EQN; MATRIX; D-016 / D-017 / D-018 / D-019 / D-020 / D-021)  
-**6 / 7**
+VERIFIED: **7** (TABLE f(x); BASE-N; CMPLX; STAT; EQN; MATRIX; VECTOR; D-016 / D-017 / D-018 / D-019 / D-020 / D-021 / D-022)  
+**7 / 7**
 
-VECTOR remains Impl `PARTIAL` (MODE entry only), Ver `UNVERIFIED`. TABLE is Impl `IMPLEMENTED`, Ver `VERIFIED` for the official f(x) flow. BASE-N is Impl `IMPLEMENTED`, Ver `VERIFIED` for the official integer/logical flow. CMPLX is Impl `IMPLEMENTED`, Ver `VERIFIED` for official arithmetic/polar/arg/Conjg/Abs examples (not hardware). STAT is Impl `IMPLEMENTED`, Ver `VERIFIED` for official Ex2–Ex4 (and numeric Ex5 t/P); not hardware. EQN is Impl `IMPLEMENTED`, Ver `VERIFIED` for official Ex1–Ex5 (not hardware). MATRIX is Impl `IMPLEMENTED`, Ver `VERIFIED` for official Ex1–Ex8 (source-derived, not hardware). g(x) is not implemented. Bit shifts are DEFERRED. Complex STO and non-real trig/log/√ are PARTIAL/DEFERRED. STAT Q/R are INFERRED; Q1/Med/Q3 are 115/C-only. EQN vertex min/max is not implemented. MATRIX Ref/Rref is 115/C-only.
+VECTOR is Impl `IMPLEMENTED`, Ver `VERIFIED` for official Ex1–Ex4, Ex6, Ex7 (source-derived, not hardware). Ex5 2D×2D cross uses an inferred `(0,0,−2)` because the official HTML dropped the printed result (`NEEDS-HUMAN-REVIEW`). TABLE is Impl `IMPLEMENTED`, Ver `VERIFIED` for the official f(x) flow. BASE-N is Impl `IMPLEMENTED`, Ver `VERIFIED` for the official integer/logical flow. CMPLX is Impl `IMPLEMENTED`, Ver `VERIFIED` for official arithmetic/polar/arg/Conjg/Abs examples (not hardware). STAT is Impl `IMPLEMENTED`, Ver `VERIFIED` for official Ex2–Ex4 (and numeric Ex5 t/P); not hardware. EQN is Impl `IMPLEMENTED`, Ver `VERIFIED` for official Ex1–Ex5 (not hardware). MATRIX is Impl `IMPLEMENTED`, Ver `VERIFIED` for official Ex1–Ex8 (source-derived, not hardware). g(x) is not implemented. Bit shifts are DEFERRED. Complex STO and non-real trig/log/√ are PARTIAL/DEFERRED. STAT Q/R are INFERRED; Q1/Med/Q3 are 115/C-only. EQN vertex min/max is not implemented. MATRIX Ref/Rref is 115/C-only. VECTOR has no dedicated Angle command (Ex7 is a user formula).
 
 ## Other buckets (not mixed into A or B)
 
 | Bucket | Count | IDs |
 | --- | --- | --- |
 | Identified (matrix rows) | 44 | |
-| PARTIAL (implementation) | 4 | VECTOR + INT + DIFF + SUM |
+| PARTIAL (implementation) | 3 | INT + DIFF + SUM |
 | BLOCKED (verification) | 1 | C-P0-PWA |
 | NEEDS-HUMAN-REVIEW (verification) | 3 | C-P0-PREANS, C-NHR-CAL, C-NHR-RND |
 | DEFERRED (priority) | 4 | C-P2-INT, DIFF, SUM, SOLVE |

@@ -17,7 +17,7 @@
 | Browser/platform mismatch | Medium | Medium | Honest coverage | Chromium + Playwright devices | Partial |
 | Documentation drift | Medium | Medium | Stable IDs | Incremental docs | Process |
 | Corrupt persist injected as CalcState | Medium | High | persist.test.ts | `isPersistedCalcState` rejects unknown/incomplete nested state (D-015) | Mitigated for schema-v1 shape; Atom trees still unchecked |
-| Unbounded `call.name` / mode data in COMP AST | Medium | High | Architecture audit | TABLE uses `TableSession`; BASE-N uses `BaseNToken[]`; CMPLX reuses COMP AST with `complexOk`; STAT uses `StatSession` + gated `stat-*` calls; EQN uses `EqnSession`; MATRIX uses `MatrixSession` + gated `mat-*` calls; COMP `call.name` still free | Open for COMP; TABLE/BASE-N/CMPLX/STAT/EQN/MATRIX traps mitigated |
+| Unbounded `call.name` / mode data in COMP AST | Medium | High | Architecture audit | TABLE uses `TableSession`; BASE-N uses `BaseNToken[]`; CMPLX reuses COMP AST with `complexOk`; STAT uses `StatSession` + gated `stat-*` calls; EQN uses `EqnSession`; MATRIX uses `MatrixSession` + gated `mat-*` calls; VECTOR uses `VectorSession` + gated `vct-*` calls; COMP `call.name` still free | Open for COMP; TABLE/BASE-N/CMPLX/STAT/EQN/MATRIX/VECTOR traps mitigated |
 | STAT menu numbering vs hardware | Medium | Low | Official HTML dropped key numbers | Clone uses 115/C numbering; documented NHR | Open — NHR vs hardware |
 | STAT Q/R vs hardware | Medium | Low | Official Ex5 illustrates P and t only | Q/R from 115/C diagrams (`INFERRED`) | Open — NHR vs hardware |
 | BASE-N overflow wrap vs Math ERROR | Medium | Medium | Official range table without wrap rule | Clone errors instead of wrapping; documented NHR | Open — NHR vs hardware |
@@ -29,3 +29,5 @@
 | MATRIX menu numbering / dim 7–9 LCD | Medium | Low | Official HTML dropped key glyphs | Clone uses 115/C 1–9 Dim sizes; first LCD page shows 1–6 | Open — NHR vs hardware |
 | MATRIX singular inverse error class | Medium | Low | Official errors page names Dimension ERROR for dims only | Clone uses Math ERROR (illegal op / ÷0) | Open — INFERRED |
 | MATRIX persist across power-off | Medium | Medium | Official MATRIX page silent | Session stripped like TABLE/STAT/EQN | Open — INFERRED / NHR |
+| VECTOR menu numbering / 2D cross | Medium | Low | Official HTML dropped Ex5 vector and most key glyphs | Clone embeds 2D×2D as (0,0,a1b2−a2b1); 115/C menu 1–7 | Open — NHR vs hardware |
+| VECTOR persist across power-off | Medium | Medium | Official VECTOR page silent | Session stripped like TABLE/STAT/EQN/MATRIX | Open — INFERRED / NHR |

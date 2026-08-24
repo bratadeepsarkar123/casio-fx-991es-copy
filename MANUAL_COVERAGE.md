@@ -52,7 +52,7 @@ Source: ToC of supplied PDF (printed pages 1–3 of the file, labeled 1–3 in t
 | EQN | 70–72 | in-scope | P1 IMPLEMENTED (D-020) |
 | MATRIX | 73–75 | in-scope | P1 IMPLEMENTED (D-021) |
 | TABLE | 76–78 | in-scope | P1 IMPLEMENTED (f(x); D-016) |
-| VECTOR | 79–81 | in-scope | P1 PARTIAL |
+| VECTOR | 79–81 | in-scope | P1 IMPLEMENTED (D-022) |
 | INEQ | 82–84 | out-of-scope | 115/C only vs target |
 | VERIFY | 85–86 | out-of-scope | 115/C only |
 | DIST | 87–91 | out-of-scope | 115/C only |
