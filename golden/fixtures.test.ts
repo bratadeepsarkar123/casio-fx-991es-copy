@@ -127,4 +127,48 @@ describe("independent golden fixtures", () => {
       expect(lcdResult(s)).toBe(fx.expected.display);
     },
   );
+
+  it.each(["GT-ST-OFFICIAL-EX2", "GT-ST-OFFICIAL-EX3", "GT-ST-OFFICIAL-EX4"])(
+    "%s JSON fixture matches STAT state TARGET-OFFICIAL-DOC",
+    (id) => {
+      const raw = readFileSync(new URL(`./fixtures/${id}.json`, import.meta.url), "utf8");
+      const fx = JSON.parse(raw) as {
+        id: string;
+        evidenceClass: string;
+        targetConfirm: string;
+        keys: string[];
+        expected: {
+          mode: string;
+          phase: string;
+          type: string;
+          display: string;
+          screen: string;
+          dataset?: Array<{ x: string; y?: string | null; freq?: string | null }>;
+        };
+      };
+      expect(fx.id).toBe(id);
+      expect(fx.evidenceClass).toBe("TARGET-OFFICIAL-DOC");
+      expect(fx.targetConfirm).toBe("CONFIRMED");
+      const keys = fx.keys.map((k) => {
+        if (!isKeyId(k)) {
+          throw new Error(k);
+        }
+        return k;
+      }) as KeyId[];
+      const s = dispatchKeys(createInitialState(0), keys, 0);
+      expect(s.mode).toBe(fx.expected.mode);
+      expect(s.stat?.phase).toBe(fx.expected.phase);
+      expect(s.stat?.type).toBe(fx.expected.type);
+      expect(s.screen.kind).toBe(fx.expected.screen);
+      expect(lcdResult(s)).toBe(fx.expected.display);
+      if (fx.expected.dataset) {
+        const got = (s.stat?.rows ?? []).slice(0, fx.expected.dataset.length).map((r) => ({
+          x: r.x,
+          ...(fx.expected.dataset![0] && "y" in fx.expected.dataset![0] ? { y: r.y } : {}),
+          ...(fx.expected.dataset![0] && "freq" in fx.expected.dataset![0] ? { freq: r.freq } : {}),
+        }));
+        expect(got).toEqual(fx.expected.dataset);
+      }
+    },
+  );
 });

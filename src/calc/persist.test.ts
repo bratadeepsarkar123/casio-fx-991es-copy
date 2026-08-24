@@ -96,6 +96,31 @@ describe("persist schema v1", () => {
     expect(back?.ansIm).toBe("3");
   });
 
+  it("does not persist a STAT dataset (INFERRED; NHR vs hardware)", () => {
+    const filled = dispatchKeys(
+      createInitialState(0),
+      ["mode", "3", "1", "2", "equals", "4", "equals", "ac"],
+      0,
+    );
+    expect(filled.stat?.phase).toBe("calc");
+    expect(filled.stat?.rows[0]?.x).toBe("2");
+    const env = serializeState(filled);
+    expect(env.schemaVersion).toBe(1);
+    expect(env.state.stat).toBeNull();
+    const back = deserializeState(JSON.parse(JSON.stringify(env)), 0);
+    expect(back?.mode).toBe("STAT");
+    expect(back?.stat?.phase).toBe("type");
+    expect(back?.stat?.rows).toEqual([{ x: null, y: null, freq: null }]);
+    expect(back?.screen.kind).toBe("input");
+  });
+
+  it("loads a v1 COMP envelope that omits stat", () => {
+    const { table: _t, stat: _s, ...rest } = createInitialState(0);
+    const back = deserializeState({ schemaVersion: 1, savedAt: 0, state: rest }, 1);
+    expect(back?.mode).toBe("COMP");
+    expect(back?.stat).toBeNull();
+  });
+
   it("does not persist BASE-N tokens (INFERRED; NHR vs hardware)", () => {
     const filled = dispatchKeys(createInitialState(0), ["mode", "4", "log", "1", "1", "add", "1", "equals"], 0);
     expect(filled.baseN.value).toBe("4");

@@ -4,7 +4,7 @@ Responsive, offline-capable web clone of the **Casio fx-991ES PLUS 2nd edition**
 
 ## Not a complete clone
 
-P0 COMP-mode behavior is covered by golden tests. TABLE f(x) (D-016), BASE-N (D-017), and CMPLX (D-018) are implemented. Other P1 modes (STAT, EQN, MATRIX, VECTOR) can be **entered** from MODE but are not verified editors. Functional-v1 vs complete-clone counts are separate; see `CAPABILITY_MATRIX.md` and `docs/COVERAGE_AUDIT.md`.
+P0 COMP-mode behavior is covered by golden tests. TABLE f(x) (D-016), BASE-N (D-017), CMPLX (D-018), and STAT (D-019) are implemented. Other P1 modes (EQN, MATRIX, VECTOR) can be **entered** from MODE but are not verified editors. Functional-v1 vs complete-clone counts are separate; see `CAPABILITY_MATRIX.md` and `docs/COVERAGE_AUDIT.md`.
 
 ## Requirements
 
@@ -42,6 +42,7 @@ npm run test:e2e  # Playwright (build + preview)
 - `docs/ARCHITECTURE.md` — system layers, state model, event flows, mode readiness
 - `docs/BASE_N.md` — BASE-N integer domain, evidence classes, unresolved hardware items
 - `docs/CMPLX.md` — CMPLX extended numeric domain, evidence classes, unresolved items
+- `docs/STAT.md` — STAT dataset domain, evidence classes, unresolved hardware items
 - `TARGET_SPEC.md` — model lock, PDF hash, variant conflict, evidence hierarchy
 - `docs/EVIDENCE_CLASSES.md` — TARGET-MANUAL / TARGET-OFFICIAL-DOC / CROSS-MODEL-SOURCE / …
 - `docs/NUMERIC_AUDIT.md` — native Number/Math classification

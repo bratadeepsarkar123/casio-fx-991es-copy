@@ -7,7 +7,7 @@ This document describes the **current** fx-991ES PLUS 2nd edition clone as a sys
 
 **Frozen core (D-015):** `reduce` + custom AST/cursor editor + decimal.js scalars + Zustand as a view/persist holder. Do not replace these to start later modes.
 
-TABLE domain contract: D-016. BASE-N domain contract: `docs/BASE_N.md` (D-017). CMPLX domain contract: `docs/CMPLX.md` (D-018).
+TABLE domain contract: D-016. BASE-N domain contract: `docs/BASE_N.md` (D-017). CMPLX domain contract: `docs/CMPLX.md` (D-018). STAT domain contract: `docs/STAT.md` (D-019).
 
 ---
 
@@ -23,16 +23,17 @@ pointer / optional keyboard / test
         ├─ COMP: editor AST → evaluateAtoms → real Sym (`i` → Math ERROR)
         ├─ TABLE: TableSession + COMP evaluator (X overlay; `i` still Math ERROR)
         ├─ BASE-N: BaseNToken[] → evaluateBaseN → w-bit bigint
-        └─ CMPLX: same Atom[] / editor → evaluateAtoms with complexOk → Sym including cplx
+        ├─ CMPLX: same Atom[] / editor → evaluateAtoms with complexOk → Sym including cplx
+        └─ STAT: StatSession dataset → statNumeric / STAT evalCall names → ResultValue
         ↓
    lcdModel → Lcd.tsx / Chassis.tsx
 ```
 
-TABLE reuses `evaluateAtoms`; it is not a third numeric domain. BASE-N does **not** reuse COMP decimals. CMPLX reuses the COMP AST/editor and extends `Sym`; it does **not** rewrite COMP.
+TABLE reuses `evaluateAtoms`; it is not a third numeric domain. BASE-N does **not** reuse COMP decimals. CMPLX reuses the COMP AST/editor and extends `Sym`; it does **not** rewrite COMP. STAT does **not** store the dataset as COMP `Atom[]`; the Statistics Editor is a dedicated cell buffer. STAT calc-screen commands are additive `call.name` values evaluated only when `mode === "STAT"`.
 
 Zustand (`src/store.ts`) holds one `CalcState`, injects `Date.now()` into events, and writes localStorage. React does not implement calculator semantics.
 
-**What this clone is:** a hardened COMP-mode foundation plus **TABLE f(x)**, **BASE-N** (integer domain), and **CMPLX** (extended numeric domain). MODE *entry* remains for STAT / EQN / MATRIX / VECTOR.
+**What this clone is:** a hardened COMP-mode foundation plus **TABLE f(x)**, **BASE-N** (integer domain), **CMPLX** (extended numeric domain), and **STAT** (dataset + statistics domain). MODE *entry* remains for EQN / MATRIX / VECTOR.
 **What this clone is not:** a complete clone. Live PWA install/offline is **BLOCKED** until GitHub Pages is enabled. Visual keymap vs the original chat photo is **NEEDS-HUMAN-REVIEW**.
 
 ---
@@ -96,6 +97,7 @@ Authoritative type: `CalcState` in `src/calc/types.ts`.
 | `rngSeed` | Deterministic Ran# / RanInt |
 | `baseN` | Additive BASE-N session: `radix`, linear `tokens`, `cursor`, canonical signed `value`. Not COMP `Atom[]`. |
 | `table` | Additive TABLE session (`null` outside TABLE). Grid is **not** COMP `Atom[]`. |
+| `stat` | Additive STAT session (`null` outside STAT). Dataset rows are decimal **strings**, not COMP `Atom[]`. |
 
 ### Derived (never persist separately)
 
@@ -105,7 +107,7 @@ Authoritative type: `CalcState` in `src/calc/types.ts`.
 
 The entire `CalcState` inside envelope `{ schemaVersion: 1, savedAt, state }` at localStorage key `fx991es-plus2/v1`.
 
-On load: nested state must pass `isPersistedCalcState`; `power` is forced `"on"`; `lastActivityMs` is reset; if the saved `power` was `"off"`, `screen` becomes `{ kind: "input" }`. **TABLE session/rows are stripped on serialize** (D-016). **BASE-N tokens/value are stripped; radix is kept** (D-017). Missing `ansIm` / `preAnsIm` default to `"0"` (D-018; schema stays v1). A saved TABLE mode rehydrates to an empty f(x) prompt. A saved BASE-N mode rehydrates to an empty integer input in the saved radix. COMP envelopes that omit `table` or use radix-only `baseN` still load.
+On load: nested state must pass `isPersistedCalcState`; `power` is forced `"on"`; `lastActivityMs` is reset; if the saved `power` was `"off"`, `screen` becomes `{ kind: "input" }`. **TABLE session/rows are stripped on serialize** (D-016). **BASE-N tokens/value are stripped; radix is kept** (D-017). **STAT session/rows are stripped** (D-019). Missing `ansIm` / `preAnsIm` default to `"0"` (D-018; schema stays v1). A saved TABLE mode rehydrates to an empty f(x) prompt. A saved BASE-N mode rehydrates to an empty integer input in the saved radix. A saved STAT mode rehydrates to the type-select screen. COMP envelopes that omit `table` / `stat` or use radix-only `baseN` still load.
 
 ### Transient
 
@@ -210,7 +212,7 @@ The AST **must not evaluate**. Evaluation is `evaluate.ts`. Formatting is `forma
 | --- | --- |
 | `i` as a value | **Implemented:** `Sym` variant `{ k: "cplx"; re; im }` (D-018). COMP still Math ERROR on `i`. |
 | Matrices / vectors | Parallel stores + mode editors — **not** nested COMP `Atom[]` encoding of arrays |
-| STAT lists / frequencies | Parallel list store |
+| STAT lists / frequencies | **Implemented:** `StatSession` rows (`x`/`y`/`freq` strings). Not COMP `Atom[]`. |
 | EQN coefficient screens | Dedicated screens, not a COMP polynomial parser |
 | TABLE grid | **Implemented:** `TableSession` + `screen.kind === "table-view"`; f(x) reuses COMP `Atom[]` + X overlay |
 | BASE-N digit alphabets / bitwise | **Implemented:** `BaseNToken[]` + w-bit `bigint` (D-017). Do not reuse COMP decimal `num` strings as hex. |
@@ -243,6 +245,8 @@ BASE-N equals calls `evaluateBaseN` on `BaseNToken[]` (D-017). Word width is 16-
 
 CMPLX equals uses the same `evaluateAtoms` with `complexOk`. **Did CMPLX require rewriting COMP?** No. COMP still throws Math ERROR on `i` and on `∠`. `cplx` arithmetic runs only when a complex `Sym` exists, which COMP evaluation does not produce.
 
+STAT calc-screen `=` uses the same `evaluateAtoms`. STAT command names (`stat-n`, `stat-meanX`, `stat-xhat`, …) resolve from `ctx.statRows` via `statNumeric.ts` (decimal.js). They are Syntax ERROR outside STAT. Dataset entry does not call `evaluateAtoms`. **Did STAT require rewriting COMP?** No. COMP AST, BASE-N, and CMPLX value semantics are unchanged.
+
 `i` throws Math ERROR in COMP by design.
 
 ---
@@ -260,6 +264,7 @@ CMPLX equals uses the same `evaluateAtoms` with `complexOk`. **Did CMPLX require
 - Ran#: decimal thousandths from uint32 LCG (`Math.imul` is 32-bit control state, not IEEE calculator math). Algorithm vs hardware: `INFERRED`.
 - mathjs is pinned and **unused** (D-003). Complex numbers are `Sym.cplx`, not mathjs.
 - BASE-N integers: `bigint` with explicit width mask/sign (`src/calc/baseNNumeric.ts`). Not IEEE-754 and not COMP `decimal.js`.
+- STAT: decimal.js weighted sums / OLS / erf series (`src/calc/statNumeric.ts`). No statistics library as source of truth.
 
 **Legitimate non-semantic `Number`/`Math.*`:** array indices, Fix/Sci digit `Number(keyId)`, `Math.min`/`max` for contrast/replay, layout in `src/ui`.
 
@@ -314,12 +319,12 @@ Persistence must not implement arithmetic. It currently does not.
 
 | Layer | Suite | What it actually tests |
 | --- | --- | --- |
-| A Numeric | `src/calc/numeric.test.ts`, `src/calc/baseNNumeric.test.ts`, `src/calc/complex.test.ts` | decimal.js range; BASE-N 16/32-bit bigint; rectangular complex arithmetic |
+| A Numeric | `src/calc/numeric.test.ts`, `src/calc/baseNNumeric.test.ts`, `src/calc/complex.test.ts`, `src/calc/statNumeric.test.ts` | decimal.js range; BASE-N 16/32-bit bigint; rectangular complex arithmetic; STAT official Ex2–Ex5 |
 | A Special angles | `src/calc/special-angles.test.ts` | exact shortcuts vs nearby floats |
 | B Editor | `src/calc/editor.test.ts` | cursor, DEL, operator-exit, nth-root template, replay edit |
-| C State | `src/calc/state-transitions.test.ts`, `machine.test.ts`, `table-state.test.ts`, `baseN-state.test.ts`, `cmplx-state.test.ts` | AC/MODE/SETUP/CLR/power; TABLE; BASE-N; CMPLX |
-| D Golden keys | `golden/acceptance.test.ts`, `golden/fixtures.test.ts`, `golden/table.test.ts`, `golden/baseN.test.ts`, `golden/cmplx.test.ts` | key sequences → display + mode-specific state |
-| E Persist | `src/calc/persist.test.ts`, `e2e/persist.spec.ts` | schema reject/round-trip; TABLE grid and BASE-N tokens stripped; `ansIm` default |
+| C State | `src/calc/state-transitions.test.ts`, `machine.test.ts`, `table-state.test.ts`, `baseN-state.test.ts`, `cmplx-state.test.ts`, `stat-state.test.ts` | AC/MODE/SETUP/CLR/power; TABLE; BASE-N; CMPLX; STAT |
+| D Golden keys | `golden/acceptance.test.ts`, `golden/fixtures.test.ts`, `golden/table.test.ts`, `golden/baseN.test.ts`, `golden/cmplx.test.ts`, `golden/stat.test.ts` | key sequences → display + mode-specific state |
+| E Persist | `src/calc/persist.test.ts`, `e2e/persist.spec.ts` | schema reject/round-trip; TABLE/BASE-N/STAT stripped; `ansIm` default |
 | F UI overlay | `src/ui/coords.test.ts`, `e2e/overlay.spec.ts` | 50 keys, 0–100% boxes, debug overlay, pointer |
 | G PWA/build | `npm run build` + Workbox in CI | precache locally; **not** live origin |
 
@@ -329,12 +334,13 @@ Calculator-semantic tests dispatch `KeyId` through `reduce` — they do not clic
 
 A golden should specify starting state, key sequence, expected display/state, source, evidence class, target confidence.
 
-Reality: most COMP goldens are inline Vitest `it(...)` with `SRC-P*` in the title, default `createInitialState(0)`, and `lcdResult` assertions. Structured fixtures: `golden/fixtures/GT-P22-EX1.json`, `golden/fixtures/GT-TBL-XSQ-DEFAULTS.json`, `golden/fixtures/GT-BN-OFFICIAL-EX1.json`, `golden/fixtures/GT-CX-OFFICIAL-EX1.json`. **A passing golden is clone behavior, not `TARGET-MANUAL`.** File header in `acceptance.test.ts` states that.
+Reality: most COMP goldens are inline Vitest `it(...)` with `SRC-P*` in the title, default `createInitialState(0)`, and `lcdResult` assertions. Structured fixtures: `golden/fixtures/GT-P22-EX1.json`, `golden/fixtures/GT-TBL-XSQ-DEFAULTS.json`, `golden/fixtures/GT-BN-OFFICIAL-EX1.json`, `golden/fixtures/GT-CX-OFFICIAL-EX1.json`, `golden/fixtures/GT-ST-OFFICIAL-EX2.json`. **A passing golden is clone behavior, not `TARGET-MANUAL`.** File header in `acceptance.test.ts` states that.
 
 **Gaps (quality, do not inflate count):**
 
 - Most COMP goldens still lack an `evidenceClass` field.
 - TABLE goldens assert mode/phase/rows/rowIndex, not only LCD strings.
+- STAT goldens assert dataset rows + result, not only LCD strings.
 - Unimplemented COMP tokens (`Pol`, `int`) still eval to Syntax ERROR; TABLE additionally **rejects** them in f(x) before eval.
 - `C-OPT-KBD` unverified.
 - `guessErrorIndex` is weakly tested beyond ÷0.
@@ -343,21 +349,21 @@ Reality: most COMP goldens are inline Vitest `it(...)` with `SRC-P*` in the titl
 
 ## 12. Future-mode readiness
 
-TABLE f(x), BASE-N, and CMPLX are implemented additively. Remaining modes must still not rewrite COMP.
+TABLE f(x), BASE-N, CMPLX, and STAT are implemented additively. Remaining modes must still not rewrite COMP.
 
 | Mode | Clean fit? | Reuse | New abstraction | Rewrite trap | P0/P1 blocker |
 | --- | --- | --- | --- | --- | --- |
 | **TABLE** | **Implemented (f(x))** | COMP editor; `evaluateAtoms(..., { X })`; `TableSession` | One-row LCD view; Start/End/Step prompts | Encoding the grid as COMP `Atom[]` | g(x) not in scope. Dual SETUP TABLE format is unused. |
 | **BASE-N** | **Implemented** | MODE entry; error codes; SHIFT/ALPHA latches; persist envelope | `BaseNToken[]` + 16/32-bit `bigint` (`baseNNumeric.ts`) | Using decimal.js hex as if it were COMP `num` | Bit shifts deferred. Arithmetic overflow vs wrap NHR. |
 | **CMPLX** | **Implemented** | COMP `Atom[]` / editor; `evaluateAtoms`; `complexFormat`; ALPHA `i`; SHIFT+`(-)` `∠` | `Sym.cplx` + `src/calc/complex.ts`; `ansIm`/`preAnsIm` | Making complex a COMP special-case; mathjs scalars; a second parser | Complex STO **PARTIAL**. Trig/log/√ of non-real **DEFERRED**. LineIO two-line a/bi **NHR**. |
-| **STAT** | Additive | `statFreq`; MODE | List/frequency store, STAT menus | STAT lists inside COMP `editor.root` | No P0. P1: new store |
+| **STAT** | **Implemented** | MODE; SETUP `statFreq`; calc-screen COMP eval for STAT commands; persist envelope | `StatSession` rows + `statNumeric.ts` | STAT lists inside COMP `editor.root`; a statistics library as source of truth | Menu numbering **NHR**. Q/R **INFERRED**. Hardware power-off dataset **NHR**. Q1/Med/Q3 unsupported on target. |
 | **EQN** | Additive | MODE; ErrorCode `Can't Solve` | Coefficient screens + solver UI | Parsing a COMP polynomial AST as simultaneous EQN | No P0. P1: dedicated UI |
 | **MATRIX** | Additive | MODE; `Dimension ERROR` | Matrix registers + dim editor | Nested `Atom[]` matrices; replacing decimal.js | No P0. P1: new store. mathjs optional later |
 | **VECTOR** | Same as MATRIX | MODE | Vector registers | Same trap | No P0. P1: new store |
 
-**Recommended next mode: STAT** (data-heavy list store). Do not start it until asked.
+**Recommended next mode: EQN** (coefficient screens + solver). Do not start it until asked.
 
-`call.name` is still a free string in COMP. TABLE only rejects Pol/Rec/int/diff/Σ inside **f(x)**. BASE-N does not use `call.name`. CMPLX adds `arg` / `conjg` via the existing call node. Broad COMP gating remains a follow-up P1.
+`call.name` is still a free string in COMP. TABLE only rejects Pol/Rec/int/diff/Σ inside **f(x)**. BASE-N does not use `call.name`. CMPLX adds `arg` / `conjg` via the existing call node. STAT adds `stat-*` names that Syntax ERROR outside STAT. Broad COMP gating remains a follow-up P1.
 
 ---
 
@@ -368,7 +374,7 @@ TABLE f(x), BASE-N, and CMPLX are implemented additively. Remaining modes must s
 | 115/C PDF treated as target manual | provenance | Mitigated by evidence classes; keep labeling |
 | Golden tests become “target truth” | provenance | Titles cite SRC-P*; passing ≠ TARGET-MANUAL |
 | Persist injection of impossible state | P1 | Shape check added; atoms still unchecked |
-| Unbounded `call.name` | P1 | TABLE rejects Pol/int/Σ in f(x) only; COMP still free-string |
+| Unbounded `call.name` | P1 | TABLE rejects Pol/int/Σ in f(x) only; STAT `stat-*` names Syntax ERROR outside STAT; COMP still free-string |
 | Dual `memoryM` / `variables.M` | P1 hygiene | Keep dual-write until a mode needs a split |
 | `reduce` god-function | P1 for scale | Split by mode later, keep single `reduce` entry |
 | ENG shift discarded (`void shifted`) | P2 | Documented; not COMP-core |
@@ -380,4 +386,4 @@ TABLE f(x), BASE-N, and CMPLX are implemented additively. Remaining modes must s
 | Playwright “tablet” is Chromium | honesty | Not iOS Safari |
 | No physical differential testing | accepted | N/A |
 
-**P0 architecture blockers for further modes:** none identified for STAT as additive work. TABLE f(x), BASE-N, and CMPLX are in.
+**P0 architecture blockers for further modes:** none identified for EQN as additive work. TABLE f(x), BASE-N, CMPLX, and STAT are in.

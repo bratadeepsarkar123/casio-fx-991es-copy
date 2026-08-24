@@ -54,7 +54,7 @@ Verification token for ICM session rules was acknowledged; this project is an au
 
 ## D-010 — P1 modes
 
-STAT/EQN/MATRIX/VECTOR: mode **entry** is implemented (MODE menu). Full subsystem editors remain `PARTIAL` / not VERIFIED. TABLE f(x) is implemented (D-016). BASE-N integer domain is implemented (D-017). CMPLX extended numeric domain is implemented (D-018). COMP P0 is the v1 floor.
+STAT/EQN/MATRIX/VECTOR: mode **entry** is implemented (MODE menu). TABLE f(x) is implemented (D-016). BASE-N integer domain is implemented (D-017). CMPLX extended numeric domain is implemented (D-018). STAT dataset + statistics domain is implemented (D-019). EQN/MATRIX/VECTOR remain `PARTIAL` / not VERIFIED. COMP P0 is the v1 floor.
 
 ## D-011 — Integration / Σ / SOLVE
 
@@ -138,6 +138,23 @@ Future modes (TABLE first — see `docs/ARCHITECTURE.md` §12) must be **additiv
 - **Did CMPLX rewrite COMP?** No.
 
 **Status:** Recorded. See `docs/CMPLX.md`.
+
+## D-019 — STAT is a dedicated dataset domain, not COMP AST
+
+**Decision:** Implement STAT as an additive `StatSession` on `CalcState` (`src/calc/stat.ts`, `src/calc/statNumeric.ts`) orchestrated by `reduce` via `reduceStat`. Do **not** encode the dataset as COMP `Atom[]`, a TABLE session, or a serialized expression.
+
+- **Types:** MODE `3` then 1–8: 1-VAR, A+BX, _+CX2, ln X, e^X, A•B^X, A•X^B, 1/X (`TARGET-OFFICIAL-DOC`).
+- **Limits:** 80 X-only; 40 X+FREQ or X+Y; 26 X+Y+FREQ (`TARGET-OFFICIAL-DOC`). Do not copy 115/C 40/20/26.
+- **FREQ:** SETUP Stat Format (`setup.statFreq`). Changing it deletes STAT data (`TARGET-OFFICIAL-DOC`). Empty FREQ defaults to 1 (official Ex2). Non-integer / ≤0 FREQ is Argument ERROR (`INFERRED`).
+- **Editor:** numeric cell buffer; `=` commits and moves down the same column (`CROSS-MODEL-SOURCE`); DEL deletes the line; STAT Edit Ins / Del-A (`TARGET-OFFICIAL-DOC`). Not the COMP AST editor.
+- **Wipe:** exit STAT, 1-VAR ↔ paired, Stat Format change (`TARGET-OFFICIAL-DOC`). Same-family type change (A+BX → ln X) keeps data (official Ex3).
+- **Calc screen:** AC from editor (`TARGET-OFFICIAL-DOC`). SHIFT+`1` STAT menu inserts commands; `=` uses existing `evaluateEquals`. Dataset entry does not write Ans (`INFERRED`).
+- **Numeric:** decimal.js only. σx uses n in the denominator (Ex2). OLS / transformed OLS / 3×3 quadratic. P(t)=Φ(t) via erf series (Ex5). Q/R from 115/C diagrams (`INFERRED`).
+- **Persist:** schema stays v1. STAT session stripped. Reload in STAT → type select. Hardware power-off **NEEDS-HUMAN-REVIEW**.
+- **Unsupported on this target:** Q1/Med/Q3 (115/C only). Separate DIST mode remains `UNSUPPORTED-BY-HARDWARE`.
+- **Did STAT rewrite COMP / TABLE / BASE-N / CMPLX?** No.
+
+**Status:** Recorded. See `docs/STAT.md`.
 
 ## Risk register
 

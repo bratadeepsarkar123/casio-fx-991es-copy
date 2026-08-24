@@ -36,6 +36,8 @@ BASE-N (`src/calc/baseNNumeric.ts`, `src/calc/baseN.ts`) uses signed `bigint` wi
 
 CMPLX (`src/calc/symbolic.ts` `cplx`, `src/calc/complex.ts`) uses real `Sym` parts. `atan`/`sin`/`cos` for arg/polar go through decimal.js (`Dec.atan`, `toRad(...).sin()`), not IEEE-754 `Math.*`. `toDec` of a non-real throws. Integer-to-`BigInt` via `toFixed(0)` is only for exact integer degree args. See `docs/CMPLX.md`.
 
+STAT (`src/calc/statNumeric.ts`) uses decimal.js for weighted sums, OLS, quadratic 3×3 elimination, and an erf Maclaurin series for Φ(t). Loop indices `n` converted with `D(2 * n + 1)` are class 2 (bounded integers). No `Math.*` on STAT results. See `docs/STAT.md`.
+
 ## Policy notes (not hardware claims)
 
 - Internal digits 15, display 10+2, range ±1e-99 … ±9.999999999e99: `CROSS-MODEL-SOURCE` SRC-P97; overlapping range also in target precision pages (`CONFIRMED` as a specification class, not by physical measurement).

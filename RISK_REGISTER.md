@@ -17,7 +17,9 @@
 | Browser/platform mismatch | Medium | Medium | Honest coverage | Chromium + Playwright devices | Partial |
 | Documentation drift | Medium | Medium | Stable IDs | Incremental docs | Process |
 | Corrupt persist injected as CalcState | Medium | High | persist.test.ts | `isPersistedCalcState` rejects unknown/incomplete nested state (D-015) | Mitigated for schema-v1 shape; Atom trees still unchecked |
-| Unbounded `call.name` / mode data in COMP AST | Medium | High | Architecture audit | TABLE uses `TableSession`; BASE-N uses `BaseNToken[]`; CMPLX reuses COMP AST with `complexOk`; COMP `call.name` still free | Open for COMP; TABLE/BASE-N/CMPLX traps mitigated |
+| Unbounded `call.name` / mode data in COMP AST | Medium | High | Architecture audit | TABLE uses `TableSession`; BASE-N uses `BaseNToken[]`; CMPLX reuses COMP AST with `complexOk`; STAT uses `StatSession` + gated `stat-*` calls; COMP `call.name` still free | Open for COMP; TABLE/BASE-N/CMPLX/STAT traps mitigated |
+| STAT menu numbering vs hardware | Medium | Low | Official HTML dropped key numbers | Clone uses 115/C numbering; documented NHR | Open — NHR vs hardware |
+| STAT Q/R vs hardware | Medium | Low | Official Ex5 illustrates P and t only | Q/R from 115/C diagrams (`INFERRED`) | Open — NHR vs hardware |
 | BASE-N overflow wrap vs Math ERROR | Medium | Medium | Official range table without wrap rule | Clone errors instead of wrapping; documented NHR | Open — NHR vs hardware |
 | CMPLX LineIO a/bi layout vs two-line HTML LCD | Medium | Low | Official Linear Display note | Clone keeps expr/result LCD; documented NHR | Open — NHR vs hardware |
 | Complex STO of A–F | Medium | Medium | Official memories survive; no STO example on CMPLX page | Math ERROR on nonzero imag this phase | PARTIAL |

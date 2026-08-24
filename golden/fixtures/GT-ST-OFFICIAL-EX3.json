@@ -1,0 +1,32 @@
+{
+  "id": "GT-ST-OFFICIAL-EX3",
+  "sourceEvidenceId": "TGT-TOC-STAT",
+  "evidenceClass": "TARGET-OFFICIAL-DOC",
+  "targetConfirm": "CONFIRMED",
+  "page": null,
+  "section": "Statistical Calculations (STAT) Example 3",
+  "source": "https://support.casio.com/global/en/calc/manual/fx-570ESPLUS_991ESPLUS_en/using_calculation_modes/stat.html",
+  "keys": [
+    "shift", "mode", "6", "3",
+    "mode", "3", "2",
+    "2", "0", "equals", "1", "1", "0", "equals", "2", "0", "0", "equals", "2", "9", "0", "equals",
+    "right", "up", "up", "up", "up",
+    "3", "1", "5", "0", "equals", "7", "3", "1", "0", "equals", "8", "8", "0", "0", "equals", "9", "3", "1", "0", "equals",
+    "ac",
+    "shift", "1", "1", "4",
+    "shift", "1", "5", "1", "equals"
+  ],
+  "expected": {
+    "mode": "STAT",
+    "phase": "calc",
+    "type": "ln X",
+    "dataset": [
+      { "x": "20", "y": "3150" },
+      { "x": "110", "y": "7310" },
+      { "x": "200", "y": "8800" },
+      { "x": "290", "y": "9310" }
+    ],
+    "display": "-3857.984",
+    "screen": "result"
+  }
+}

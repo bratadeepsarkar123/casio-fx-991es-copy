@@ -158,6 +158,30 @@ Official 570/991 2nd-edition CMPLX page: https://support.casio.com/global/en/cal
 
 Clone (D-018): `Sym.cplx` rectangular. Not a COMP display hack. Not mathjs. Not BASE-N.
 
+## SRC-P57–66 / TGT-TOC STAT `[TARGET-OFFICIAL-DOC for types, editor, Ex2–Ex5; SRC-P57 CROSS-MODEL-SOURCE for menu numbers]`
+
+Official 570/991 2nd-edition STAT page: https://support.casio.com/global/en/calc/manual/fx-570ESPLUS_991ESPLUS_en/using_calculation_modes/stat.html
+
+| Behavior | Clone | Evidence |
+| --- | --- | --- |
+| Enter STAT | MODE `3` then type 1–8 | `TARGET-OFFICIAL-DOC` |
+| Dataset | `StatSession.rows` (not COMP AST) | Architecture (D-019) |
+| Row caps | 80 / 40 / 26 | `TARGET-OFFICIAL-DOC` |
+| FREQ | SETUP Stat Format; default off; empty FREQ=1 | `TARGET-OFFICIAL-DOC` / Ex2 |
+| Wipe on exit / 1-VAR↔paired / Stat Format | yes | `TARGET-OFFICIAL-DOC` |
+| Editor DEL / Ins / Del-A | line delete; insert; clear all | `TARGET-OFFICIAL-DOC` |
+| AC in editor | calc screen, data kept | `TARGET-OFFICIAL-DOC` |
+| Ex2 mean / σx | 3 / 1.154700538 | `TARGET-OFFICIAL-DOC` |
+| Ex3 ln X A,B,r | −3857.984 / 2357.532 / 0.998 Fix 3 | `TARGET-OFFICIAL-DOC` |
+| Ex4 x̂(−130) | 4.861 Fix 3 | `TARGET-OFFICIAL-DOC` |
+| Ex5 t / P(t) | −0.762 / 0.223 Fix 3 | `TARGET-OFFICIAL-DOC` |
+| Q / R | Φ(t)−½ / 1−Φ(t) | `INFERRED` from 115/C diagrams **NHR** |
+| Menu numbering | 115/C 1:Type… | `CROSS-MODEL-SOURCE` **NHR** |
+| Q1/Med/Q3 | not implemented | 115/C only → **UNSUPPORTED-BY-HARDWARE** |
+| Persist | session stripped; schema v1 | `INFERRED` **NHR** vs hardware power-off |
+
+Clone (D-019): dedicated STAT dataset + decimal.js `statNumeric`. Not a COMP expression. Not a statistics library.
+
 ## SRC-P66–69 / TGT-TOC BASE-N `[TARGET-OFFICIAL-DOC for widths, examples, logical ops; SRC-P66 CROSS-MODEL-SOURCE for 115/C overlap]`
 
 Official 570/991 2nd-edition BASE-N page: https://support.casio.com/global/en/calc/manual/fx-570ESPLUS_991ESPLUS_en/using_calculation_modes/base-n_calculations.html
@@ -195,5 +219,5 @@ Clone (D-017): `bigint` word with explicit 16/32-bit mask/sign. Not COMP `decima
 - Dual TABLE f,g on 991ES PLUS-2 vs 115/C (D-007). Target official TABLE page is **f(x) only**. Clone implements f(x); g(x) is not implemented. `[CONFLICT` / SETUP leftover `CROSS-MODEL-SOURCE`]
 - TABLE zero/negative Step vs hardware; per-row Math ERROR policy; TABLE persist across power-off; one-row LCD vs hardware table screen. `[NEEDS-HUMAN-REVIEW]`
 - BASE-N +/−/× overflow vs wrap; ÷ toward-zero; A–F vs `(-)` outside HEX; BASE menu page order for d/h/b/o; persist of BASE-N expression; invalid-digit ignore vs queued Syntax ERROR. `[NEEDS-HUMAN-REVIEW]`
-- CMPLX SHIFT+`2` menu numbering vs hardware; LineIO a/bi on separate lines; S⇔D vs polar/rect; complex STO; real results in r∠θ SETUP (clone does not print `r∠0`); PreAns imag across COMP. `[NEEDS-HUMAN-REVIEW]`
+- STAT menu numbering vs hardware; Q/R vs hardware; editor left/right/up/down; persist of STAT data across power-off; default FREQ=1 when the last Ex2 frequency key is omitted. `[NEEDS-HUMAN-REVIEW]`
 - Visual keymap vs original chat binary (file not in repo). `[NEEDS-HUMAN-REVIEW]`
