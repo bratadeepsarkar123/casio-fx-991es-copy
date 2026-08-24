@@ -18,17 +18,17 @@ Not VERIFIED in this bucket:
 ## B. Complete-clone required surface
 
 `REQUIRED-COMPLETE-CLONE` rows: **7** (CMPLX, STAT, BASE-N, EQN, MATRIX, TABLE, VECTOR)  
-VERIFIED: **4** (TABLE f(x); BASE-N; CMPLX; STAT; D-016 / D-017 / D-018 / D-019)  
-**4 / 7**
+VERIFIED: **5** (TABLE f(x); BASE-N; CMPLX; STAT; EQN; D-016 / D-017 / D-018 / D-019 / D-020)  
+**5 / 7**
 
-EQN, MATRIX, VECTOR remain Impl `PARTIAL` (MODE entry only), Ver `UNVERIFIED`. TABLE is Impl `IMPLEMENTED`, Ver `VERIFIED` for the official f(x) flow. BASE-N is Impl `IMPLEMENTED`, Ver `VERIFIED` for the official integer/logical flow. CMPLX is Impl `IMPLEMENTED`, Ver `VERIFIED` for official arithmetic/polar/arg/Conjg/Abs examples (not hardware). STAT is Impl `IMPLEMENTED`, Ver `VERIFIED` for official Ex2–Ex4 (and numeric Ex5 t/P); not hardware. g(x) is not implemented. Bit shifts are DEFERRED. Complex STO and non-real trig/log/√ are PARTIAL/DEFERRED. STAT Q/R are INFERRED; Q1/Med/Q3 are 115/C-only.
+MATRIX and VECTOR remain Impl `PARTIAL` (MODE entry only), Ver `UNVERIFIED`. TABLE is Impl `IMPLEMENTED`, Ver `VERIFIED` for the official f(x) flow. BASE-N is Impl `IMPLEMENTED`, Ver `VERIFIED` for the official integer/logical flow. CMPLX is Impl `IMPLEMENTED`, Ver `VERIFIED` for official arithmetic/polar/arg/Conjg/Abs examples (not hardware). STAT is Impl `IMPLEMENTED`, Ver `VERIFIED` for official Ex2–Ex4 (and numeric Ex5 t/P); not hardware. EQN is Impl `IMPLEMENTED`, Ver `VERIFIED` for official Ex1–Ex5 (not hardware). g(x) is not implemented. Bit shifts are DEFERRED. Complex STO and non-real trig/log/√ are PARTIAL/DEFERRED. STAT Q/R are INFERRED; Q1/Med/Q3 are 115/C-only. EQN vertex min/max is not implemented.
 
 ## Other buckets (not mixed into A or B)
 
 | Bucket | Count | IDs |
 | --- | --- | --- |
 | Identified (matrix rows) | 44 | |
-| PARTIAL (implementation) | 6 | 3× remaining P1 modes + INT + DIFF + SUM |
+| PARTIAL (implementation) | 5 | 2× remaining P1 modes + INT + DIFF + SUM |
 | BLOCKED (verification) | 1 | C-P0-PWA |
 | NEEDS-HUMAN-REVIEW (verification) | 3 | C-P0-PREANS, C-NHR-CAL, C-NHR-RND |
 | DEFERRED (priority) | 4 | C-P2-INT, DIFF, SUM, SOLVE |
@@ -42,10 +42,10 @@ This build must **not** be described as a complete clone. No physical differenti
 | Suite | Result |
 | --- | --- |
 | `npm ci` | pass |
-| Vitest (`npm test`) | **223 passed** (21 files). Pre-STAT baseline 195/18 files; STAT domain + reducer + goldens added. COMP `golden/acceptance.test.ts` still 30 passed. TABLE, BASE-N, and CMPLX suites still green. |
+| Vitest (`npm test`) | **257 passed** (24 files). Pre-EQN baseline 223/21 files; EQN solver + reducer + goldens added. COMP `golden/acceptance.test.ts` still 30 passed. TABLE, BASE-N, CMPLX, and STAT suites still green. |
 | `npm run lint` (`tsc --noEmit`) | pass |
 | `npm run build` (`tsc` + Vite PWA) | pass — Workbox precache 15 entries |
-| Playwright (`npx playwright install --with-deps chromium` then `npm run test:e2e`) | **24 passed** (was 21; +STAT on Chromium desktop, Pixel 7, iPad-sized Chromium). **Not** real iOS Safari. |
+| Playwright (`npx playwright install --with-deps chromium` then `npm run test:e2e`) | **27 passed** (was 24; +EQN on Chromium desktop, Pixel 7, iPad-sized Chromium). **Not** real iOS Safari. |
 | Differential vs physical unit | N/A |
 
 ## Visual calibration
