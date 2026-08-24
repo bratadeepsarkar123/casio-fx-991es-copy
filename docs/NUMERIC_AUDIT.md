@@ -40,6 +40,8 @@ STAT (`src/calc/statNumeric.ts`) uses decimal.js for weighted sums, OLS, quadrat
 
 EQN (`src/calc/eqnSolve.ts`) uses existing `Sym` arithmetic (Gaussian elimination, quadratic formula, `symSqrt` / `packCplx`) and decimal.js Newton only as a cubic fallback when no rational root exists. `BigInt(v.toFixed(0))` is only for exact integer coefficient factorisation (class 2). No `Math.*` on solver results. See `docs/EQN.md`.
 
+MATRIX (`src/calc/matrixNumeric.ts`) uses existing `Sym` cells. Loop indices over 1–3 dimensions are class 1. `matrixFromInts` accepts test `bigint` literals (and integer `number` only as a test helper, converted with `BigInt`). No `Math.*` on matrix results. mathjs is unused. See `docs/MATRIX.md`.
+
 ## Policy notes (not hardware claims)
 
 - Internal digits 15, display 10+2, range ±1e-99 … ±9.999999999e99: `CROSS-MODEL-SOURCE` SRC-P97; overlapping range also in target precision pages (`CONFIRMED` as a specification class, not by physical measurement).

@@ -237,6 +237,33 @@ Official 570/991 2nd-edition EQN page: https://support.casio.com/global/en/calc/
 
 Clone (D-020): dedicated EQN coefficient session + `eqnSolve`. Not a CAS. Not COMP evaluation.
 
+## SRC-P73–75 / TGT-TOC MATRIX `[TARGET-OFFICIAL-DOC for registers, 3×3, Ex1–Ex8; SRC-P73 CROSS-MODEL-SOURCE for 115/C overlap]`
+
+Official 570/991 2nd-edition MATRIX page: https://support.casio.com/global/en/calc/manual/fx-570ESPLUS_991ESPLUS_en/using_calculation_modes/matrix.html
+
+| Behavior | Clone | Evidence |
+| --- | --- | --- |
+| Enter MATRIX | MODE `6`; SHIFT+`4` MATRIX menu | `TARGET-OFFICIAL-DOC`; key `EMPIRICAL` |
+| Registers | MatA, MatB, MatC, MatAns | `TARGET-OFFICIAL-DOC` |
+| Max size | 3×3 including rectangular | `TARGET-OFFICIAL-DOC` |
+| Dim keys 1–9 | 1×1 … 3×3 | `CROSS-MODEL-SOURCE` / **NHR** |
+| MATRIX menu 1–8 | Dim, Data, MatA/B/C/Ans, det, Trn | names `TARGET-OFFICIAL-DOC`; numbers `CROSS-MODEL-SOURCE` / **NHR** |
+| Ex1 product/sum | MatA×MatB `[[5,4],[3,3]]`; sum `[[4,2],[2,3]]` | `TARGET-OFFICIAL-DOC` |
+| Ex3 scalar | 3×MatA `[[6,3],[3,3]]` | `TARGET-OFFICIAL-DOC` |
+| Ex4 det | `1` scalar | `TARGET-OFFICIAL-DOC` |
+| Ex5 Trn | 2×3 → 3×2 | `TARGET-OFFICIAL-DOC` |
+| Ex6 inverse | `[[1,-1],[-1,2]]` via x⁻¹ | `TARGET-OFFICIAL-DOC` |
+| Ex7 Abs | element-wise | `TARGET-OFFICIAL-DOC` |
+| Ex8 x²/x³ | `[[5,3],[3,2]]` / `[[13,8],[8,5]]` | `TARGET-OFFICIAL-DOC` |
+| Dimension ERROR | unspecified dim / incompatible dims | `TARGET-OFFICIAL-DOC` |
+| Singular inverse | Math ERROR | **INFERRED** |
+| Complex entries | Math ERROR | **INFERRED** |
+| Ref / Rref | **Not implemented** | 115/C HTML only → **UNSUPPORTED-BY-HARDWARE** on this target |
+| VECTOR | **Not this phase** | Separate mode |
+| Persist | session stripped; schema v1 | **INFERRED** **NHR** vs hardware power-off |
+
+Clone (D-021): dedicated MATRIX register session + `matrixNumeric`. Not COMP `Atom[]`. Not mathjs. Not VECTOR.
+
 ## NEEDS HUMAN REVIEW
 
 - Exact SETUP page-2 item numbers (glyphs dropped). `[NEEDS-HUMAN-REVIEW]`
@@ -247,4 +274,5 @@ Clone (D-020): dedicated EQN coefficient session + `eqnSolve`. Not a CAS. Not CO
 - BASE-N +/−/× overflow vs wrap; ÷ toward-zero; A–F vs `(-)` outside HEX; BASE menu page order for d/h/b/o; persist of BASE-N expression; invalid-digit ignore vs queued Syntax ERROR. `[NEEDS-HUMAN-REVIEW]`
 - STAT menu numbering vs hardware; Q/R vs hardware; editor left/right/up/down; persist of STAT data across power-off; default FREQ=1 when the last Ex2 frequency key is omitted. `[NEEDS-HUMAN-REVIEW]`
 - EQN extra `=` after last coefficient; no-solution/infinite message wording; cubic order beyond Ex5; whether solutions write Ans/X/Y; persist of EQN data across power-off; one-cell LCD vs hardware coefficient matrix. `[NEEDS-HUMAN-REVIEW]`
+- MATRIX menu numbering vs hardware; Dim 7–9 off the first LCD page; MatAns grid vs one-cell LCD; AC from editor; persist of MatA/B/C across power-off; singular inverse Math ERROR vs hardware. `[NEEDS-HUMAN-REVIEW]`
 - Visual keymap vs original chat binary (file not in repo). `[NEEDS-HUMAN-REVIEW]`
