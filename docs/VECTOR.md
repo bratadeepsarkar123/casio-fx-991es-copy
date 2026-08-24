@@ -259,10 +259,10 @@ Hardware 7-row VctAns grid: `NEEDS-HUMAN-REVIEW`.
 
 | Item | Status |
 | --- | --- |
-| Official Ex1–Ex7 math | VERIFIED vs official numbers / reconstructed Ex1 sum |
+| Official Ex1–Ex7 math | VERIFIED vs official numbers / reconstructed Ex1 sum (Ex5 2D-cross INFERRED) |
 | 2D cross (0,0,−2) | NEEDS-HUMAN-REVIEW (HTML dropped the vector) |
 | Physical hardware | N/A |
 | GitHub Pages / PWA | BLOCKED |
-| COMP/TABLE/BASE-N/CMPLX/STAT/EQN/MATRIX | must remain green |
+| COMP/TABLE/BASE-N/CMPLX/STAT/EQN/MATRIX | green (Vitest 336 / Playwright 33) |
 
-Capability: VECTOR mode **REQUIRED-COMPLETE-CLONE** / **IMPLEMENTED** / **PARTIAL** overall (2D-cross + persistence + VctAns layout still NHR).
+Capability: VECTOR mode **REQUIRED-COMPLETE-CLONE** / **IMPLEMENTED** / **VERIFIED** for official Ex1–Ex4, Ex6, Ex7 (source-derived, not hardware). Ex5 2D-cross + persistence + VctAns layout remain NHR.
