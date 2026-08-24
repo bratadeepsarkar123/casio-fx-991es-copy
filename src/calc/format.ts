@@ -245,17 +245,18 @@ export function resultFromSym(s: Sym, setup: SetupState, complexFormat = setup.c
   const approxDec = toDec(s);
   const approx = formatBySetup(approxDec, setup);
   const matho = setup.displayFormat === "MthIO-MathO";
+  const exact = exactRealResult(s, setup, approx, approxDec);
 
   if (!matho) {
-    if (s.k === "rat") {
-      const frac = fractionDisplay(s.r, setup);
-    if (frac && setup.displayFormat === "LineIO") {
-      return { ...frac, approx, display: approx, naturalKind: "decimal" };
-    }
+    if (exact.fraction || exact.pi || exact.sqrt) {
+      return { ...exact, display: approx, naturalKind: "decimal" };
     }
     return { approx, display: approx, naturalKind: "decimal" };
   }
+  return exact;
+}
 
+function exactRealResult(s: Sym, setup: SetupState, approx: string, approxDec: Decimal): ResultValue {
   switch (s.k) {
     case "rat": {
       const frac = fractionDisplay(s.r, setup);
@@ -292,6 +293,8 @@ export function resultFromSym(s: Sym, setup: SetupState, complexFormat = setup.c
       return { approx, display: text, naturalKind: "sqrt", sqrt: text };
     }
     case "real":
+      return { approx, display: approx, naturalKind: "decimal" };
+    case "cplx":
       return { approx, display: approx, naturalKind: "decimal" };
     default: {
       const _never: never = s;
