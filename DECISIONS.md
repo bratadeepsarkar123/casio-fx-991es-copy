@@ -36,7 +36,7 @@ Verification token for ICM session rules was acknowledged; this project is an au
 
 ## D-006 — Chassis photo + keymap.json
 
-**Decision:** Official Casio FX-991ESPLUS-2BU product photo, cropped. Hit-zones in `public/keymap.json` as **percent of source image**. Shared `containedImageRect` for hit-testing and the red overlay (on by default; `?debug=false` hides it).
+**Decision:** Official Casio FX-991ESPLUS-2BU product photo, cropped. Hit-zones in `public/keymap.json` as **percent of source image**. Shared `containedImageRect` for hit-testing and the red overlay (off by default; `?debug=true` shows it). User signed off D-pad hitboxes 2026-08-24.
 
 **Calibration status:** `NEEDS HUMAN REVIEW` (geometric fit; chat-attached original binary was not on disk).
 
@@ -221,7 +221,7 @@ Future modes (TABLE first — see `docs/ARCHITECTURE.md` §12) must be **additiv
 
 **Decision:** In MthIO, the expression line (and MathO fraction results) render as structured HTML/CSS: stacked `a/b`, radical + vinculum, raised exponents. Hardware mode labels on the LCD are **MAT** / **VCT** (not `MATRIX` / `VECTOR`). Overflow `>` / `▾` uses a clone character budget, not a simulated 31×96 grid. `lcdExpression()` stays a caret-free linear string for goldens.
 
-**Not claimed:** pixel-perfect dot-matrix authenticity (still a README non-goal). Glyph weight and green-gray metrics stay `NEEDS-HUMAN-REVIEW` until user LCD stills arrive.
+**Not claimed:** pixel-perfect dot-matrix authenticity (still a README non-goal). Glyph weight and green-gray metrics follow user LCD stills (2026-08-24): expression top-left, result bottom-right, indicators on the top edge (M / mode / boxed D / Math). MODE/SETUP/submenus use the full LCD body as a two-column wrap, not the 12-character result strip.
 
 **Status:** Recorded.
 

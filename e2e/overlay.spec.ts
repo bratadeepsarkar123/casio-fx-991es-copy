@@ -11,8 +11,14 @@ test.describe("physical overlay", () => {
     await expect(page.getByTestId("lcd-caret")).toBeVisible();
   });
 
-  test("hit-zone overlay is on by default", async ({ page }) => {
+  test("hit-zone overlay is hidden by default", async ({ page }) => {
     await page.goto("./");
+    await expect(page.getByTestId("lcd")).toBeVisible();
+    await expect(page.locator("[data-debug-key]")).toHaveCount(0);
+  });
+
+  test("?debug=true shows hit-zone outlines", async ({ page }) => {
+    await page.goto("./?debug=true");
     await expect(page.locator("[data-debug-key='equals']")).toBeVisible();
     await expect(page.locator("[data-debug-key]")).toHaveCount(50);
     await expect(page.getByTestId("overlay-up")).toBeVisible();

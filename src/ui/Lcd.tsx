@@ -1,6 +1,14 @@
 import type { CSSProperties } from "react";
 import type { CalcState } from "../calc/types.ts";
-import { angleIndicator, lcdExpressionParts, lcdIndicators, lcdResult, lcdShowsNatural } from "./lcdModel.ts";
+import {
+  angleIndicator,
+  lcdExpressionParts,
+  lcdIndicators,
+  lcdMenuView,
+  lcdResult,
+  lcdShowsMenu,
+  lcdShowsNatural,
+} from "./lcdModel.ts";
 import { NaturalExpression, NaturalResultView } from "./naturalView.tsx";
 import "./lcd.css";
 
@@ -17,14 +25,16 @@ export function Lcd({ state, style }: LcdProps) {
   const math = ind.math;
   const natural = lcdShowsNatural(state);
   const mathO = state.setup.displayFormat === "MthIO-MathO";
+  const menu = lcdMenuView(state);
   const contrast = 0.75 + state.setup.contrast * 0.05;
+  const menuOpen = lcdShowsMenu(state);
 
   return (
     <div
-      className="lcd-panel overflow-hidden rounded-[2%] px-[3%] py-[4%] font-mono"
+      className={menuOpen ? "lcd-panel is-menu overflow-hidden rounded-[2%] px-[3%] py-[3%] font-mono" : "lcd-panel overflow-hidden rounded-[2%] px-[3%] py-[3%] font-mono"}
       style={{
         ...style,
-        background: "#c5d4c7",
+        background: "#c3d1c4",
         color: "#1a221c",
         boxShadow: "inset 0 0 8px rgba(0,0,0,0.25)",
         filter: `contrast(${contrast})`,
@@ -42,17 +52,17 @@ export function Lcd({ state, style }: LcdProps) {
           {ind.sto ? <span data-testid="ind-sto">STO</span> : null}
           {ind.rcl ? <span data-testid="ind-rcl">RCL</span> : null}
           {ind.disp ? <span data-testid="ind-disp">Disp</span> : null}
+          {ind.mode ? <span data-testid="ind-mode">{ind.mode}</span> : null}
         </div>
         <div className="lcd-ind-mid">
           <span className="lcd-angle" data-testid="ind-angle">
             {ang}
           </span>
+        </div>
+        <div className="lcd-ind-right">
           {math ? <span data-testid="ind-math">Math</span> : null}
           {ind.fix ? <span data-testid="ind-fix">FIX</span> : null}
           {ind.sci ? <span data-testid="ind-sci">SCI</span> : null}
-        </div>
-        <div className="lcd-ind-right">
-          {ind.mode ? <span data-testid="ind-mode">{ind.mode}</span> : null}
           {ind.baseN ? <span data-testid="ind-basen">{ind.baseN}</span> : null}
           {ind.replay ? <span data-testid="ind-replay">▲</span> : null}
           {ind.exprOverflow ? (
@@ -67,32 +77,50 @@ export function Lcd({ state, style }: LcdProps) {
           ) : null}
         </div>
       </div>
-      <div className="lcd-expr" data-testid="lcd-expr" style={{ opacity: state.power === "off" ? 0 : 1 }}>
-        <div className="lcd-expr-inner">
-          {natural ? (
-            <NaturalExpression
-              atoms={state.editor.root}
-              format={state.setup.displayFormat}
-              cursor={parts.showCaret ? state.editor.cursor : null}
-              showCaret={parts.showCaret}
-            />
-          ) : (
-            <>
-              {parts.before}
-              {parts.showCaret ? <span data-testid="lcd-caret" className="lcd-caret" aria-hidden="true" /> : null}
-              {parts.after}
-              {!parts.before && !parts.after && !parts.showCaret ? "\u00a0" : null}
-            </>
-          )}
+      {menu ? (
+        <div className="lcd-menu" data-testid="lcd-menu" style={{ opacity: state.power === "off" ? 0 : 1 }}>
+          {menu.prompt ? <div className="lcd-menu-prompt">{menu.prompt}</div> : null}
+          {menu.items.length > 0 ? (
+            <div className="lcd-menu-grid">
+              {menu.items.map((item) => (
+                <span key={item}>{item}</span>
+              ))}
+            </div>
+          ) : null}
+          <span className="lcd-menu-linear" data-testid="lcd-result">
+            {result}
+          </span>
         </div>
-      </div>
-      <div className="lcd-result" data-testid="lcd-result">
-        {state.result && mathO && (state.screen.kind === "result" || state.screen.kind === "replay") ? (
-          <NaturalResultView result={state.result} mathO={mathO} />
-        ) : (
-          result
-        )}
-      </div>
+      ) : (
+        <>
+          <div className="lcd-expr" data-testid="lcd-expr" style={{ opacity: state.power === "off" ? 0 : 1 }}>
+            <div className="lcd-expr-inner">
+              {natural ? (
+                <NaturalExpression
+                  atoms={state.editor.root}
+                  format={state.setup.displayFormat}
+                  cursor={parts.showCaret ? state.editor.cursor : null}
+                  showCaret={parts.showCaret}
+                />
+              ) : (
+                <>
+                  {parts.before}
+                  {parts.showCaret ? <span data-testid="lcd-caret" className="lcd-caret" aria-hidden="true" /> : null}
+                  {parts.after}
+                  {!parts.before && !parts.after && !parts.showCaret ? "\u00a0" : null}
+                </>
+              )}
+            </div>
+          </div>
+          <div className="lcd-result" data-testid="lcd-result">
+            {state.result && mathO && (state.screen.kind === "result" || state.screen.kind === "replay") ? (
+              <NaturalResultView result={state.result} mathO={mathO} />
+            ) : (
+              result
+            )}
+          </div>
+        </>
+      )}
     </div>
   );
 }

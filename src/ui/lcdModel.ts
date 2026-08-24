@@ -200,6 +200,119 @@ export function lcdExpressionParts(state: CalcState): LcdExprParts {
   };
 }
 
+function systemMenuText(state: CalcState): string | null {
+  const menu = state.menu;
+  switch (menu.kind) {
+    case "none":
+      return null;
+    case "mode":
+      return "1:COMP 2:CMPLX 3:STAT 4:BASE-N 5:EQN 6:MATRIX 7:TABLE 8:VECTOR";
+    case "setup":
+      return menu.page === 0
+        ? "1:MthIO 2:LineIO 3:Deg 4:Rad 5:Gra 6:Fix 7:Sci 8:Norm"
+        : "1:ab/c 2:d/c 3:CMPLX 4:STAT 5:TABLE 6:Rdec 7:Disp 8:CONT";
+    case "mthio":
+      return "Result Format? 1:MathO 2:LineO";
+    case "fix":
+      return "Fix 0~9?";
+    case "sci":
+      return "Sci 0~9?";
+    case "norm":
+      return "Norm 1:Norm1 2:Norm2";
+    case "clr":
+      return "1:Setup 2:Memory 3:All";
+    case "confirm":
+      return "Sure?";
+    case "sto":
+      return "STO";
+    case "rcl":
+      return "RCL";
+    case "drg":
+      return "1:° 2:r 3:g";
+    case "hyp":
+      return "hyp";
+    case "cmplx-fmt":
+      return "1:a+bi 2:r∠θ";
+    case "stat-fmt":
+      return "1:FreqOn 2:FreqOff";
+    case "table-fmt":
+      return "1:f(x) 2:f(x),g(x)";
+    case "rdec":
+      return "1:On 2:Off";
+    case "disp":
+      return "1:Dot 2:Comma";
+    case "contrast":
+      return `CONT ${state.setup.contrast}`;
+    case "base-op":
+      return menu.page === 0 ? "1:and 2:or 3:xor 4:xnor 5:Not 6:Neg" : "1:d 2:h 3:b 4:o";
+    case "cmplx-op":
+      return "1:arg 2:Conjg 3:r∠θ 4:a+bi";
+    case "comp-fn":
+      return "1:GCD 2:LCM 3:Int 4:Intg";
+    case "matrix-op":
+      return matrixMenuText();
+    case "vector-op":
+      return vectorMenuText();
+    case "stat-op":
+    case "stat-editor":
+    case "stat-edit":
+    case "stat-sum":
+    case "stat-var":
+    case "stat-reg":
+    case "stat-distr":
+    case "stat-minmax":
+      return statMenuText(state);
+    default: {
+      const _never: never = menu;
+      return _never;
+    }
+  }
+}
+
+/** Numbered MODE/SETUP/type menus use the full LCD body, not the 12-char result strip. */
+export function lcdShowsMenu(state: CalcState): boolean {
+  if (state.power === "off" || state.screen.kind === "error" || state.screen.kind === "off") {
+    return false;
+  }
+  if (state.menu.kind !== "none") {
+    return true;
+  }
+  if (state.mode === "STAT" && state.stat?.phase === "type") {
+    return true;
+  }
+  if (state.mode === "EQN" && state.eqn?.phase === "type") {
+    return true;
+  }
+  if (state.mode === "MATRIX" && state.matrix) {
+    const phase = state.matrix.phase;
+    if (phase === "dim-reg" || phase === "data-reg" || phase === "sto-dest") {
+      return true;
+    }
+  }
+  if (state.mode === "VECTOR" && state.vector) {
+    const phase = state.vector.phase;
+    if (phase === "dim-reg" || phase === "data-reg" || phase === "sto-dest") {
+      return true;
+    }
+  }
+  return false;
+}
+
+export interface LcdMenuView {
+  prompt: string;
+  items: string[];
+}
+
+export function lcdMenuView(state: CalcState): LcdMenuView | null {
+  if (!lcdShowsMenu(state)) {
+    return null;
+  }
+  const text = lcdResult(state);
+  const items = [...text.matchAll(/(?:^|\s)(\d+:\S+)/g)].map((m) => m[1] ?? "");
+  const prompt = text.replace(/(?:^|\s)(\d+:\S+)/g, "").replace(/\s+/g, " ").trim();
+  return { prompt, items: items.filter(Boolean) };
+}
+
 export function lcdResult(state: CalcState): string {
   if (state.screen.kind === "error") {
     return state.screen.code;
@@ -207,37 +320,9 @@ export function lcdResult(state: CalcState): string {
   if (state.screen.kind === "off") {
     return "";
   }
-  if (state.menu.kind === "mode") {
-    return "1:COMP 2:CMPLX 3:STAT 4:BASE-N 5:EQN 6:MATRIX 7:TABLE 8:VECTOR";
-  }
-  if (state.menu.kind === "setup") {
-    return state.menu.page === 0
-      ? "1:MthIO 2:LineIO 3:Deg 4:Rad 5:Gra 6:Fix 7:Sci 8:Norm"
-      : "1:ab/c 2:d/c 3:CMPLX 4:STAT 5:TABLE 6:Rdec 7:Disp 8:CONT";
-  }
-  if (state.menu.kind === "base-op") {
-    return state.menu.page === 0
-      ? "1:and 2:or 3:xor 4:xnor 5:Not 6:Neg"
-      : "1:d 2:h 3:b 4:o";
-  }
-  if (state.menu.kind === "cmplx-op") {
-    return "1:arg 2:Conjg 3:r∠θ 4:a+bi";
-  }
-  if (state.menu.kind === "comp-fn") {
-    return "1:GCD 2:LCM 3:Int 4:Intg";
-  }
-  if (state.menu.kind === "matrix-op") {
-    return matrixMenuText();
-  }
-  if (state.menu.kind === "vector-op") {
-    return vectorMenuText();
-  }
-  const statMenu = statMenuText(state);
-  if (statMenu) {
-    return statMenu;
-  }
-  if (state.menu.kind !== "none") {
-    return state.menu.kind.toUpperCase();
+  const menuText = systemMenuText(state);
+  if (menuText !== null) {
+    return menuText;
   }
   if (state.mode === "STAT" && state.stat) {
     if (state.stat.phase === "type") {
@@ -472,7 +557,7 @@ export function lcdIndicators(state: CalcState): LcdIndicators {
     rcl: state.menu.kind === "rcl",
     baseN: state.mode === "BASE-N" ? radixLabel(state.baseN.radix) : null,
     disp: hasColon(state),
-    exprOverflow: lcdExpression(state).length > LCD_EXPR_VISIBLE_CHARS,
-    resultOverflow: lcdResult(state).length > LCD_RESULT_VISIBLE_CHARS,
+    exprOverflow: !lcdShowsMenu(state) && lcdExpression(state).length > LCD_EXPR_VISIBLE_CHARS,
+    resultOverflow: !lcdShowsMenu(state) && lcdResult(state).length > LCD_RESULT_VISIBLE_CHARS,
   };
 }

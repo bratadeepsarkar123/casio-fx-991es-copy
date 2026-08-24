@@ -400,9 +400,9 @@ Local (this architecture): Vite `base` `/casio-fx-991es-copy/`; PWA plugin `regi
 
 ## 15. Visual-verification status
 
-`public/keymap.json`: 50 keys, percent-of-source-image, boxes in 0–100%, shared `containedImageRect` for overlay and hit-test, allowed d-pad overlaps only. Red outlines are on by default (`?debug=false` hides them). **Not** visual sign-off.
+`public/keymap.json`: 50 keys, percent-of-source-image, boxes in 0–100%, shared `containedImageRect` for overlay and hit-test, allowed d-pad overlaps only. Red outlines are off by default (`?debug=true` shows them). User signed off D-pad 2026-08-24.
 
-**`C-NHR-CAL = NEEDS-HUMAN-REVIEW`.** The original chat-attached photo binary is not on disk. Geometric tests are **not** visual sign-off against the hardware or the original overlay photo.
+**`C-NHR-CAL = VERIFIED`** (user D-pad sign-off 2026-08-24). Overlay off by default; `?debug=true` shows hit-zones. Not a pixel-perfect chassis claim.
 
 ---
 

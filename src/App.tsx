@@ -10,7 +10,7 @@ export function App() {
   const dispatch = useCalcStore((s) => s.dispatch);
   const hydrate = useCalcStore((s) => s.hydrate);
   const [keymap, setKeymap] = useState<Keymap | null>(null);
-  const debug = new URLSearchParams(window.location.search).get("debug") !== "false";
+  const debug = new URLSearchParams(window.location.search).get("debug") === "true";
 
   useEffect(() => {
     hydrate();

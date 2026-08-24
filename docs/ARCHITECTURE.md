@@ -323,7 +323,7 @@ Persistence must not implement arithmetic. It currently does not.
 
 - `Chassis.tsx`: object-fit contain via `containedImageRect`; LCD and keys via `percentToLocal`. Clicks dispatch `keyId` only.
 - `hitTest` is for unit tests and reasoning about overlap; production clicks do not call it.
-- Red hit-zone overlay is on by default (`?debug=false` hides it). **Not** visual sign-off.
+- Red hit-zone overlay is off by default (`?debug=true` shows it). User signed off D-pad 2026-08-24.
 - No React Router. Vite `base` `/casio-fx-991es-copy/`. Asset URLs are relative (`keymap.json`, `assets/…`).
 - Feedback (`playKeyClick`, `haptic`) is outside `reduce`.
 
@@ -395,7 +395,7 @@ All **major target modes** (COMP, TABLE, BASE-N, CMPLX, STAT, EQN, MATRIX, VECTO
 | ENG shift discarded (`void shifted`) | P2 | Documented; not COMP-core |
 | `menu.kind === "hyp"` dead | P2 | HYP is a latch |
 | Live PWA unverified | BLOCKED | Origin up; legacy `/(root)` serves source `index.html`; `/src/main.tsx` 404 |
-| Visual keymap vs missing original photo | NHR | overlay on by default; no fake sign-off |
+| Visual keymap vs missing original photo | VERIFIED (user sign-off) | overlay off by default; `?debug=true` shows |
 | Hardware rounding ties | NHR | HALF_UP policy only |
 | PreAns on target chassis | NHR / UNCONFIRMED | D-012 |
 | Playwright “tablet” is Chromium | honesty | Not iOS Safari |

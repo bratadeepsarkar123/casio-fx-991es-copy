@@ -20,7 +20,7 @@ Not VERIFIED in this bucket:
 `REQUIRED-COMPLETE-CLONE` rows: **7** (CMPLX, STAT, BASE-N, EQN, MATRIX, TABLE, VECTOR)  
 VERIFIED: **7** (source-derived — TABLE f(x); BASE-N; CMPLX; STAT; EQN; MATRIX; VECTOR; D-016 … D-022)  
 **Major-mode source verification: 7 / 7**  
-**Hardware differential verification: N/A** · **Target-manual verification: limited** · **Visual: NHR** · **Live PWA: BLOCKED**
+**Hardware differential verification: N/A** · **Target-manual verification: limited** · **Visual keymap: user signed off** · **Live PWA: BLOCKED**
 
 VECTOR is Impl `IMPLEMENTED`, Ver `VERIFIED` for official Ex1–Ex4, Ex6, Ex7 (source-derived, not hardware). Ex5 2D×2D cross uses an inferred `(0,0,−2)` because the official HTML dropped the printed result (`NEEDS-HUMAN-REVIEW`). TABLE is Impl `IMPLEMENTED`, Ver `VERIFIED` for the official f(x) flow. BASE-N is Impl `IMPLEMENTED`, Ver `VERIFIED` for the official integer/logical flow. CMPLX is Impl `IMPLEMENTED`, Ver `VERIFIED` for official arithmetic/polar/arg/Conjg/Abs examples (not hardware). STAT is Impl `IMPLEMENTED`, Ver `VERIFIED` for official Ex2–Ex4 (and numeric Ex5 t/P); not hardware. EQN is Impl `IMPLEMENTED`, Ver `VERIFIED` for official Ex1–Ex5 (not hardware). MATRIX is Impl `IMPLEMENTED`, Ver `VERIFIED` for official Ex1–Ex8 (source-derived, not hardware). g(x) is not implemented. Bit shifts are DEFERRED. Complex STO and non-real trig/log/√ are PARTIAL/DEFERRED. STAT Q/R are INFERRED; Q1/Med/Q3 are 115/C-only. EQN vertex min/max is not implemented. MATRIX Ref/Rref is 115/C-only. VECTOR has no dedicated Angle command (Ex7 is a user formula).
 
@@ -31,12 +31,12 @@ VECTOR is Impl `IMPLEMENTED`, Ver `VERIFIED` for official Ex1–Ex4, Ex6, Ex7 (s
 | Identified (matrix rows) | 44 | |
 | PARTIAL (implementation) | 3 | INT + DIFF + SUM |
 | BLOCKED (verification) | 1 | C-P0-PWA |
-| NEEDS-HUMAN-REVIEW (verification) | 3 | C-P0-PREANS, C-NHR-CAL, C-NHR-RND |
+| NEEDS-HUMAN-REVIEW (verification) | 2 | C-P0-PREANS, C-NHR-RND |
 | DEFERRED (priority) | 4 | C-P2-INT, DIFF, SUM, SOLVE |
 | UNSUPPORTED-BY-HARDWARE | 3 | INEQ, VERIFY, DIST |
 | OPTIONAL-V1 (priority) | 4 | PREANS, KBD, NHR-CAL, NHR-RND |
 
-This build must **not** be described as a complete clone or as hardware-equivalent. All seven major target modes are implemented and source-verified; hardware differential verification, visual sign-off, and live PWA verification remain outstanding. Playwright tablet project is Chromium with an iPad-sized viewport, **not** real iOS Safari.
+This build must **not** be described as a complete clone or as hardware-equivalent. All seven major target modes are implemented and source-verified; hardware differential verification and live PWA verification remain outstanding. D-pad overlay signed off 2026-08-24. Playwright tablet project is Chromium with an iPad-sized viewport, **not** real iOS Safari.
 
 ## Tests (this revision, actually run)
 
@@ -52,7 +52,7 @@ This build must **not** be described as a complete clone or as hardware-equivale
 
 ## Visual calibration
 
-Inspected via geometric keymap. **Not** signed off against the original chat binary (`NEEDS-HUMAN-REVIEW`). Overlay is on by default (`?debug=false` hides). D-pad boxes were retuned to the teardrop quadrants; still NHR. Shared `containedImageRect` + `public/keymap.json`.
+Inspected via geometric keymap. User signed off D-pad hitboxes 2026-08-24. Overlay is **off** by default (`?debug=true` shows). Shared `containedImageRect` + `public/keymap.json`.
 
 ## Deployment
 

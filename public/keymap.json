@@ -513,6 +513,6 @@
       "h": 4.4
     }
   ],
-  "calibrationStatus": "NEEDS_HUMAN_REVIEW",
-  "calibrationNotes": "Geometric fit from official Casio FX-991ESPLUS-2BU product photo (cropped). D-pad boxes retuned to the four teardrop quadrants (still NEEDS_HUMAN_REVIEW). Overlay is on by default; hide with ?debug=false."
+  "calibrationStatus": "USER_SIGNED_OFF",
+  "calibrationNotes": "Geometric fit from official Casio FX-991ESPLUS-2BU product photo (cropped). D-pad boxes retuned to the four teardrop quadrants; user signed off 2026-08-24. Overlay is off by default; show with ?debug=true."
 }

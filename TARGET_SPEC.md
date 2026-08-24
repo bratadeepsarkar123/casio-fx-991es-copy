@@ -61,7 +61,7 @@ Evidence classes: see `docs/EVIDENCE_CLASSES.md`. Short labels used below: `TARG
 | Asset used | Official Casio product PNG `fx-991ES_PLUS-2BU_F.png`, cropped to the calculator silhouette |
 | Repo path | `public/assets/chassis-fx-991es-plus-2.png` |
 | SHA-256 | recorded in git |
-| Calibration status | `NEEDS HUMAN REVIEW` — geometric keymap fit; overlay on by default, `?debug=false` hides |
+| Calibration status | User signed off D-pad 2026-08-24 — overlay off by default, `?debug=true` shows |
 
 ## Physical reference
 
