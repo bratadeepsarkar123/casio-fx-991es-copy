@@ -49,7 +49,7 @@ Source: ToC of supplied PDF (printed pages 1–3 of the file, labeled 1–3 in t
 | CMPLX | 56–57 | in-scope | P1 IMPLEMENTED (D-018) |
 | STAT | 57–66 | in-scope | P1 IMPLEMENTED (D-019) |
 | BASE-N | 66–69 | in-scope | P1 IMPLEMENTED (D-017) |
-| EQN | 70–72 | in-scope | P1 PARTIAL |
+| EQN | 70–72 | in-scope | P1 IMPLEMENTED (D-020) |
 | MATRIX | 73–75 | in-scope | P1 PARTIAL |
 | TABLE | 76–78 | in-scope | P1 IMPLEMENTED (f(x); D-016) |
 | VECTOR | 79–81 | in-scope | P1 PARTIAL |

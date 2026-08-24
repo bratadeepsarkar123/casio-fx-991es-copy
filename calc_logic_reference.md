@@ -211,6 +211,32 @@ Official 570/991 2nd-edition BASE-N page: https://support.casio.com/global/en/ca
 
 Clone (D-017): `bigint` word with explicit 16/32-bit mask/sign. Not COMP `decimal.js` shown as hex.
 
+## SRC-P70–72 / TGT-TOC EQN `[TARGET-OFFICIAL-DOC for types and official Ex1–Ex5; SRC-P70 CROSS-MODEL-SOURCE for 115/C overlap]`
+
+Official 570/991 2nd-edition EQN page: https://support.casio.com/global/en/calc/manual/fx-570ESPLUS_991ESPLUS_en/using_calculation_modes/equation_calculations.html
+
+| Behavior | Clone | Evidence |
+| --- | --- | --- |
+| Enter EQN | MODE `5`; type menu 1–4 | `TARGET-OFFICIAL-DOC` |
+| 2-UNK / 3-UNK / quadratic / cubic | Implemented | `TARGET-OFFICIAL-DOC` |
+| 4-UNK / quartic / INEQ / vertex min/max | **Not implemented** | Not on official HTML examples / 115/C-only → **UNSUPPORTED-BY-HARDWARE** or **NHR** |
+| Coefficient editor | Structured cells; COMP editor is the current slot | `TARGET-OFFICIAL-DOC` |
+| AC in editor | Zeros all coefficients | `TARGET-OFFICIAL-DOC` |
+| Extra `=` after last coefficient | `readyToSolve` | 115/C sequences `CROSS-MODEL-SOURCE` / **INFERRED** |
+| Ex1 lin2 | X=`-1` Y=`2` | `TARGET-OFFICIAL-DOC` |
+| Ex2 lin3 | X=`1` Y=`2` Z=`3` | `TARGET-OFFICIAL-DOC` (minuses from equation text / 115/C keys) |
+| Ex3 quadratic | X1/X2 complex pair via `Sym.cplx` | `TARGET-OFFICIAL-DOC` |
+| Ex4 repeated | single `X=` `√2` | `TARGET-OFFICIAL-DOC` |
+| Ex5 cubic | X1=`-1` X2=`2` X3=`1` | `TARGET-OFFICIAL-DOC`; other cubic orders **NHR** |
+| Linear √ display | Forced off | `TARGET-OFFICIAL-DOC` |
+| Can't Solve | **Not used** | Official: SOLVE only |
+| No solution / infinite | `No Solution` / `Infinitely Many` | 115/C E-36 `CROSS-MODEL-SOURCE`; wording **NHR** |
+| Leading `a=0` | Math ERROR | **INFERRED** **NHR** |
+| Ans / variables | Not written by solutions | **INFERRED** **NHR** |
+| Persist | session stripped; schema v1 | **INFERRED** **NHR** vs hardware power-off |
+
+Clone (D-020): dedicated EQN coefficient session + `eqnSolve`. Not a CAS. Not COMP evaluation.
+
 ## NEEDS HUMAN REVIEW
 
 - Exact SETUP page-2 item numbers (glyphs dropped). `[NEEDS-HUMAN-REVIEW]`
@@ -220,4 +246,5 @@ Clone (D-017): `bigint` word with explicit 16/32-bit mask/sign. Not COMP `decima
 - TABLE zero/negative Step vs hardware; per-row Math ERROR policy; TABLE persist across power-off; one-row LCD vs hardware table screen. `[NEEDS-HUMAN-REVIEW]`
 - BASE-N +/−/× overflow vs wrap; ÷ toward-zero; A–F vs `(-)` outside HEX; BASE menu page order for d/h/b/o; persist of BASE-N expression; invalid-digit ignore vs queued Syntax ERROR. `[NEEDS-HUMAN-REVIEW]`
 - STAT menu numbering vs hardware; Q/R vs hardware; editor left/right/up/down; persist of STAT data across power-off; default FREQ=1 when the last Ex2 frequency key is omitted. `[NEEDS-HUMAN-REVIEW]`
+- EQN extra `=` after last coefficient; no-solution/infinite message wording; cubic order beyond Ex5; whether solutions write Ans/X/Y; persist of EQN data across power-off; one-cell LCD vs hardware coefficient matrix. `[NEEDS-HUMAN-REVIEW]`
 - Visual keymap vs original chat binary (file not in repo). `[NEEDS-HUMAN-REVIEW]`

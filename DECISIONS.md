@@ -20,7 +20,7 @@ Verification token for ICM session rules was acknowledged; this project is an au
 
 ## D-003 — Numerical core: decimal.js only for scalars
 
-**Decision:** `decimal.js` 10.6.0 is the only scalar numeric type that affects display. mathjs is a pinned dependency for possible matrix/vector structure later and is **not** used for COMP or CMPLX evaluation. Complex numbers are a first-class `Sym` variant (`k: "cplx"`), not mathjs.
+**Decision:** `decimal.js` 10.6.0 is the only scalar numeric type that affects display. mathjs is a pinned dependency for possible matrix/vector structure later and is **not** used for COMP, CMPLX, STAT, or EQN evaluation. Complex numbers are a first-class `Sym` variant (`k: "cplx"`), not mathjs.
 
 **Internal digits:** 15 (SRC-P97). Display: 10+2. Range: ±1e-99 … ±9.999999999e99 (SRC-P97).
 **π internal:** 3.14159265358980 (SRC-P36). **e internal:** 2.71828182845904 (SRC-P36).
@@ -54,7 +54,7 @@ Verification token for ICM session rules was acknowledged; this project is an au
 
 ## D-010 — P1 modes
 
-STAT/EQN/MATRIX/VECTOR: mode **entry** is implemented (MODE menu). TABLE f(x) is implemented (D-016). BASE-N integer domain is implemented (D-017). CMPLX extended numeric domain is implemented (D-018). STAT dataset + statistics domain is implemented (D-019). EQN/MATRIX/VECTOR remain `PARTIAL` / not VERIFIED. COMP P0 is the v1 floor.
+STAT/EQN/MATRIX/VECTOR: mode **entry** is implemented (MODE menu). TABLE f(x) is implemented (D-016). BASE-N integer domain is implemented (D-017). CMPLX extended numeric domain is implemented (D-018). STAT dataset + statistics domain is implemented (D-019). EQN coefficient solver is implemented (D-020). MATRIX/VECTOR remain `PARTIAL` / not VERIFIED. COMP P0 is the v1 floor.
 
 ## D-011 — Integration / Σ / SOLVE
 
@@ -155,6 +155,22 @@ Future modes (TABLE first — see `docs/ARCHITECTURE.md` §12) must be **additiv
 - **Did STAT rewrite COMP / TABLE / BASE-N / CMPLX?** No.
 
 **Status:** Recorded. See `docs/STAT.md`.
+
+## D-020 — EQN is a dedicated coefficient solver, not COMP evaluation
+
+**Decision:** Implement EQN as an additive `EqnSession` on `CalcState` (`src/calc/eqn.ts`, `src/calc/eqnSolve.ts`) orchestrated by `reduce` via `reduceEqn`. Do **not** encode the equation as a COMP `Atom[]` polynomial, merge it into COMP evaluation, or use `Can't Solve Error` (SOLVE-only on the official errors page).
+
+- **Types:** MODE `5` then 1–4: 2-UNK, 3-UNK, quadratic, cubic (`TARGET-OFFICIAL-DOC`). No 4-UNK, quartic, INEQ, or 115/C vertex min/max.
+- **Editor:** structured coefficient cells. COMP editor is the current cell only (fractions / √ required by official Ex3/Ex4). AC zeros all coefficients. STO / Pol / Rec / M+ / colon ignored.
+- **Solve:** extra `=` after the last coefficient (`CROSS-MODEL-SOURCE` sequences; **INFERRED** `readyToSolve`).
+- **Solutions:** `{ label, sym }[]` plus index. Linear never uses √ display. Quadratic/cubic may be real or `Sym.cplx`. CMPLX format applies. Repeated quadratic root is a single `X=`.
+- **Numeric:** existing `Sym` / decimal.js / `packCplx`. Linear Gaussian elimination. Quadratic formula. Cubic rational-root (negative-first) then deflate; Newton fallback.
+- **Errors:** inconsistent → `No Solution`; dependent → `Infinitely Many` (115/C E-36; wording **NHR**). Leading `a=0` → Math ERROR (**INFERRED**).
+- **Ans/vars:** solutions do not write Ans or A–F/X/Y (**INFERRED** / **NHR**).
+- **Persist:** schema stays v1. EQN session stripped. Reload in EQN → type select. Hardware power-off **NEEDS-HUMAN-REVIEW**.
+- **Did EQN rewrite COMP / TABLE / BASE-N / CMPLX / STAT?** No.
+
+**Status:** Recorded. See `docs/EQN.md`.
 
 ## Risk register
 

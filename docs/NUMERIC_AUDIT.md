@@ -38,6 +38,8 @@ CMPLX (`src/calc/symbolic.ts` `cplx`, `src/calc/complex.ts`) uses real `Sym` par
 
 STAT (`src/calc/statNumeric.ts`) uses decimal.js for weighted sums, OLS, quadratic 3×3 elimination, and an erf Maclaurin series for Φ(t). Loop indices `n` converted with `D(2 * n + 1)` are class 2 (bounded integers). No `Math.*` on STAT results. See `docs/STAT.md`.
 
+EQN (`src/calc/eqnSolve.ts`) uses existing `Sym` arithmetic (Gaussian elimination, quadratic formula, `symSqrt` / `packCplx`) and decimal.js Newton only as a cubic fallback when no rational root exists. `BigInt(v.toFixed(0))` is only for exact integer coefficient factorisation (class 2). No `Math.*` on solver results. See `docs/EQN.md`.
+
 ## Policy notes (not hardware claims)
 
 - Internal digits 15, display 10+2, range ±1e-99 … ±9.999999999e99: `CROSS-MODEL-SOURCE` SRC-P97; overlapping range also in target precision pages (`CONFIRMED` as a specification class, not by physical measurement).
