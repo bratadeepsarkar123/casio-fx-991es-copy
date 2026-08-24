@@ -13,7 +13,7 @@ VERIFIED: **25** (PWA live origin is BLOCKED)
 
 Not VERIFIED in this bucket:
 
-- `C-P0-PWA` — Impl `IMPLEMENTED`, Ver `BLOCKED`. Pages is enabled (`html_url` 200, `build_type: legacy`, branch `cursor/fx991es-plus2-web-clone-4c69`, path `/`). Live HTML is the Vite **source** `index.html`; `/src/main.tsx` → **404** (blank calculator, 2 module errors). Not a live-PWA verification. Fix: Pages source **GitHub Actions**, or branch folder **`/docs`**.
+- `C-P0-PWA` — Impl `IMPLEMENTED`, Ver `BLOCKED`. **Remaining human click:** Settings → Pages → **GitHub Actions** or branch folder **`/docs`**. Agent cannot flip that setting. Pages is enabled (`html_url` 200, `build_type: legacy`, branch `cursor/fx991es-plus2-web-clone-4c69`, path `/`). Live HTML is the Vite **source** `index.html`; `/src/main.tsx` → **404** (blank calculator, 2 module errors). Not a live-PWA verification.
 
 ## B. Complete-clone required surface
 

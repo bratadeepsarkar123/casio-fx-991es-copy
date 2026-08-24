@@ -29,7 +29,7 @@ Evidence classes and TargetConfirm: `docs/EVIDENCE_CLASSES.md`.
 | C-P0-PERSIST | localStorage schema v1 | REQUIRED-FUNCTIONAL-V1 | spec §8 | INFERRED | N/A | IMPLEMENTED | VERIFIED | persist.test.ts; e2e persist |
 | C-P0-KEYS | Physical overlay + keymap.json | REQUIRED-FUNCTIONAL-V1 | CHASSIS | EMPIRICAL | CONFIRMED | IMPLEMENTED | VERIFIED | coords.test.ts; overlay e2e |
 | C-P0-LCD | LCD expression/result/indicators | REQUIRED-FUNCTIONAL-V1 | SRC-P7–8; CHASSIS | CROSS-MODEL-SOURCE | CONFIRMED | IMPLEMENTED | VERIFIED | lcdIndicators; lcd-expr/result |
-| C-P0-PWA | Install + offline SW | REQUIRED-FUNCTIONAL-V1 | spec §9 | INFERRED | N/A | IMPLEMENTED | BLOCKED | Origin 200; Pages serving Vite source (`/src/main.tsx` 404), not `dist` |
+| C-P0-PWA | Install + offline SW | REQUIRED-FUNCTIONAL-V1 | spec §9 | INFERRED | N/A | IMPLEMENTED | BLOCKED | Origin 200; Pages still serving Vite source (`/src/main.tsx` 404), not `dist`. Human must switch Settings → Pages to GitHub Actions or folder `/docs` |
 | C-P0-LOG | log / ln / 10^x / e^x | REQUIRED-FUNCTIONAL-V1 | SRC-P37; TGT-TOC | CROSS-MODEL-SOURCE | CONFIRMED | IMPLEMENTED | VERIFIED | GT-P37 |
 | C-P0-PCT | Percent | REQUIRED-FUNCTIONAL-V1 | SRC-P23; TGT-TOC | CROSS-MODEL-SOURCE | CONFIRMED | IMPLEMENTED | VERIFIED | GT-P23 |
 | C-P0-FIX | Fix/Sci/Norm | REQUIRED-FUNCTIONAL-V1 | SRC-P13; TGT-TOC setup | CROSS-MODEL-SOURCE | CONFIRMED | IMPLEMENTED | VERIFIED | GT-P13 Fix3 |
