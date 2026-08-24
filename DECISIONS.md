@@ -36,7 +36,7 @@ Verification token for ICM session rules was acknowledged; this project is an au
 
 ## D-006 — Chassis photo + keymap.json
 
-**Decision:** Official Casio FX-991ESPLUS-2BU product photo, cropped. Hit-zones in `public/keymap.json` as **percent of source image**. Shared `containedImageRect` for hit-testing and `?debug=true` overlay.
+**Decision:** Official Casio FX-991ESPLUS-2BU product photo, cropped. Hit-zones in `public/keymap.json` as **percent of source image**. Shared `containedImageRect` for hit-testing and the red overlay (on by default; `?debug=false` hides it).
 
 **Calibration status:** `NEEDS HUMAN REVIEW` (geometric fit; chat-attached original binary was not on disk).
 

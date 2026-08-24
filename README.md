@@ -25,7 +25,7 @@ npm run test:e2e  # Playwright (build + preview)
 
 ## Usage
 
-- Click/tap the photographed keys. `?debug=true` outlines hit-zones.
+- Click/tap the photographed keys. Red hit-zone outlines are **on by default** so D-pad mapping can be screenshot-reviewed. Hide them with `?debug=false`.
 - SHIFT / ALPHA latches match the gold / red legends.
 - MODE enters the 8 target modes. SETUP is SHIFT MODE.
 

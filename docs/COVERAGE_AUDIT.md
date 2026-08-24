@@ -52,7 +52,7 @@ This build must **not** be described as a complete clone or as hardware-equivale
 
 ## Visual calibration
 
-Inspected via geometric keymap. **Not** signed off against the original chat binary (`NEEDS-HUMAN-REVIEW`). Use `?debug=true`. Shared `containedImageRect` + `public/keymap.json` unchanged (no coordinate retune).
+Inspected via geometric keymap. **Not** signed off against the original chat binary (`NEEDS-HUMAN-REVIEW`). Overlay is on by default (`?debug=false` hides). D-pad boxes were retuned to the teardrop quadrants; still NHR. Shared `containedImageRect` + `public/keymap.json`.
 
 ## Deployment
 

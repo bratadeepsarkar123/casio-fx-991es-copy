@@ -103,14 +103,24 @@ export function Chassis({ keymap, imageSrc, state, debug, onKey }: ChassisProps)
       {debug
         ? keymap.keys.map((key) => {
             const r = percentToLocal(imageRect, key);
+            const dpad = key.id === "up" || key.id === "down" || key.id === "left" || key.id === "right";
             return (
               <div
                 key={`dbg-${key.id}`}
-                className="pointer-events-none absolute border border-red-500 text-[9px] leading-none text-yellow-200"
-                style={{ left: r.x, top: r.y, width: r.w, height: r.h }}
+                className="pointer-events-none absolute text-[9px] leading-none text-yellow-200"
+                style={{
+                  left: r.x,
+                  top: r.y,
+                  width: r.w,
+                  height: r.h,
+                  border: dpad ? "3px solid #ef4444" : "2px solid #ef4444",
+                  boxSizing: "border-box",
+                  zIndex: 4,
+                }}
                 data-debug-key={key.id}
+                data-testid={dpad ? `overlay-${key.id}` : undefined}
               >
-                <span className="bg-black/70 px-0.5">{key.id}</span>
+                <span className="bg-black/80 px-0.5">{key.id}</span>
               </div>
             );
           })

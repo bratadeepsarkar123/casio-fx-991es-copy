@@ -5,7 +5,7 @@
 | Wrong target-model behavior imported | Medium | Critical | Source/model audit | Evidence classes; 115/C extras excluded; PreAns not promoted | Open — PDF is 115/C; PreAns UNCONFIRMED |
 | Numerical engine divergence | High | Critical | Golden + edge tests | decimal.js; native-float audit | Mitigated for COMP; ties NHR |
 | GitHub Pages serving source tree | High | High | Fetch live `index.html` + `/src/main.tsx` | Pages must be GitHub Actions (`dist`) or branch folder `/docs`; do not use `/(root)` | Open — origin 200, calculator blank until source is switched |
-| Coordinate calibration error | High | High | `?debug=true` + Playwright | Shared transform | NEEDS HUMAN REVIEW |
+| Coordinate calibration error | High | High | overlay on by default + Playwright | Shared transform | NEEDS HUMAN REVIEW |
 | Context-window loss during manual ingestion | High | High | Coverage index | Incremental ToC audit | Partial ingestion |
 | Golden tests become circular | Medium | Critical | Source IDs in test names | Manual page citations | Mitigated |
 | MathLive asset failure offline | Medium | High | Offline/network | MathLive not used | N/A |
