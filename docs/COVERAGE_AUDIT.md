@@ -1,6 +1,6 @@
 # Coverage audit (hardening pass)
 
-Architecture/readiness map: `docs/ARCHITECTURE.md` (COMP-core freeze, FLOW A/B, future-mode readiness). Do not treat that document as a complete-clone claim.
+Architecture/readiness map: `docs/ARCHITECTURE.md` (COMP-core freeze, FLOW A/B, domain map). Post-major-mode scorecard: `docs/POST_MAJOR_MODE_AUDIT.md`. Do not treat those documents as a hardware-complete clone claim.
 
 Statuses follow the three-axis model in `CAPABILITY_MATRIX.md`.
 **VERIFIED** = Impl `IMPLEMENTED` and Ver `VERIFIED`.
@@ -18,8 +18,9 @@ Not VERIFIED in this bucket:
 ## B. Complete-clone required surface
 
 `REQUIRED-COMPLETE-CLONE` rows: **7** (CMPLX, STAT, BASE-N, EQN, MATRIX, TABLE, VECTOR)  
-VERIFIED: **7** (TABLE f(x); BASE-N; CMPLX; STAT; EQN; MATRIX; VECTOR; D-016 / D-017 / D-018 / D-019 / D-020 / D-021 / D-022)  
-**7 / 7**
+VERIFIED: **7** (source-derived — TABLE f(x); BASE-N; CMPLX; STAT; EQN; MATRIX; VECTOR; D-016 … D-022)  
+**Major-mode source verification: 7 / 7**  
+**Hardware differential verification: N/A** · **Target-manual verification: limited** · **Visual: NHR** · **Live PWA: BLOCKED**
 
 VECTOR is Impl `IMPLEMENTED`, Ver `VERIFIED` for official Ex1–Ex4, Ex6, Ex7 (source-derived, not hardware). Ex5 2D×2D cross uses an inferred `(0,0,−2)` because the official HTML dropped the printed result (`NEEDS-HUMAN-REVIEW`). TABLE is Impl `IMPLEMENTED`, Ver `VERIFIED` for the official f(x) flow. BASE-N is Impl `IMPLEMENTED`, Ver `VERIFIED` for the official integer/logical flow. CMPLX is Impl `IMPLEMENTED`, Ver `VERIFIED` for official arithmetic/polar/arg/Conjg/Abs examples (not hardware). STAT is Impl `IMPLEMENTED`, Ver `VERIFIED` for official Ex2–Ex4 (and numeric Ex5 t/P); not hardware. EQN is Impl `IMPLEMENTED`, Ver `VERIFIED` for official Ex1–Ex5 (not hardware). MATRIX is Impl `IMPLEMENTED`, Ver `VERIFIED` for official Ex1–Ex8 (source-derived, not hardware). g(x) is not implemented. Bit shifts are DEFERRED. Complex STO and non-real trig/log/√ are PARTIAL/DEFERRED. STAT Q/R are INFERRED; Q1/Med/Q3 are 115/C-only. EQN vertex min/max is not implemented. MATRIX Ref/Rref is 115/C-only. VECTOR has no dedicated Angle command (Ex7 is a user formula).
 
@@ -35,7 +36,7 @@ VECTOR is Impl `IMPLEMENTED`, Ver `VERIFIED` for official Ex1–Ex4, Ex6, Ex7 (s
 | UNSUPPORTED-BY-HARDWARE | 3 | INEQ, VERIFY, DIST |
 | OPTIONAL-V1 (priority) | 4 | PREANS, KBD, NHR-CAL, NHR-RND |
 
-This build must **not** be described as a complete clone. No physical differential testing. Playwright tablet project is Chromium with an iPad-sized viewport, **not** real iOS Safari.
+This build must **not** be described as a complete clone or as hardware-equivalent. All seven major target modes are implemented and source-verified; hardware differential verification, visual sign-off, and live PWA verification remain outstanding. Playwright tablet project is Chromium with an iPad-sized viewport, **not** real iOS Safari.
 
 ## Tests (this revision, actually run)
 

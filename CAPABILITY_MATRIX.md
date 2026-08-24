@@ -55,7 +55,19 @@ Evidence classes and TargetConfirm: `docs/EVIDENCE_CLASSES.md`.
 | C-NHR-CAL | Visual keymap vs chat photo | OPTIONAL-V1 | chassis; chat binary missing | EMPIRICAL | N/A | IMPLEMENTED | NEEDS-HUMAN-REVIEW | `?debug=true` |
 | C-NHR-RND | Rounding ties vs hardware | OPTIONAL-V1 | SRC-P13 “rounded off” | CROSS-MODEL-SOURCE | UNCONFIRMED | IMPLEMENTED | NEEDS-HUMAN-REVIEW | HALF_UP policy tests |
 
-P1 modes are on the target device (`TARGET-OFFICIAL-DOC`) and are required for a **complete** clone. They are **not** part of the functional-v1 floor. TABLE f(x) (D-016), BASE-N (D-017), CMPLX (D-018), STAT (D-019), EQN (D-020), MATRIX (D-021), and VECTOR (D-022) are IMPLEMENTED/VERIFIED (source-derived, not hardware). VECTOR 2D×2D cross result is **NEEDS-HUMAN-REVIEW** (official HTML dropped Ex5). GitHub Pages/PWA remains BLOCKED.
+P1 modes are on the target device (`TARGET-OFFICIAL-DOC`) and are required for a **source-complete major-mode surface**. They are **not** part of the functional-v1 floor. TABLE f(x) (D-016), BASE-N (D-017), CMPLX (D-018), STAT (D-019), EQN (D-020), MATRIX (D-021), and VECTOR (D-022) are IMPLEMENTED/VERIFIED (**source-derived, not hardware**). VECTOR 2D×2D cross result is **NEEDS-HUMAN-REVIEW** (official HTML dropped Ex5). GitHub Pages/PWA remains BLOCKED.
+
+Do **not** interpret the 7/7 row as a 100% hardware clone.
+
+| Label | Status |
+| --- | --- |
+| Major-mode source verification | **7/7** |
+| Hardware differential verification | **N/A** |
+| Target-manual verification | **limited by source availability** |
+| Visual verification | **NEEDS-HUMAN-REVIEW** |
+| Live deployment verification | **BLOCKED** |
+
+All seven major target modes are implemented and source-verified; hardware differential verification, visual sign-off, and live PWA verification remain outstanding. See `docs/POST_MAJOR_MODE_AUDIT.md`.
 
 ## Counts
 

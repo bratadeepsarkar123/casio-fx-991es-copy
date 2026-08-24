@@ -205,6 +205,18 @@ Future modes (TABLE first — see `docs/ARCHITECTURE.md` §12) must be **additiv
 
 **Status:** Recorded. See `docs/VECTOR.md`.
 
+## D-023 — Post-major-mode audit: keep the additive architecture; isolate Dimension ERROR
+
+**Decision:** After COMP + TABLE + BASE-N + CMPLX + STAT + EQN + MATRIX + VECTOR, **do not redesign** `reduce`, the AST, decimal.js, `Sym`, `MatrixValue`, or `VectorValue`. The architecture is stable enough to begin deferred functions **without** a major rewrite, provided they follow the existing additive pattern (evalCall extension or a new session with `reduceX` returning null to fall through).
+
+**Small correctness/architecture fix in this phase:** move `CalcDimensionError` from `matrixNumeric.ts` to `numeric.ts`. VECTOR must not import MATRIX algebra for a shared error class. MATRIX and VECTOR re-export the class.
+
+**Explicitly not done:** typed `call.name` union (still P1; COMP injection + MODE-wipe tests added); `SessionBase`; reducer split; any ∫ / d/dx / Σ / CALC / SOLVE implementation.
+
+**Verification language:** major-mode source verification is 7/7. Hardware differential = N/A. Visual = NHR. Live PWA = BLOCKED. Do not say “complete clone”.
+
+**Status:** Recorded. See `docs/POST_MAJOR_MODE_AUDIT.md`.
+
 ## Risk register
 
 See `RISK_REGISTER.md`.

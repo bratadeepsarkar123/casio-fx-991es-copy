@@ -2,9 +2,9 @@
 
 Responsive, offline-capable web clone of the **Casio fx-991ES PLUS 2nd edition** (`FX-991ESPLUS-2`). Faithfulness is judged against **manual worked examples**, not visual impression.
 
-## Not a complete clone
+## Not a hardware-complete clone
 
-P0 COMP-mode behavior is covered by golden tests. TABLE f(x) (D-016), BASE-N (D-017), CMPLX (D-018), STAT (D-019), EQN (D-020), MATRIX (D-021), and VECTOR (D-022) are implemented. Functional-v1 vs complete-clone counts are separate; see `CAPABILITY_MATRIX.md` and `docs/COVERAGE_AUDIT.md`.
+P0 COMP-mode behavior is covered by golden tests. TABLE f(x) (D-016), BASE-N (D-017), CMPLX (D-018), STAT (D-019), EQN (D-020), MATRIX (D-021), and VECTOR (D-022) are implemented and **source-verified**. Hardware differential testing, visual sign-off, and live PWA verification remain outstanding. See `CAPABILITY_MATRIX.md`, `docs/COVERAGE_AUDIT.md`, and `docs/POST_MAJOR_MODE_AUDIT.md`.
 
 ## Requirements
 
@@ -39,7 +39,8 @@ npm run test:e2e  # Playwright (build + preview)
 
 ## Docs
 
-- `docs/ARCHITECTURE.md` — system layers, state model, event flows, mode readiness
+- `docs/ARCHITECTURE.md` — system layers, state model, event flows, domain map
+- `docs/POST_MAJOR_MODE_AUDIT.md` — post-major-mode architecture/evidence scorecard (not a hardware-clone claim)
 - `docs/BASE_N.md` — BASE-N integer domain, evidence classes, unresolved hardware items
 - `docs/CMPLX.md` — CMPLX extended numeric domain, evidence classes, unresolved items
 - `docs/STAT.md` — STAT dataset domain, evidence classes, unresolved hardware items

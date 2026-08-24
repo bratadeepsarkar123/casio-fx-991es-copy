@@ -17,7 +17,7 @@
 | Browser/platform mismatch | Medium | Medium | Honest coverage | Chromium + Playwright devices | Partial |
 | Documentation drift | Medium | Medium | Stable IDs | Incremental docs | Process |
 | Corrupt persist injected as CalcState | Medium | High | persist.test.ts | `isPersistedCalcState` rejects unknown/incomplete nested state (D-015) | Mitigated for schema-v1 shape; Atom trees still unchecked |
-| Unbounded `call.name` / mode data in COMP AST | Medium | High | Architecture audit | TABLE uses `TableSession`; BASE-N uses `BaseNToken[]`; CMPLX reuses COMP AST with `complexOk`; STAT uses `StatSession` + gated `stat-*` calls; EQN uses `EqnSession`; MATRIX uses `MatrixSession` + gated `mat-*` calls; VECTOR uses `VectorSession` + gated `vct-*` calls; COMP `call.name` still free | Open for COMP; TABLE/BASE-N/CMPLX/STAT/EQN/MATRIX/VECTOR traps mitigated |
+| Unbounded `call.name` / mode data in COMP AST | Medium | High | Architecture audit; `call-name-gate.test.ts` | TABLE uses `TableSession`; BASE-N uses `BaseNToken[]`; CMPLX reuses COMP AST with `complexOk`; STAT uses `StatSession` + gated `stat-*` calls; EQN uses `EqnSession`; MATRIX uses `MatrixSession` + gated `mat-*` calls; VECTOR uses `VectorSession` + gated `vct-*` calls; COMP injection of `mat-*`/`vct-*`/`stat-*` → Syntax ERROR; MODE wipe clears editor | Open for COMP type (`string`); key-driven leak mitigated (D-023) |
 | STAT menu numbering vs hardware | Medium | Low | Official HTML dropped key numbers | Clone uses 115/C numbering; documented NHR | Open — NHR vs hardware |
 | STAT Q/R vs hardware | Medium | Low | Official Ex5 illustrates P and t only | Q/R from 115/C diagrams (`INFERRED`) | Open — NHR vs hardware |
 | BASE-N overflow wrap vs Math ERROR | Medium | Medium | Official range table without wrap rule | Clone errors instead of wrapping; documented NHR | Open — NHR vs hardware |
@@ -31,3 +31,6 @@
 | MATRIX persist across power-off | Medium | Medium | Official MATRIX page silent | Session stripped like TABLE/STAT/EQN | Open — INFERRED / NHR |
 | VECTOR menu numbering / 2D cross | Medium | Low | Official HTML dropped Ex5 vector and most key glyphs | Clone embeds 2D×2D as (0,0,a1b2−a2b1); 115/C menu 1–7 | Open — NHR vs hardware |
 | VECTOR persist across power-off | Medium | Medium | Official VECTOR page silent | Session stripped like TABLE/STAT/EQN/MATRIX | Open — INFERRED / NHR |
+| VECTOR algebra importing MATRIX modules | Low | Medium | Import graph | `CalcDimensionError` moved to `numeric.ts` (D-023); VECTOR no longer imports `matrixNumeric.ts` | Mitigated |
+| `7/7 VERIFIED` read as hardware clone | Medium | Critical | Capability labels | Explicit source-vs-hardware labels in `POST_MAJOR_MODE_AUDIT.md` / `CAPABILITY_MATRIX.md` | Process — keep language precise |
+| CLR Memory policy differs by session | Medium | Low | `runConfirm("memory")` | MATRIX/VECTOR registers wiped; STAT/EQN/TABLE sessions kept | Open — INFERRED / NHR; do not unify without evidence |

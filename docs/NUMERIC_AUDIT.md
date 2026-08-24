@@ -42,7 +42,7 @@ EQN (`src/calc/eqnSolve.ts`) uses existing `Sym` arithmetic (Gaussian eliminatio
 
 MATRIX (`src/calc/matrixNumeric.ts`) uses existing `Sym` cells. Loop indices over 1–3 dimensions are class 1. `matrixFromInts` accepts test `bigint` literals (and integer `number` only as a test helper, converted with `BigInt`). No `Math.*` on matrix results. mathjs is unused. See `docs/MATRIX.md`.
 
-VECTOR (`src/calc/vectorNumeric.ts`) uses existing `Sym` cells. Loop indices over dim 2 or 3 are class 1. Magnitude uses `symSqrt` of the sum of squares. Cross/dot/add/scale use `symAdd`/`symMul`/`symNeg`. `vectorFromInts` accepts test `bigint` literals (and integer `number` only as a test helper, converted with `BigInt`). No `Math.*` on vector results. mathjs is unused. See `docs/VECTOR.md`.
+VECTOR (`src/calc/vectorNumeric.ts`) uses existing `Sym` cells. Loop indices over dim 2 or 3 are class 1. Magnitude uses `symSqrt` of the sum of squares. Cross/dot/add/scale use `symAdd`/`symMul`/`symNeg`. `vectorFromInts` accepts test `bigint` literals (and integer `number` only as a test helper, converted with `BigInt`). No `Math.*` on vector results. mathjs is unused. `CalcDimensionError` is defined in `numeric.ts` (D-023) so this file does not import MATRIX algebra. See `docs/VECTOR.md`.
 
 ## Policy notes (not hardware claims)
 

@@ -9,6 +9,8 @@ This document describes the **current** fx-991ES PLUS 2nd edition clone as a sys
 
 TABLE domain contract: D-016. BASE-N domain contract: `docs/BASE_N.md` (D-017). CMPLX domain contract: `docs/CMPLX.md` (D-018). STAT domain contract: `docs/STAT.md` (D-019). EQN domain contract: `docs/EQN.md` (D-020). MATRIX domain contract: `docs/MATRIX.md` (D-021). VECTOR domain contract: `docs/VECTOR.md` (D-022).
 
+Post-major-mode conformance audit (all seven modes present): `docs/POST_MAJOR_MODE_AUDIT.md` (D-023). That document is the architecture/evidence scorecard. It is **not** a complete-clone or hardware-equivalence claim.
+
 ---
 
 ## 1. System overview
@@ -387,7 +389,7 @@ All **major target modes** (COMP, TABLE, BASE-N, CMPLX, STAT, EQN, MATRIX, VECTO
 | 115/C PDF treated as target manual | provenance | Mitigated by evidence classes; keep labeling |
 | Golden tests become “target truth” | provenance | Titles cite SRC-P*; passing ≠ TARGET-MANUAL |
 | Persist injection of impossible state | P1 | Shape check added; atoms still unchecked |
-| Unbounded `call.name` | P1 | TABLE rejects Pol/int/Σ in f(x) only; STAT `stat-*` names Syntax ERROR outside STAT; MATRIX `mat-*` names Syntax ERROR outside MATRIX; VECTOR `vct-*` names Syntax ERROR outside VECTOR; COMP still free-string |
+| Unbounded `call.name` | P1 | TABLE rejects Pol/int/Σ in f(x) only; STAT `stat-*` names Syntax ERROR outside STAT; MATRIX `mat-*` names Syntax ERROR outside MATRIX; VECTOR `vct-*` names Syntax ERROR outside VECTOR; COMP still free-string. COMP injection + MODE-wipe tests: `src/calc/call-name-gate.test.ts` (D-023). Typed union deferred. |
 | Dual `memoryM` / `variables.M` | P1 hygiene | Keep dual-write until a mode needs a split |
 | `reduce` god-function | P1 for scale | Split by mode later, keep single `reduce` entry |
 | ENG shift discarded (`void shifted`) | P2 | Documented; not COMP-core |
@@ -400,3 +402,59 @@ All **major target modes** (COMP, TABLE, BASE-N, CMPLX, STAT, EQN, MATRIX, VECTO
 | No physical differential testing | accepted | N/A |
 
 **P0 architecture blockers for further modes:** none. TABLE f(x), BASE-N, CMPLX, STAT, EQN, MATRIX, and VECTOR are in. Do not start unrelated advanced functions after VECTOR.
+
+---
+
+## 14. Post-major-mode domain map (D-023)
+
+This section is a developer map of the **complete** system after all seven major target modes. Historical FLOW A/B and COMP-core freeze above still apply. Full scorecard: `docs/POST_MAJOR_MODE_AUDIT.md`.
+
+```
+INPUT LAYER          App.tsx, Chassis.tsx, keys.ts, public/keymap.json
+        ↓
+KEY/EVENT            KeyEvent { keyId, source, nowMs? }     — no React in tests
+        ↓
+STATE ORCHESTRATION  machine.ts reduce()                    — sole semantic authority
+        ↓
+DOMAIN DISPATCH      mode + menu.kind → reduceX | handleMenu
+        ↓
+DOMAIN STATE         CalcState sessions (nullable except baseN)
+        ↓
+DOMAIN EVALUATION    evaluate / baseNNumeric / statNumeric / eqnSolve / matrixEval / vectorEval
+        ↓
+SHARED VALUES        numeric.ts (Dec, errors) + symbolic.ts (Sym) + bigint (BASE-N only)
+        ↓
+DISPLAY MODEL        ui/lcdModel.ts  (derived; no arithmetic)
+        ↓
+PERSISTENCE          persist.ts envelope v1  (Zustand save only)
+        ↓
+REACT / LCD / UI     store.ts, Lcd.tsx, Chassis.tsx, feedback.ts
+```
+
+| Layer | Files | Authoritative state | React in the layer? | Testable without DOM? |
+| --- | --- | --- | --- | --- |
+| Input | `App.tsx`, `Chassis.tsx`, `keys.ts`, `keymap.json` | none | yes (chassis) | coords + e2e overlay |
+| Event | `keys.ts` | `KeyEvent` | no | yes |
+| Orchestration | `machine.ts` | `CalcState` | no | yes |
+| Dispatch | `reduce` / `handleMenu` | `mode`, `menu` | no | yes |
+| Sessions | `table.ts`, `baseN.ts`, `stat.ts`, `eqn.ts`, `matrix.ts`, `vector.ts`, `types.ts` | session fields | no | yes |
+| Evaluation | `evaluate.ts`, `*Numeric.ts`, `*Eval.ts`, `eqnSolve.ts`, `complex.ts` | `Sym` / bigint / structured values | no | yes |
+| Shared numeric | `numeric.ts`, `symbolic.ts`, `format.ts`, `specialTrig.ts` | `Dec`, `Sym`, error classes | no | yes |
+| Display | `lcdModel.ts` + domain `*Text` helpers | none (derived) | no | yes |
+| Persist | `persist.ts` | localStorage envelope | no | yes |
+| UI shell | `store.ts`, `Lcd.tsx`, `Chassis.tsx`, `main.tsx` | store copy of `CalcState` | yes | e2e |
+
+| Domain | State | Editor | Numeric | Evaluator | Display | Persist |
+| --- | --- | --- | --- | --- | --- | --- |
+| COMP | editor + ans/result | `Atom[]` | `Sym` + decimal.js | `evaluate.ts` | lcdModel | keep |
+| TABLE | `TableSession` | COMP f(x) | COMP + X overlay | `evaluateAtoms` | table-view row | strip |
+| BASE-N | `BaseNState` | `BaseNToken[]` | signed bigint | `baseNNumeric.ts` | padded integer | radix only |
+| CMPLX | COMP editor | `Atom[]` + i/∠ | `Sym.cplx` | `evaluate.ts` `complexOk` | a+bi / r∠θ | keep + ansIm |
+| STAT | `StatSession` | cell strings | decimal.js | `stat-*` in evalCall | labels | strip |
+| EQN | `EqnSession` | current coeff slot | `Sym` / cplx | `eqnSolve.ts` | `{label,sym}` | strip |
+| MATRIX | `MatrixSession` | current cell | `MatrixValue` | `matrixEval` / `matrixNumeric` | one cell | strip |
+| VECTOR | `VectorSession` | current component | `VectorValue` | `vectorEval` / `vectorNumeric` | one cell | strip |
+
+**Isolation rules still in force:** no `Sym.mat` / `Sym.vec`; no MATRIX↔VECTOR mix; no STAT dataset in `Atom[]`; no BASE-N via decimal.js; UI never calls evaluators except through `reduce`.
+
+`CalcDimensionError` is defined in `src/calc/numeric.ts` (D-023) so VECTOR algebra does not import MATRIX algebra. MATRIX and VECTOR still re-export the class for existing imports.
