@@ -1,6 +1,21 @@
 import type { CalcState } from "../calc/types.ts";
 import { atomsToLinear } from "../calc/editor.ts";
 import { formatBaseNExpression, radixLabel } from "../calc/baseN.ts";
+import { STAT_CALL_LABELS } from "../calc/statNumeric.ts";
+import { statEditorExpression, statEditorValue, statMenuText, statTypeMenuText } from "../calc/stat.ts";
+
+function relabelStatCalls(expr: string): string {
+  let out = expr;
+  const names = Object.keys(STAT_CALL_LABELS).sort((a, b) => b.length - a.length);
+  for (const name of names) {
+    const label = STAT_CALL_LABELS[name];
+    if (!label) {
+      continue;
+    }
+    out = out.split(name).join(label);
+  }
+  return out;
+}
 
 function tablePromptLabel(phase: "fx" | "start" | "end" | "step"): string {
   switch (phase) {
@@ -26,6 +41,12 @@ export function lcdExpression(state: CalcState): string {
   if (state.screen.kind === "error") {
     return atomsToLinear(state.screen.expression, state.setup.displayFormat);
   }
+  if (state.mode === "STAT" && state.stat?.phase === "editor") {
+    return statEditorExpression(state.stat);
+  }
+  if (state.mode === "STAT" && state.stat?.phase === "type") {
+    return "STAT";
+  }
   if (state.mode === "TABLE" && state.table?.phase === "view") {
     const row = state.table.rows[state.table.rowIndex];
     if (!row) {
@@ -33,7 +54,11 @@ export function lcdExpression(state: CalcState): string {
     }
     return `X=${row.xDisplay}`;
   }
-  return atomsToLinear(state.editor.root, state.setup.displayFormat);
+  const expr = atomsToLinear(state.editor.root, state.setup.displayFormat);
+  if (state.mode === "STAT") {
+    return relabelStatCalls(expr);
+  }
+  return expr;
 }
 
 export function lcdResult(state: CalcState): string {
@@ -59,8 +84,20 @@ export function lcdResult(state: CalcState): string {
   if (state.menu.kind === "cmplx-op") {
     return "1:arg 2:Conjg 3:r∠θ 4:a+bi";
   }
+  const statMenu = statMenuText(state);
+  if (statMenu) {
+    return statMenu;
+  }
   if (state.menu.kind !== "none") {
     return state.menu.kind.toUpperCase();
+  }
+  if (state.mode === "STAT" && state.stat) {
+    if (state.stat.phase === "type") {
+      return statTypeMenuText(state.stat.typePage);
+    }
+    if (state.stat.phase === "editor") {
+      return statEditorValue(state.stat);
+    }
   }
   if (state.mode === "TABLE" && state.table) {
     if (state.table.phase === "view") {

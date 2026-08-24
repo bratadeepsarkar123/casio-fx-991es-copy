@@ -35,7 +35,8 @@ import {
   type Sym,
 } from "./symbolic.ts";
 import { complexAbs, complexArg, complexConj, polarToRect } from "./complex.ts";
-import type { AngleUnit, Atom, CalcState, ComplexFormat, ResultValue, VarName } from "./types.ts";
+import { evalStatCommand, isStatCallName } from "./statNumeric.ts";
+import type { AngleUnit, Atom, CalcState, ComplexFormat, ResultValue, StatRow, StatType, VarName } from "./types.ts";
 
 export interface EvalContext {
   angle: AngleUnit;
@@ -48,6 +49,9 @@ export interface EvalContext {
   nextUint32: () => number;
   complexOk: boolean;
   complexFormatOverride: ComplexFormat | null;
+  statType: StatType | null;
+  statFreq: boolean;
+  statRows: StatRow[] | null;
 }
 
 function ctxFromState(state: CalcState, nextUint32: () => number): EvalContext {
@@ -66,6 +70,9 @@ function ctxFromState(state: CalcState, nextUint32: () => number): EvalContext {
     nextUint32,
     complexOk: state.mode === "CMPLX",
     complexFormatOverride: null,
+    statType: state.mode === "STAT" ? (state.stat?.type ?? null) : null,
+    statFreq: state.setup.statFreq,
+    statRows: state.mode === "STAT" && state.stat ? state.stat.rows : null,
   };
 }
 
@@ -251,6 +258,17 @@ function fromRadToCurrent(rad: Dec, unit: AngleUnit): Dec {
 }
 
 function evalCall(name: string, args: Atom[][], ctx: EvalContext): Sym {
+  if (isStatCallName(name)) {
+    if (!ctx.statType || !ctx.statRows) {
+      throw new CalcSyntaxError();
+    }
+    let arg: ReturnType<typeof requireReal> | null = null;
+    if (args[0] && args[0].length > 0) {
+      arg = requireReal(evalSlot(args[0], ctx));
+    }
+    const dec = evalStatCommand(name, arg, ctx.statType, ctx.statRows, ctx.statFreq);
+    return fromDec(dec);
+  }
   const vals = args.map((a) => evalSlot(a, ctx));
   switch (name) {
     case "conjg":

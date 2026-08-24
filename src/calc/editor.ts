@@ -350,6 +350,21 @@ export function insertCall(ed: EditorState, name: string): EditorState {
   return { ...inserted, cursor: { path, index: 0, offset: null } };
 }
 
+/** Zero-argument STAT commands (n, x̄, A, …). */
+export function insertClosedCall(ed: EditorState, name: string): EditorState {
+  return insertAtom(ed, { t: "call", name, args: [], closed: true });
+}
+
+/** x̂ / ŷ / t wrap the entire current expression as the argument (official “argument immediately before”). */
+export function wrapRootAsClosedCall(ed: EditorState, name: string): EditorState {
+  const args = ed.root.length > 0 ? [ed.root] : [[]];
+  return {
+    ...ed,
+    root: [{ t: "call", name, args, closed: true }],
+    cursor: { path: [], index: 1, offset: null },
+  };
+}
+
 export function insertAbs(ed: EditorState): EditorState {
   return wrapPrevAs(ed, (inner) => ({ t: "abs", inner }), "inner");
 }

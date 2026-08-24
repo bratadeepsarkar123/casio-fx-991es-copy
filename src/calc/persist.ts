@@ -3,6 +3,7 @@ import { VAR_NAMES } from "./types.ts";
 import { createInitialState } from "./machine.ts";
 import { emptyTableSession } from "./table.ts";
 import { emptyBaseN } from "./baseN.ts";
+import { emptyStatSession } from "./stat.ts";
 
 export const PERSIST_KEY = "fx991es-plus2/v1";
 export const SCHEMA_VERSION = 1;
@@ -224,10 +225,17 @@ export function serializeState(state: CalcState): PersistEnvelope {
     state: {
       ...state,
       table: null,
+      stat: null,
       baseN: emptyBaseN(state.baseN.radix),
-      editor: state.mode === "TABLE" || state.mode === "BASE-N" ? createInitialState(0).editor : state.editor,
-      screen: state.mode === "TABLE" || state.mode === "BASE-N" ? { kind: "input" } : state.screen,
-      result: state.mode === "TABLE" || state.mode === "BASE-N" ? null : state.result,
+      editor:
+        state.mode === "TABLE" || state.mode === "BASE-N" || state.mode === "STAT"
+          ? createInitialState(0).editor
+          : state.editor,
+      screen:
+        state.mode === "TABLE" || state.mode === "BASE-N" || state.mode === "STAT"
+          ? { kind: "input" }
+          : state.screen,
+      result: state.mode === "TABLE" || state.mode === "BASE-N" || state.mode === "STAT" ? null : state.result,
     },
   };
 }
@@ -249,13 +257,14 @@ export function deserializeState(raw: unknown, nowMs = 0): CalcState | null {
     ansIm: typeof persisted.ansIm === "string" ? persisted.ansIm : "0",
     preAnsIm: typeof persisted.preAnsIm === "string" ? persisted.preAnsIm : "0",
     table: env.state.mode === "TABLE" ? emptyTableSession() : null,
+    stat: env.state.mode === "STAT" ? emptyStatSession() : null,
     baseN: emptyBaseN(env.state.baseN.radix),
     lastActivityMs: nowMs,
     power: "on",
     screen:
       env.state.power === "off"
         ? { kind: "input" }
-        : env.state.mode === "TABLE" || env.state.mode === "BASE-N"
+        : env.state.mode === "TABLE" || env.state.mode === "BASE-N" || env.state.mode === "STAT"
           ? { kind: "input" }
           : env.state.screen,
   };

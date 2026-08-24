@@ -126,7 +126,15 @@ export type MenuState =
   | { kind: "disp" }
   | { kind: "contrast" }
   | { kind: "base-op"; page: number }
-  | { kind: "cmplx-op" };
+  | { kind: "cmplx-op" }
+  | { kind: "stat-op" }
+  | { kind: "stat-editor" }
+  | { kind: "stat-edit" }
+  | { kind: "stat-sum"; page: number }
+  | { kind: "stat-var"; page: number }
+  | { kind: "stat-reg" }
+  | { kind: "stat-distr" }
+  | { kind: "stat-minmax" };
 
 export type Screen =
   | { kind: "input" }
@@ -170,6 +178,35 @@ export interface BaseNState {
   value: string | null;
 }
 
+/** Official STAT calculation types (TARGET-OFFICIAL-DOC). */
+export type StatType = "1-VAR" | "A+BX" | "_+CX2" | "ln X" | "e^X" | "A•B^X" | "A•X^B" | "1/X";
+
+export type StatPhase = "type" | "editor" | "calc";
+
+export type StatCol = "x" | "y" | "freq";
+
+/** One Statistics Editor row. Cell strings are decimal literals, not COMP Atom[]. */
+export interface StatRow {
+  x: string | null;
+  y: string | null;
+  freq: string | null;
+}
+
+/**
+ * Additive STAT session. Dataset lives here — never in COMP `Atom[]`.
+ * Transient `input` is the current cell buffer (not persisted).
+ */
+export interface StatSession {
+  type: StatType | null;
+  phase: StatPhase;
+  typePage: 0 | 1;
+  rows: StatRow[];
+  rowIndex: number;
+  col: StatCol;
+  input: string;
+  editing: boolean;
+}
+
 /** Additive TABLE session. Not a COMP Atom[] encoding of the grid. */
 export interface TableSession {
   phase: TablePhase;
@@ -207,6 +244,8 @@ export interface CalcState {
   rngSeed: number;
   baseN: BaseNState;
   table: TableSession | null;
+  /** Additive STAT session. `null` outside STAT. Dataset is not COMP `Atom[]`. */
+  stat: StatSession | null;
 }
 
 export interface DispatchOptions {

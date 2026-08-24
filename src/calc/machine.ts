@@ -35,6 +35,7 @@ import { formatBySetup, toggleDecimal } from "./format.ts";
 import { D, createUint32Rng } from "./numeric.ts";
 import { emptyTableSession, reduceTable, tableReturnToFx } from "./table.ts";
 import { applyBaseOpMenu, emptyBaseN, reduceBaseN, reduceBaseNError } from "./baseN.ts";
+import { emptyStatSession, handleStatMenu, isStatMenuKind, reduceStat, wipeStatData } from "./stat.ts";
 import type {
   Atom,
   CalcMode,
@@ -91,6 +92,7 @@ export function createInitialState(nowMs = 0): CalcState {
     rngSeed: 1,
     baseN: emptyBaseN(10),
     table: null,
+    stat: null,
   };
 }
 
@@ -144,6 +146,7 @@ function handleMenu(state: CalcState, keyId: KeyId): CalcState | null {
         preAns: mode === "COMP" || mode === "CMPLX" ? state.preAns : "0",
         preAnsIm: mode === "COMP" || mode === "CMPLX" ? state.preAnsIm : "0",
         table: mode === "TABLE" ? emptyTableSession() : null,
+        stat: mode === "STAT" ? emptyStatSession() : null,
         baseN: emptyBaseN(10),
       };
     }
@@ -391,6 +394,9 @@ function handleMenu(state: CalcState, keyId: KeyId): CalcState | null {
         return state;
     }
   }
+  if (isStatMenuKind(menu.kind)) {
+    return handleStatMenu(state, keyId);
+  }
   return state;
 }
 
@@ -409,6 +415,9 @@ function applySetup(state: CalcState, patch: Partial<SetupState>): CalcState {
       screen: { kind: "input" },
       result: null,
     };
+  }
+  if (next.mode === "STAT" && patch.statFreq !== undefined) {
+    return wipeStatData(next, true);
   }
   return next;
 }
@@ -438,6 +447,7 @@ function runConfirm(state: CalcState, action: "setup" | "memory" | "all"): CalcS
       result: null,
       history: [],
       table: null,
+      stat: null,
       baseN: emptyBaseN(10),
     };
   }
@@ -603,6 +613,13 @@ export function reduce(state: CalcState, event: KeyEvent): CalcState {
     const baseHandled = reduceBaseN(s, event);
     if (baseHandled) {
       return baseHandled;
+    }
+  }
+
+  if (s.mode === "STAT") {
+    const statHandled = reduceStat(s, event);
+    if (statHandled) {
+      return statHandled;
     }
   }
 
