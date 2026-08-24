@@ -523,3 +523,16 @@ Scored by value × source confidence × implementation risk × architectural fit
 19. Ready for deferred functions? **Yes, without major redesign.**
 20. Ready for deployment? **Code/PWA artifacts yes; live origin no (`BLOCKED`).**
 21. Next engineering phase? **Σ (with policy), not a rewrite; Pages enablement is ops.**
+
+---
+
+## Gate (this audit revision, actually run)
+
+| Suite | Result |
+| --- | --- |
+| `npm ci` | pass |
+| Vitest | **353 passed** (31 files); includes 17 new `call-name-gate` tests; `persist.test.ts` 17 passed; COMP goldens 30 passed |
+| `tsc --noEmit` | pass |
+| production build | pass — Workbox precache **15**; manifest scope `/casio-fx-991es-copy/` |
+| Playwright | **33 passed** (Chromium / Pixel 7 / iPad-sized Chromium — **not** iOS Safari) |
+| GitHub Pages | **404** — `C-P0-PWA` remains BLOCKED |

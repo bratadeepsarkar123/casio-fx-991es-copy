@@ -43,11 +43,12 @@ This build must **not** be described as a complete clone or as hardware-equivale
 | Suite | Result |
 | --- | --- |
 | `npm ci` | pass |
-| Vitest (`npm test`) | **336 passed** (30 files). Pre-VECTOR baseline 299/27 files; VECTOR numeric + reducer + goldens added. COMP `golden/acceptance.test.ts` still 30 passed. TABLE, BASE-N, CMPLX, STAT, EQN, and MATRIX suites still green. |
+| Vitest (`npm test`) | **353 passed** (31 files). Pre-audit VECTOR-gate 336/30 files; +17 COMP `call.name` gate tests (`call-name-gate.test.ts`). COMP `golden/acceptance.test.ts` still 30 passed. Persistence `persist.test.ts` 17 passed. Golden suites still green. |
 | `npm run lint` (`tsc --noEmit`) | pass |
-| `npm run build` (`tsc` + Vite PWA) | pass — Workbox precache 15 entries |
-| Playwright (`npx playwright install --with-deps chromium` then `npm run test:e2e`) | **33 passed** (was 30; +VECTOR on Chromium desktop, Pixel 7, iPad-sized Chromium). **Not** real iOS Safari. |
+| `npm run build` (`tsc` + Vite PWA) | pass — Workbox precache **15** entries; manifest `start_url`/`scope` `/casio-fx-991es-copy/` |
+| Playwright (`npx playwright install --with-deps chromium` then `CI=true npm run test:e2e`) | **33 passed** (Chromium desktop, Pixel 7, iPad-sized Chromium). **Not** real iOS Safari. |
 | Differential vs physical unit | N/A |
+| GitHub Pages API | `GET /repos/bratadeepsarkar123/casio-fx-991es-copy/pages` → **404** (`C-P0-PWA` still BLOCKED) |
 
 ## Visual calibration
 
