@@ -29,6 +29,7 @@ Colorway used for the chassis overlay: official Casio **FX-991ESPLUS-2BU** (ligh
 | Repo copy | `sources/supplied/FX991ESPLUS2_user_manual.pdf` |
 | SHA-256 | `a63782bd7c93061759a08410d4b22d45f010bd6edce77e721bb3f92ef30c951e` |
 | Pages | 105 |
+| Markdown extract | `sources/supplied/manual-md/` (one file per page) + `sources/supplied/FX991ESPLUS2_user_manual.md` (concatenated). Text extract only; no OCR. |
 | PDF title metadata | `fx-115ES PLUS_fx-991ES PLUS C` |
 | Cover models | **fx-115ES PLUS** and **fx-991ES PLUS C** (2nd edition / NATURAL-V.P.A.M.) |
 | Creator | AH Formatter V6.6 MR6 |
