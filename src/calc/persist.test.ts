@@ -209,9 +209,27 @@ describe("persist schema v1", () => {
   });
 
   it("loads a v1 COMP envelope that omits matrix", () => {
-    const { table: _t, stat: _s, eqn: _e, matrix: _m, ...rest } = createInitialState(0);
+    const { table: _t, stat: _s, eqn: _e, matrix: _m, vector: _v, ...rest } = createInitialState(0);
     const back = deserializeState({ schemaVersion: 1, savedAt: 0, state: rest }, 1);
     expect(back?.mode).toBe("COMP");
     expect(back?.matrix).toBeNull();
+    expect(back?.vector).toBeNull();
+  });
+
+  it("does not persist VECTOR registers (INFERRED; NHR vs hardware)", () => {
+    const filled = dispatchKeys(
+      createInitialState(0),
+      ["mode", "8", "1", "2", "1", "equals", "2", "equals", "ac"],
+      0,
+    );
+    expect(filled.vector?.registers.A).not.toBeNull();
+    const env = serializeState(filled);
+    expect(env.schemaVersion).toBe(1);
+    expect(env.state.vector).toBeNull();
+    const back = deserializeState(JSON.parse(JSON.stringify(env)), 0);
+    expect(back?.mode).toBe("VECTOR");
+    expect(back?.vector?.phase).toBe("dim-reg");
+    expect(back?.vector?.registers.A).toBeNull();
+    expect(back?.screen.kind).toBe("input");
   });
 });

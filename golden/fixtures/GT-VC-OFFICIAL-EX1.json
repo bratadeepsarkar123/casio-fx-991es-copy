@@ -1,0 +1,25 @@
+{
+  "id": "GT-VC-OFFICIAL-EX1",
+  "sourceEvidenceId": "TGT-TOC-VECTOR",
+  "evidenceClass": "TARGET-OFFICIAL-DOC",
+  "targetConfirm": "CONFIRMED",
+  "page": null,
+  "section": "Vector Calculations Example 1 — VctA+VctB",
+  "source": "https://support.casio.com/global/en/calc/manual/fx-570ESPLUS_991ESPLUS_en/using_calculation_modes/vector_calculations.html",
+  "keys": [
+    "mode", "8", "1", "2",
+    "1", "equals", "2", "equals", "ac",
+    "shift", "5", "1", "2", "2",
+    "3", "equals", "4", "equals", "ac",
+    "shift", "5", "3", "add", "shift", "5", "4", "equals"
+  ],
+  "expected": {
+    "mode": "VECTOR",
+    "phase": "vctans",
+    "vctA": ["1", "2"],
+    "vctB": ["3", "4"],
+    "vctAns": ["4", "6"],
+    "expression": "Ans1=",
+    "display": "4"
+  }
+}

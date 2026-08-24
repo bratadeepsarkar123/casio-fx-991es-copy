@@ -136,7 +136,8 @@ export type MenuState =
   | { kind: "stat-reg" }
   | { kind: "stat-distr" }
   | { kind: "stat-minmax" }
-  | { kind: "matrix-op" };
+  | { kind: "matrix-op" }
+  | { kind: "vector-op" };
 
 export type Screen =
   | { kind: "input" }
@@ -288,6 +289,45 @@ export interface MatrixSession {
   };
 }
 
+export type VctReg = "A" | "B" | "C" | "Ans";
+
+export type VectorDim = 2 | 3;
+
+export type VectorPhase =
+  | "dim-reg"
+  | "dim-size"
+  | "data-reg"
+  | "editor"
+  | "calc"
+  | "vctans"
+  | "sto-dest";
+
+/**
+ * Structured vector value. Cells are existing `Sym` scalars — not `number[]`,
+ * not COMP `Atom[]`, and not `MatrixValue`.
+ */
+export interface VectorValue {
+  dim: VectorDim;
+  cells: Sym[];
+}
+
+/**
+ * Additive VECTOR session. Register contents live here — never as COMP Atom[] vectors.
+ * Transient; not persisted (D-022).
+ */
+export interface VectorSession {
+  phase: VectorPhase;
+  dimTarget: "A" | "B" | "C" | null;
+  editorReg: VctReg | null;
+  index: number;
+  registers: {
+    A: VectorValue | null;
+    B: VectorValue | null;
+    C: VectorValue | null;
+    Ans: VectorValue | null;
+  };
+}
+
 /** Additive TABLE session. Not a COMP Atom[] encoding of the grid. */
 export interface TableSession {
   phase: TablePhase;
@@ -331,6 +371,8 @@ export interface CalcState {
   eqn: EqnSession | null;
   /** Additive MATRIX session. `null` outside MATRIX. Register cells are not COMP Atom[]. */
   matrix: MatrixSession | null;
+  /** Additive VECTOR session. `null` outside VECTOR. Components are not COMP Atom[]. */
+  vector: VectorSession | null;
 }
 
 export interface DispatchOptions {

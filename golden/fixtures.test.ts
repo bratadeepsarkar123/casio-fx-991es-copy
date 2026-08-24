@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { createInitialState, dispatchKeys } from "../src/calc/machine.ts";
 import { lcdExpression, lcdResult } from "../src/ui/lcdModel.ts";
 import { matrixToDecGrid } from "../src/calc/matrixNumeric.ts";
+import { vectorToDecCells } from "../src/calc/vectorNumeric.ts";
 import type { KeyId } from "../src/calc/keys.ts";
 import { isKeyId } from "../src/calc/keys.ts";
 
@@ -170,6 +171,41 @@ describe("independent golden fixtures", () => {
         }));
         expect(got).toEqual(fx.expected.dataset);
       }
+    },
+  );
+
+  it.each(["GT-VC-OFFICIAL-EX1", "GT-VC-OFFICIAL-EX3"])(
+    "%s JSON fixture matches VECTOR register state TARGET-OFFICIAL-DOC",
+    (id) => {
+      const raw = readFileSync(new URL(`./fixtures/${id}.json`, import.meta.url), "utf8");
+      const fx = JSON.parse(raw) as {
+        id: string;
+        evidenceClass: string;
+        targetConfirm: string;
+        keys: string[];
+        expected: {
+          mode: string;
+          phase: string;
+          vctAns: string[];
+          expression: string;
+          display: string;
+        };
+      };
+      expect(fx.id).toBe(id);
+      expect(fx.evidenceClass).toBe("TARGET-OFFICIAL-DOC");
+      expect(fx.targetConfirm).toBe("CONFIRMED");
+      const keys = fx.keys.map((k) => {
+        if (!isKeyId(k)) {
+          throw new Error(k);
+        }
+        return k;
+      }) as KeyId[];
+      const s = dispatchKeys(createInitialState(0), keys, 0);
+      expect(s.mode).toBe(fx.expected.mode);
+      expect(s.vector?.phase).toBe(fx.expected.phase);
+      expect(s.vector?.registers.Ans ? vectorToDecCells(s.vector.registers.Ans) : null).toEqual(fx.expected.vctAns);
+      expect(lcdExpression(s)).toBe(fx.expected.expression);
+      expect(lcdResult(s)).toBe(fx.expected.display);
     },
   );
 

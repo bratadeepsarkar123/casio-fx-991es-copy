@@ -6,6 +6,7 @@ import { emptyBaseN } from "./baseN.ts";
 import { emptyStatSession } from "./stat.ts";
 import { emptyEqnSession } from "./eqn.ts";
 import { emptyMatrixSession } from "./matrix.ts";
+import { emptyVectorSession } from "./vector.ts";
 
 export const PERSIST_KEY = "fx991es-plus2/v1";
 export const SCHEMA_VERSION = 1;
@@ -220,6 +221,17 @@ export function isPersistedCalcState(value: unknown): value is CalcState {
   return true;
 }
 
+function isTransientEditorMode(mode: string): boolean {
+  return (
+    mode === "TABLE" ||
+    mode === "BASE-N" ||
+    mode === "STAT" ||
+    mode === "EQN" ||
+    mode === "MATRIX" ||
+    mode === "VECTOR"
+  );
+}
+
 export function serializeState(state: CalcState): PersistEnvelope {
   return {
     schemaVersion: SCHEMA_VERSION,
@@ -230,31 +242,11 @@ export function serializeState(state: CalcState): PersistEnvelope {
       stat: null,
       eqn: null,
       matrix: null,
+      vector: null,
       baseN: emptyBaseN(state.baseN.radix),
-      editor:
-        state.mode === "TABLE" ||
-        state.mode === "BASE-N" ||
-        state.mode === "STAT" ||
-        state.mode === "EQN" ||
-        state.mode === "MATRIX"
-          ? createInitialState(0).editor
-          : state.editor,
-      screen:
-        state.mode === "TABLE" ||
-        state.mode === "BASE-N" ||
-        state.mode === "STAT" ||
-        state.mode === "EQN" ||
-        state.mode === "MATRIX"
-          ? { kind: "input" }
-          : state.screen,
-      result:
-        state.mode === "TABLE" ||
-        state.mode === "BASE-N" ||
-        state.mode === "STAT" ||
-        state.mode === "EQN" ||
-        state.mode === "MATRIX"
-          ? null
-          : state.result,
+      editor: isTransientEditorMode(state.mode) ? createInitialState(0).editor : state.editor,
+      screen: isTransientEditorMode(state.mode) ? { kind: "input" } : state.screen,
+      result: isTransientEditorMode(state.mode) ? null : state.result,
     },
   };
 }
@@ -279,17 +271,14 @@ export function deserializeState(raw: unknown, nowMs = 0): CalcState | null {
     stat: env.state.mode === "STAT" ? emptyStatSession() : null,
     eqn: env.state.mode === "EQN" ? emptyEqnSession() : null,
     matrix: env.state.mode === "MATRIX" ? emptyMatrixSession() : null,
+    vector: env.state.mode === "VECTOR" ? emptyVectorSession() : null,
     baseN: emptyBaseN(env.state.baseN.radix),
     lastActivityMs: nowMs,
     power: "on",
     screen:
       env.state.power === "off"
         ? { kind: "input" }
-        : env.state.mode === "TABLE" ||
-            env.state.mode === "BASE-N" ||
-            env.state.mode === "STAT" ||
-            env.state.mode === "EQN" ||
-            env.state.mode === "MATRIX"
+        : isTransientEditorMode(env.state.mode)
           ? { kind: "input" }
           : env.state.screen,
   };

@@ -23,6 +23,18 @@ import {
   matrixStoDestText,
   relabelMatrixCalls,
 } from "../calc/matrix.ts";
+import {
+  relabelVectorCalls,
+  vectorCellPrompt,
+  vectorDataRegText,
+  vectorDimRegText,
+  vectorDimSizeExpr,
+  vectorDimSizeResult,
+  vectorEditorExpression,
+  vectorEditorValue,
+  vectorMenuText,
+  vectorStoDestText,
+} from "../calc/vector.ts";
 
 function relabelStatCalls(expr: string): string {
   let out = expr;
@@ -102,6 +114,27 @@ export function lcdExpression(state: CalcState): string {
       return matrixCellPrompt("Ans", mx.row, mx.col);
     }
   }
+  if (state.mode === "VECTOR" && state.vector) {
+    const vc = state.vector;
+    if (vc.phase === "dim-reg") {
+      return "VECTOR";
+    }
+    if (vc.phase === "dim-size" && vc.dimTarget) {
+      return vectorDimSizeExpr(vc.dimTarget);
+    }
+    if (vc.phase === "data-reg") {
+      return "VECTOR";
+    }
+    if (vc.phase === "sto-dest") {
+      return "STO";
+    }
+    if (vc.phase === "editor") {
+      return vectorEditorExpression(state);
+    }
+    if (vc.phase === "vctans") {
+      return vectorCellPrompt("Ans", vc.index);
+    }
+  }
   if (state.mode === "TABLE" && state.table?.phase === "view") {
     const row = state.table.rows[state.table.rowIndex];
     if (!row) {
@@ -115,6 +148,9 @@ export function lcdExpression(state: CalcState): string {
   }
   if (state.mode === "MATRIX") {
     return relabelMatrixCalls(expr);
+  }
+  if (state.mode === "VECTOR") {
+    return relabelVectorCalls(expr);
   }
   return expr;
 }
@@ -144,6 +180,9 @@ export function lcdResult(state: CalcState): string {
   }
   if (state.menu.kind === "matrix-op") {
     return matrixMenuText();
+  }
+  if (state.menu.kind === "vector-op") {
+    return vectorMenuText();
   }
   const statMenu = statMenuText(state);
   if (statMenu) {
@@ -193,6 +232,27 @@ export function lcdResult(state: CalcState): string {
     }
     if (mx.phase === "matans") {
       return state.result?.display ?? matrixEditorValue(state);
+    }
+  }
+  if (state.mode === "VECTOR" && state.vector) {
+    const vc = state.vector;
+    if (vc.phase === "dim-reg") {
+      return vectorDimRegText();
+    }
+    if (vc.phase === "dim-size") {
+      return vectorDimSizeResult();
+    }
+    if (vc.phase === "data-reg") {
+      return vectorDataRegText();
+    }
+    if (vc.phase === "sto-dest") {
+      return vectorStoDestText();
+    }
+    if (vc.phase === "editor") {
+      return vectorEditorValue(state);
+    }
+    if (vc.phase === "vctans") {
+      return state.result?.display ?? vectorEditorValue(state);
     }
   }
   if (state.mode === "TABLE" && state.table) {

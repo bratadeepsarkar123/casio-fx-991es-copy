@@ -38,6 +38,7 @@ import { applyBaseOpMenu, emptyBaseN, reduceBaseN, reduceBaseNError } from "./ba
 import { emptyStatSession, handleStatMenu, isStatMenuKind, reduceStat, wipeStatData } from "./stat.ts";
 import { emptyEqnSession, reduceEqn } from "./eqn.ts";
 import { emptyMatrixSession, handleMatrixMenu, isMatrixMenuKind, reduceMatrix, wipeMatrixRegisters } from "./matrix.ts";
+import { emptyVectorSession, handleVectorMenu, isVectorMenuKind, reduceVector, wipeVectorRegisters } from "./vector.ts";
 import type {
   Atom,
   CalcMode,
@@ -97,6 +98,7 @@ export function createInitialState(nowMs = 0): CalcState {
     stat: null,
     eqn: null,
     matrix: null,
+    vector: null,
   };
 }
 
@@ -153,6 +155,7 @@ function handleMenu(state: CalcState, keyId: KeyId): CalcState | null {
         stat: mode === "STAT" ? emptyStatSession() : null,
         eqn: mode === "EQN" ? emptyEqnSession() : null,
         matrix: mode === "MATRIX" ? emptyMatrixSession() : null,
+        vector: mode === "VECTOR" ? emptyVectorSession() : null,
         baseN: emptyBaseN(10),
       };
     }
@@ -406,6 +409,9 @@ function handleMenu(state: CalcState, keyId: KeyId): CalcState | null {
   if (isMatrixMenuKind(menu.kind)) {
     return handleMatrixMenu(state, keyId);
   }
+  if (isVectorMenuKind(menu.kind)) {
+    return handleVectorMenu(state, keyId);
+  }
   return state;
 }
 
@@ -444,9 +450,10 @@ function runConfirm(state: CalcState, action: "setup" | "memory" | "all"): CalcS
       ansIm: "0",
       preAnsIm: "0",
       matrix: state.matrix ? wipeMatrixRegisters(state.matrix) : null,
-      editor: state.mode === "MATRIX" ? emptyEditor() : state.editor,
-      screen: state.mode === "MATRIX" ? { kind: "input" as const } : state.screen,
-      result: state.mode === "MATRIX" ? null : state.result,
+      vector: state.vector ? wipeVectorRegisters(state.vector) : null,
+      editor: state.mode === "MATRIX" || state.mode === "VECTOR" ? emptyEditor() : state.editor,
+      screen: state.mode === "MATRIX" || state.mode === "VECTOR" ? { kind: "input" as const } : state.screen,
+      result: state.mode === "MATRIX" || state.mode === "VECTOR" ? null : state.result,
     };
   }
   if (action === "setup") {
@@ -463,6 +470,7 @@ function runConfirm(state: CalcState, action: "setup" | "memory" | "all"): CalcS
       stat: null,
       eqn: null,
       matrix: null,
+      vector: null,
       baseN: emptyBaseN(10),
     };
   }
@@ -649,6 +657,13 @@ export function reduce(state: CalcState, event: KeyEvent): CalcState {
     const matrixHandled = reduceMatrix(s, event);
     if (matrixHandled) {
       return matrixHandled;
+    }
+  }
+
+  if (s.mode === "VECTOR") {
+    const vectorHandled = reduceVector(s, event);
+    if (vectorHandled) {
+      return vectorHandled;
     }
   }
 
