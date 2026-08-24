@@ -42,10 +42,10 @@ This build must **not** be described as a complete clone. No physical differenti
 | Suite | Result |
 | --- | --- |
 | `npm ci` | pass |
-| Vitest (`npm test`) | **257 passed** (24 files). Pre-EQN baseline 223/21 files; EQN solver + reducer + goldens added. COMP `golden/acceptance.test.ts` still 30 passed. TABLE, BASE-N, CMPLX, and STAT suites still green. |
+| Vitest (`npm test`) | **299 passed** (27 files). Pre-MATRIX baseline 257/24 files; MATRIX numeric + reducer + goldens added. COMP `golden/acceptance.test.ts` still 30 passed. TABLE, BASE-N, CMPLX, STAT, and EQN suites still green. |
 | `npm run lint` (`tsc --noEmit`) | pass |
 | `npm run build` (`tsc` + Vite PWA) | pass — Workbox precache 15 entries |
-| Playwright (`npx playwright install --with-deps chromium` then `npm run test:e2e`) | **27 passed** (was 24; +EQN on Chromium desktop, Pixel 7, iPad-sized Chromium). **Not** real iOS Safari. |
+| Playwright (`npx playwright install --with-deps chromium` then `npm run test:e2e`) | **30 passed** (was 27; +MATRIX on Chromium desktop, Pixel 7, iPad-sized Chromium). **Not** real iOS Safari. |
 | Differential vs physical unit | N/A |
 
 ## Visual calibration
