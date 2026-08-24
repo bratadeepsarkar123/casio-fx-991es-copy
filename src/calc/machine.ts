@@ -13,6 +13,7 @@ import {
   insertCplxFmt,
   insertDigit,
   insertDot,
+  insertDms,
   insertFraction,
   insertGroup,
   insertLogab,
@@ -31,7 +32,7 @@ import {
   prepareForBinaryOp,
 } from "./editor.ts";
 import { evaluateEquals } from "./evaluate.ts";
-import { formatBySetup, toggleDecimal } from "./format.ts";
+import { formatEngineering, toggleDecimal, toggleSexagesimal } from "./format.ts";
 import { D, createUint32Rng } from "./numeric.ts";
 import { emptyTableSession, reduceTable, tableReturnToFx } from "./table.ts";
 import { applyBaseOpMenu, emptyBaseN, reduceBaseN, reduceBaseNError } from "./baseN.ts";
@@ -412,6 +413,19 @@ function handleMenu(state: CalcState, keyId: KeyId): CalcState | null {
   if (isVectorMenuKind(menu.kind)) {
     return handleVectorMenu(state, keyId);
   }
+  if (menu.kind === "comp-fn") {
+    const name =
+      keyId === "1" ? "GCD" : keyId === "2" ? "LCM" : keyId === "3" ? "Int" : keyId === "4" ? "Intg" : null;
+    if (!name) {
+      return state;
+    }
+    return {
+      ...clearLatches(state),
+      menu: { kind: "none" },
+      editor: insertCall(beginInputIfResult(state).editor, name),
+      screen: { kind: "input" },
+    };
+  }
   return state;
 }
 
@@ -576,6 +590,9 @@ function onEquals(state: CalcState, nextUint32: () => number): CalcState {
       ansIm: result.complex?.im ?? "0",
       history,
       rngSeed: state.rngSeed + 1,
+      variables: result.polRec
+        ? { ...state.variables, X: result.polRec.X, Y: result.polRec.Y }
+        : state.variables,
     };
   } catch (err) {
     const code = (err as { code?: ErrorCode }).code ?? "Math ERROR";
@@ -801,6 +818,9 @@ export function reduce(state: CalcState, event: KeyEvent): CalcState {
       return { ...clearLatches(s), setup: next };
     }
     if (s.result) {
+      if (s.result.remainder) {
+        return clearLatches(s);
+      }
       const toggled = toggleDecimal(s.result);
       return { ...clearLatches(s), result: toggled, resultDecimal: toggled.naturalKind === "decimal" };
     }
@@ -820,6 +840,12 @@ export function reduce(state: CalcState, event: KeyEvent): CalcState {
     }
     if (event.keyId === "eng") {
       return { ...clearLatches(s), editor: insertSym(beginInputIfResult(s).editor, "i"), screen: { kind: "input" } };
+    }
+    if (event.keyId === "0") {
+      return { ...clearLatches(s), menu: { kind: "comp-fn" } };
+    }
+    if (event.keyId === "div") {
+      return withBinaryOp(beginInputIfResult(s), "÷R");
     }
   }
 
@@ -896,6 +922,9 @@ export function reduce(state: CalcState, event: KeyEvent): CalcState {
     };
   }
 
+  if (s.shift && event.keyId === "0") {
+    return { ...clearLatches(s), editor: insertCall(beginInputIfResult(s).editor, "Rnd"), screen: { kind: "input" } };
+  }
   if (s.shift && event.keyId === "9") {
     return { ...clearLatches(s), menu: { kind: "clr" } };
   }
@@ -1022,15 +1051,22 @@ export function reduce(state: CalcState, event: KeyEvent): CalcState {
     if (s.alpha) {
       return { ...clearLatches(s), editor: insertVar(beginInputIfResult(s).editor, "B"), screen: { kind: "input" } };
     }
-    return { ...clearLatches(s), editor: insertPost(beginInputIfResult(s).editor, "dms"), screen: { kind: "input" } };
+    if (s.screen.kind === "result" && s.result) {
+      const toggled = toggleSexagesimal(s.result);
+      return { ...clearLatches(s), result: toggled };
+    }
+    return { ...clearLatches(s), editor: insertDms(beginInputIfResult(s).editor), screen: { kind: "input" } };
   }
   if (event.keyId === "eng") {
     if (s.result) {
       const x = D(s.result.approx);
-      const shifted = s.shift ? x.div(1000) : x.times(s.result.approx.includes("×10") ? 1 : 1);
-      void shifted;
-      const eng = formatBySetup(x, { ...s.setup, numberFormat: { kind: "Sci", n: 4 } });
-      return { ...clearLatches(s), result: { ...s.result, display: eng, approx: eng, naturalKind: "decimal" } };
+      const prev = s.result.engActive ? (s.result.engOffset ?? 0) : 0;
+      const nextOffset = s.result.engActive ? prev + (s.shift ? 1 : -1) : s.shift ? 1 : 0;
+      const eng = formatEngineering(x, D(nextOffset));
+      return {
+        ...clearLatches(s),
+        result: { ...s.result, display: eng, engOffset: nextOffset, engActive: true, naturalKind: "decimal" },
+      };
     }
     return clearLatches(s);
   }

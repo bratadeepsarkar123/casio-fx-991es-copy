@@ -93,6 +93,7 @@ function evalAtom(atom: Atom, state: CalcState): Vx {
     case "num":
     case "frac":
     case "mixed":
+    case "sexagesimal":
     case "sqrt":
     case "cbrt":
     case "nthrt":

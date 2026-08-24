@@ -95,6 +95,14 @@ function atomNode(
           </span>
         </span>
       );
+    case "sexagesimal":
+      return (
+        <span data-testid="nat-dms">
+          {wrapSlot(a.deg, format, cursor, showCaret, childPath(slotPath, i, "whole"))}°
+          {wrapSlot(a.min, format, cursor, showCaret, childPath(slotPath, i, "num"))}′
+          {wrapSlot(a.sec, format, cursor, showCaret, childPath(slotPath, i, "den"))}″
+        </span>
+      );
     case "sqrt":
       return (
         <span className="nat-sqrt" data-testid="nat-sqrt">
@@ -154,7 +162,7 @@ function atomNode(
                 format,
                 cursor,
                 showCaret,
-                argIndex === 0 ? childPath(slotPath, i, "args0") : [...childPath(slotPath, i, "args0"), argIndex, 99],
+                childPath(slotPath, i, argIndex <= 0 ? "args0" : argIndex === 1 ? "args1" : "args2"),
               )}
             </span>
           ))}

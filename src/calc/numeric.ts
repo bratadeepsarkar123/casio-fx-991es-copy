@@ -227,3 +227,20 @@ export function ranInt(a: Decimal, b: Decimal, u: number): Decimal {
   }
   return a.plus(D(u).mod(span));
 }
+
+export function lcmBig(a: bigint, b: bigint): bigint {
+  if (a === 0n || b === 0n) {
+    return 0n;
+  }
+  const aa = a < 0n ? -a : a;
+  const bb = b < 0n ? -b : b;
+  return (aa / gcdBig(aa, bb)) * bb;
+}
+
+/** Exact integer as bigint. Non-integers are Math ERROR. */
+export function toBigIntExact(x: Decimal): bigint {
+  if (!x.isInteger()) {
+    throw new CalcMathError();
+  }
+  return BigInt(x.toFixed(0));
+}

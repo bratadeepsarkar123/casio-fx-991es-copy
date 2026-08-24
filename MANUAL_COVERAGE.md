@@ -26,10 +26,10 @@ Source: ToC of supplied PDF (printed pages 1–3 of the file, labeled 1–3 in t
 | Toggling results | 21 | in-scope | S⇔D |
 | Fraction calculations | 22 | in-scope | Worked examples |
 | Percent | 23 | in-scope | Worked examples |
-| Sexagesimal | 23–24 | in-scope | PARTIAL impl |
+| Sexagesimal | 23–24 | in-scope | IMPLEMENTED (input °′″ + result toggle) |
 | Multi-statements | 24 | in-scope | Colon |
-| Engineering notation | 24–25 | in-scope | PARTIAL |
-| Remainder ÷R | 25 | in-scope | PARTIAL |
+| Engineering notation | 24–25 | in-scope | IMPLEMENTED (ENG / SHIFT ENG triples) |
+| Remainder ÷R | 25 | in-scope | IMPLEMENTED (ALPHA+÷; nCr stays SHIFT+÷) |
 | Recurring decimals | 26–29 | in-scope | DEFERRED/PARTIAL |
 | Prime factorization | 30 | in-scope | DEFERRED |
 | History/Replay | 31–32 | in-scope | |
@@ -40,9 +40,9 @@ Source: ToC of supplied PDF (printed pages 1–3 of the file, labeled 1–3 in t
 | Integration | 39–40 | in-scope | P2 |
 | Differential | 41–42 | in-scope | P2 |
 | Σ / Π | 42–43 | in-scope | P2 |
-| Pol/Rec | 43–44 | in-scope | P1/P2 |
+| Pol/Rec | 43–44 | in-scope | IMPLEMENTED (writes X,Y) |
 | Factorial, Abs, Ran#, RanInt | 44–45 | in-scope | |
-| nPr nCr Rnd GCD LCM Int | 46–47 | in-scope | PARTIAL |
+| nPr nCr Rnd GCD LCM Int | 46–47 | in-scope | IMPLEMENTED (GCD menu ALPHA+0 INFERRED) |
 | CALC / SOLVE | 47–51 | in-scope | DEFERRED |
 | Scientific constants | 52 | in-scope | DEFERRED |
 | Metric conversion | 53–55 | in-scope | DEFERRED |

@@ -45,8 +45,8 @@ describe("COMP call.name domain-token gate", () => {
     expect(s.vector).toBeNull();
   });
 
-  it("unimplemented COMP tokens Pol / int / diff / Σ remain Syntax ERROR", () => {
-    for (const name of ["Pol", "Rec", "int", "diff", "Σ"]) {
+  it("unimplemented COMP tokens int / diff / Σ remain Syntax ERROR", () => {
+    for (const name of ["int", "diff", "Σ"]) {
       const s = reduce(withInjectedCall(name), { keyId: "equals", source: "test", nowMs: 0 });
       expect(s.screen.kind).toBe("error");
       if (s.screen.kind === "error") {

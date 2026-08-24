@@ -31,6 +31,48 @@ export function formatSci(x: Decimal, digits: number): string {
   return `${mant}×10${expStr}`;
 }
 
+function formatExpDigits(exp: Decimal): string {
+  const mag = exp.abs().toFixed(0).padStart(2, "0");
+  return exp.isNeg() ? `-${mag}` : `+${mag}`;
+}
+
+/** Engineering notation; `offsetTriples` shifts the exponent by 3 each unit. SRC-P24–25. */
+export function formatEngineering(x: Decimal, offsetTriples: Decimal): string {
+  if (x.isZero()) {
+    return `0×10${formatExpDigits(offsetTriples.times(3))}`;
+  }
+  const sign = x.isNeg() ? "-" : "";
+  const abs = x.abs();
+  const sciExp = abs.log(10).floor();
+  let rem = sciExp.mod(3);
+  if (rem.isNeg()) {
+    rem = rem.plus(3);
+  }
+  const engExp = sciExp.minus(rem).plus(offsetTriples.times(3));
+  const mant = abs.div(D(10).pow(engExp));
+  const mantStr = stripTrailingZeros(mant.toSignificantDigits(DISPLAY_DIGITS, Decimal.ROUND_HALF_UP).toFixed());
+  return `${sign}${mantStr}×10${formatExpDigits(engExp)}`;
+}
+
+/** Degree–minute–second display. SRC-P23–24. */
+export function formatSexagesimal(x: Decimal): string {
+  const sign = x.isNeg() ? "-" : "";
+  const abs = x.abs();
+  let deg = abs.trunc();
+  let minFrac = abs.minus(deg).times(60);
+  let min = minFrac.trunc();
+  let sec = minFrac.minus(min).times(60).toDecimalPlaces(0, Decimal.ROUND_HALF_UP);
+  if (sec.gte(60)) {
+    sec = sec.minus(60);
+    min = min.plus(1);
+  }
+  if (min.gte(60)) {
+    min = min.minus(60);
+    deg = deg.plus(1);
+  }
+  return `${sign}${deg.toFixed(0)}°${min.toFixed(0)}′${sec.toFixed(0)}″`;
+}
+
 export function formatNorm(x: Decimal, which: 1 | 2): string {
   if (x.isZero()) {
     return "0";
@@ -256,6 +298,16 @@ export function resultFromSym(s: Sym, setup: SetupState, complexFormat = setup.c
       return _never;
     }
   }
+}
+
+export function toggleSexagesimal(result: ResultValue): ResultValue {
+  if (!result.sexagesimal) {
+    return result;
+  }
+  if (result.display === result.sexagesimal) {
+    return { ...result, display: result.approx, naturalKind: "decimal" };
+  }
+  return { ...result, display: result.sexagesimal, naturalKind: "decimal" };
 }
 
 export function toggleDecimal(result: ResultValue): ResultValue {

@@ -10,7 +10,7 @@ export function emptyEditor(): EditorState {
   };
 }
 
-export type SlotField = "num" | "den" | "inner" | "exp" | "base" | "arg" | "n" | "whole" | "args0";
+export type SlotField = "num" | "den" | "inner" | "exp" | "base" | "arg" | "n" | "whole" | "args0" | "args1" | "args2";
 
 interface PathStep {
   index: number;
@@ -50,6 +50,10 @@ export function fieldToCode(field: SlotField): number {
       return 7;
     case "args0":
       return 8;
+    case "args1":
+      return 9;
+    case "args2":
+      return 10;
     default: {
       const _never: never = field;
       return _never;
@@ -77,6 +81,10 @@ function fieldFromCode(code: number): SlotField {
       return "whole";
     case 8:
       return "args0";
+    case 9:
+      return "args1";
+    case 10:
+      return "args2";
     default:
       return "inner";
   }
@@ -88,6 +96,8 @@ function getField(atom: Atom, field: SlotField): Atom[] | null {
       return field === "num" ? atom.num : field === "den" ? atom.den : null;
     case "mixed":
       return field === "whole" ? atom.whole : field === "num" ? atom.num : field === "den" ? atom.den : null;
+    case "sexagesimal":
+      return field === "whole" ? atom.deg : field === "num" ? atom.min : field === "den" ? atom.sec : null;
     case "sqrt":
     case "cbrt":
     case "neg":
@@ -103,7 +113,16 @@ function getField(atom: Atom, field: SlotField): Atom[] | null {
     case "logb":
       return field === "base" ? atom.base : field === "arg" ? atom.arg : null;
     case "call":
-      return field === "args0" ? (atom.args[0] ?? null) : null;
+      if (field === "args0") {
+        return atom.args[0] ?? null;
+      }
+      if (field === "args1") {
+        return atom.args[1] ?? null;
+      }
+      if (field === "args2") {
+        return atom.args[2] ?? null;
+      }
+      return null;
     default:
       return null;
   }
@@ -124,6 +143,17 @@ function setField(atom: Atom, field: SlotField, slot: Atom[]): Atom {
         return { ...atom, den: slot };
       }
       return atom;
+    case "sexagesimal":
+      if (field === "whole") {
+        return { ...atom, deg: slot };
+      }
+      if (field === "num") {
+        return { ...atom, min: slot };
+      }
+      if (field === "den") {
+        return { ...atom, sec: slot };
+      }
+      return atom;
     case "sqrt":
     case "cbrt":
     case "neg":
@@ -140,9 +170,10 @@ function setField(atom: Atom, field: SlotField, slot: Atom[]): Atom {
     case "logb":
       return field === "base" ? { ...atom, base: slot } : field === "arg" ? { ...atom, arg: slot } : atom;
     case "call":
-      if (field === "args0") {
+      if (field === "args0" || field === "args1" || field === "args2") {
         const args = [...atom.args];
-        args[0] = slot;
+        const idx = field === "args0" ? 0 : field === "args1" ? 1 : 2;
+        args[idx] = slot;
         return { ...atom, args };
       }
       return atom;
@@ -442,7 +473,76 @@ export function insertColon(ed: EditorState): EditorState {
 }
 
 export function insertComma(ed: EditorState): EditorState {
+  const found = enclosingCall(ed);
+  if (found) {
+    const args = [...found.atom.args];
+    args.push([]);
+    const nextSlot = [...found.slot];
+    nextSlot[found.index] = { ...found.atom, args };
+    const root = replaceSlot(ed.root, found.parentPath, nextSlot);
+    const argIndex = args.length - 1;
+    const field: SlotField = argIndex <= 0 ? "args0" : argIndex === 1 ? "args1" : "args2";
+    const path = [...found.parentPath, found.index, fieldToCode(field)];
+    return { ...ed, root, cursor: { path, index: 0, offset: null } };
+  }
   return insertAtom(ed, { t: "comma" });
+}
+
+function enclosingCall(ed: EditorState): { parentPath: number[]; index: number; atom: Extract<Atom, { t: "call" }>; slot: Atom[] } | null {
+  let path = ed.cursor.path;
+  while (path.length >= 2) {
+    const parentPath = path.slice(0, -2);
+    const steps = parsePath(path);
+    const last = steps[steps.length - 1];
+    if (!last) {
+      break;
+    }
+    const { slot } = locate(ed.root, parentPath);
+    const atom = slot[last.index];
+    if (atom?.t === "call") {
+      return { parentPath, index: last.index, atom, slot };
+    }
+    path = parentPath;
+  }
+  return null;
+}
+
+export function insertDms(ed: EditorState): EditorState {
+  const steps = parsePath(ed.cursor.path);
+  const last = steps[steps.length - 1];
+  if (last) {
+    const parentPath = ed.cursor.path.slice(0, -2);
+    const { slot } = locate(ed.root, parentPath);
+    const atom = slot[last.index];
+    if (atom?.t === "sexagesimal") {
+      if (last.field === "whole") {
+        const path = [...parentPath, last.index, fieldToCode("num")];
+        return { ...ed, cursor: { path, index: atom.min.length, offset: null } };
+      }
+      if (last.field === "num") {
+        const path = [...parentPath, last.index, fieldToCode("den")];
+        return { ...ed, cursor: { path, index: atom.sec.length, offset: null } };
+      }
+      return { ...ed, cursor: { path: parentPath, index: last.index + 1, offset: null } };
+    }
+  }
+  const { slot } = locate(ed.root, ed.cursor.path);
+  const prev = slot[ed.cursor.index - 1];
+  if (prev?.t === "sexagesimal") {
+    const path = [...ed.cursor.path, ed.cursor.index - 1, fieldToCode(prev.min.length === 0 ? "num" : "den")];
+    const inner = prev.min.length === 0 ? prev.min : prev.sec;
+    return { ...ed, cursor: { path, index: inner.length, offset: null } };
+  }
+  if (isValueAtom(prev) && prev) {
+    const next = [...slot];
+    next[ed.cursor.index - 1] = { t: "sexagesimal", deg: [prev], min: [], sec: [] };
+    const root = replaceSlot(ed.root, ed.cursor.path, next);
+    const path = [...ed.cursor.path, ed.cursor.index - 1, fieldToCode("num")];
+    return { ...ed, root, cursor: { path, index: 0, offset: null } };
+  }
+  const inserted = insertAtom(ed, { t: "sexagesimal", deg: [], min: [], sec: [] });
+  const path = [...inserted.cursor.path, inserted.cursor.index - 1, fieldToCode("whole")];
+  return { ...inserted, cursor: { path, index: 0, offset: null } };
 }
 
 export function deleteLeft(ed: EditorState): EditorState {
@@ -595,6 +695,14 @@ function nextSlotField(atom: Atom | undefined, field: SlotField): SlotField | nu
         return "den";
       }
       return null;
+    case "sexagesimal":
+      if (field === "whole") {
+        return "num";
+      }
+      if (field === "num") {
+        return "den";
+      }
+      return null;
     case "nthrt":
       return field === "n" ? "inner" : null;
     case "pow":
@@ -651,6 +759,12 @@ export function byteCount(atoms: Atom[]): number {
           walk(a.whole);
           walk(a.num);
           walk(a.den);
+          break;
+        case "sexagesimal":
+          n += 4;
+          walk(a.deg);
+          walk(a.min);
+          walk(a.sec);
           break;
         case "sqrt":
         case "cbrt":
@@ -719,6 +833,14 @@ export function atomsToLinear(atoms: Atom[], format: DisplayFormat): string {
           walk(a.num);
           parts.push("/");
           walk(a.den);
+          break;
+        case "sexagesimal":
+          walk(a.deg);
+          parts.push("°");
+          walk(a.min);
+          parts.push("′");
+          walk(a.sec);
+          parts.push("″");
           break;
         case "sqrt":
           parts.push("√(");
@@ -876,6 +998,14 @@ export function atomsToLinearSplit(
           emit("/");
           walk(a.den, childPath(slotPath, i, "den"));
           break;
+        case "sexagesimal":
+          walk(a.deg, childPath(slotPath, i, "whole"));
+          emit("°");
+          walk(a.min, childPath(slotPath, i, "num"));
+          emit("′");
+          walk(a.sec, childPath(slotPath, i, "den"));
+          emit("″");
+          break;
         case "sqrt":
           emit("√(");
           walk(a.inner, childPath(slotPath, i, "inner"));
@@ -914,9 +1044,8 @@ export function atomsToLinearSplit(
             if (argIndex) {
               emit(",");
             }
-            const path =
-              argIndex === 0 ? childPath(slotPath, i, "args0") : [...childPath(slotPath, i, "args0"), argIndex, 99];
-            walk(arg, path);
+            const field: SlotField = argIndex <= 0 ? "args0" : argIndex === 1 ? "args1" : "args2";
+            walk(arg, childPath(slotPath, i, field));
           });
           emit(a.closed ? ")" : "");
           break;
@@ -1006,6 +1135,8 @@ export function prepareForBinaryOp(ed: EditorState): EditorState {
         return { ...ed, cursor: { path: parentPath, index: last.index + 1, offset: null } };
       }
       return ed;
+    case "sexagesimal":
+      return { ...ed, cursor: { path: parentPath, index: last.index + 1, offset: null } };
     case "sqrt":
     case "cbrt":
     case "neg":

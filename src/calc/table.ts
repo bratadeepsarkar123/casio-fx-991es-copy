@@ -89,6 +89,11 @@ function walkAtoms(atoms: Atom[], visit: (atom: Atom) => void): void {
         walkAtoms(atom.num, visit);
         walkAtoms(atom.den, visit);
         break;
+      case "sexagesimal":
+        walkAtoms(atom.deg, visit);
+        walkAtoms(atom.min, visit);
+        walkAtoms(atom.sec, visit);
+        break;
       case "sqrt":
       case "cbrt":
       case "neg":

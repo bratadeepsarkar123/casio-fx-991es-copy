@@ -223,6 +223,9 @@ export function lcdResult(state: CalcState): string {
   if (state.menu.kind === "cmplx-op") {
     return "1:arg 2:Conjg 3:r∠θ 4:a+bi";
   }
+  if (state.menu.kind === "comp-fn") {
+    return "1:GCD 2:LCM 3:Int 4:Intg";
+  }
   if (state.menu.kind === "matrix-op") {
     return matrixMenuText();
   }
@@ -389,6 +392,11 @@ function hasColon(state: CalcState): boolean {
           break;
         case "mixed":
           if (walk(a.whole) || walk(a.num) || walk(a.den)) {
+            return true;
+          }
+          break;
+        case "sexagesimal":
+          if (walk(a.deg) || walk(a.min) || walk(a.sec)) {
             return true;
           }
           break;

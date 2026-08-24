@@ -13,9 +13,12 @@ import {
   ranInt,
   roundInternal,
   toRad,
+  gcdBig,
+  lcmBig,
+  toBigIntExact,
   type Dec,
 } from "./numeric.ts";
-import { resultFromSym } from "./format.ts";
+import { resultFromSym, formatBySetup, formatSexagesimal } from "./format.ts";
 import { specialTrigFromSym } from "./specialTrig.ts";
 import {
   asCplx,
@@ -52,6 +55,8 @@ export interface EvalContext {
   statType: StatType | null;
   statFreq: boolean;
   statRows: StatRow[] | null;
+  divR: { quot: Dec; rem: Dec } | null;
+  polRec: { x: Dec; y: Dec; kind: "pol" | "rec" } | null;
 }
 
 function ctxFromState(state: CalcState, nextUint32: () => number): EvalContext {
@@ -73,6 +78,8 @@ function ctxFromState(state: CalcState, nextUint32: () => number): EvalContext {
     statType: state.mode === "STAT" ? (state.stat?.type ?? null) : null,
     statFreq: state.setup.statFreq,
     statRows: state.mode === "STAT" && state.stat ? state.stat.rows : null,
+    divR: null,
+    polRec: null,
   };
 }
 
@@ -140,6 +147,12 @@ function evalAtom(atom: Atom, ctx: EvalContext): Sym {
       const d = evalSlot(atom.den, ctx);
       return symAdd(w, symDiv(n, d));
     }
+    case "sexagesimal": {
+      const deg = atom.deg.length ? requireReal(evalSlot(atom.deg, ctx)) : D(0);
+      const min = atom.min.length ? requireReal(evalSlot(atom.min, ctx)) : D(0);
+      const sec = atom.sec.length ? requireReal(evalSlot(atom.sec, ctx)) : D(0);
+      return fromDec(deg.plus(min.div(60)).plus(sec.div(3600)));
+    }
     case "sqrt":
       return symSqrt(evalSlot(atom.inner, ctx));
     case "cbrt": {
@@ -206,7 +219,7 @@ function evalAtom(atom: Atom, ctx: EvalContext): Sym {
           }
           return symDiv(inner, symRat(100n));
         case "dms":
-          return fromDec(fromDms(requireReal(inner)));
+          return inner;
         default: {
           const _never: never = atom;
           throw new CalcSyntaxError();
@@ -236,10 +249,6 @@ function evalAtom(atom: Atom, ctx: EvalContext): Sym {
       return _never;
     }
   }
-}
-
-function fromDms(x: Dec): Dec {
-  return x;
 }
 
 function fromRadToCurrent(rad: Dec, unit: AngleUnit): Dec {
@@ -344,6 +353,49 @@ function evalCall(name: string, args: Atom[][], ctx: EvalContext): Sym {
     }
     case "Rnd":
       return fromDec((vals[0] ? requireReal(vals[0]) : D(0)).toSignificantDigits(10, 4));
+    case "Pol": {
+      if (!vals[0] || !vals[1]) {
+        throw new CalcArgumentError();
+      }
+      const x = requireReal(vals[0]);
+      const y = requireReal(vals[1]);
+      const z = packCplx(fromDec(x), fromDec(y));
+      const r = toDec(complexAbs(z));
+      const th = toDec(complexArg(z, ctx.angle));
+      ctx.polRec = { x: r, y: th, kind: "pol" };
+      return fromDec(r);
+    }
+    case "Rec": {
+      if (!vals[0] || !vals[1]) {
+        throw new CalcArgumentError();
+      }
+      const r = requireReal(vals[0]);
+      const th = requireReal(vals[1]);
+      const z = polarToRect(fromDec(r), fromDec(th), ctx.angle);
+      const { re, im } = asCplx(z);
+      ctx.polRec = { x: toDec(re), y: toDec(im), kind: "rec" };
+      return re;
+    }
+    case "GCD": {
+      if (!vals[0] || !vals[1]) {
+        throw new CalcArgumentError();
+      }
+      const a = toBigIntExact(requireReal(vals[0]));
+      const b = toBigIntExact(requireReal(vals[1]));
+      return symRat(gcdBig(a, b));
+    }
+    case "LCM": {
+      if (!vals[0] || !vals[1]) {
+        throw new CalcArgumentError();
+      }
+      const a = toBigIntExact(requireReal(vals[0]));
+      const b = toBigIntExact(requireReal(vals[1]));
+      return symRat(lcmBig(a, b));
+    }
+    case "Int":
+      return fromDec((vals[0] ? requireReal(vals[0]) : D(0)).trunc());
+    case "Intg":
+      return fromDec((vals[0] ? requireReal(vals[0]) : D(0)).floor());
     default:
       throw new CalcSyntaxError();
   }
@@ -451,6 +503,9 @@ function reduceItems(items: Item[], ctx: EvalContext): Sym {
       throw new CalcSyntaxError();
     }
     output.push({ k: "val", v: applyOp(op.op, a.v, b.v, ctx) });
+    if (op.op !== "÷R") {
+      ctx.divR = null;
+    }
   };
   for (const it of items) {
     if (it.k === "val") {
@@ -497,7 +552,14 @@ function applyOp(op: string, a: Sym, b: Sym, ctx: EvalContext): Sym {
       if (y.isZero()) {
         throw new CalcMathError();
       }
+      const huge = x.abs().gte("1e10") || y.abs().gte("1e10");
       const q = x.div(y).trunc();
+      const rem = x.minus(q.times(y));
+      if (huge || !q.isInteger() || q.lte(0) || rem.lt(0)) {
+        ctx.divR = null;
+        return symDiv(a, b);
+      }
+      ctx.divR = { quot: q, rem };
       return fromDec(q);
     }
     case "nPr":
@@ -539,6 +601,44 @@ export function evaluateToSym(
   return sym;
 }
 
+function decorateCompResult(result: ResultValue, ctx: EvalContext, state: CalcState): ResultValue {
+  const mathO = state.setup.displayFormat === "MthIO-MathO";
+  let next: ResultValue = result.complex
+    ? result
+    : { ...result, sexagesimal: formatSexagesimal(D(result.approx)) };
+  if (ctx.polRec) {
+    const X = formatBySetup(ctx.polRec.x, state.setup);
+    const Y = formatBySetup(ctx.polRec.y, state.setup);
+    const display =
+      ctx.polRec.kind === "pol"
+        ? mathO
+          ? `r=${X} θ=${Y}`
+          : `r=${X}`
+        : mathO
+          ? `X=${X} Y=${Y}`
+          : `X=${X}`;
+    next = {
+      ...next,
+      display,
+      approx: X,
+      polRec: { X, Y, kind: ctx.polRec.kind },
+      naturalKind: "decimal",
+    };
+  }
+  if (ctx.divR) {
+    const q = formatBySetup(ctx.divR.quot, state.setup);
+    const r = formatBySetup(ctx.divR.rem, state.setup);
+    next = {
+      ...next,
+      display: `${q} R ${r}`,
+      approx: q,
+      remainder: { quot: q, rem: r },
+      naturalKind: "decimal",
+    };
+  }
+  return next;
+}
+
 export function evaluateAtoms(
   atoms: Atom[],
   state: CalcState,
@@ -563,10 +663,11 @@ export function evaluateAtoms(
     }
     const raw = toDec(sym);
     const dec = assertRange(raw);
-    if (raw.isZero() || (dec.isZero() && !raw.isZero())) {
-      return resultFromSym(symRat(0n), state.setup);
-    }
-    return resultFromSym(sym, state.setup, format);
+    const base =
+      raw.isZero() || (dec.isZero() && !raw.isZero())
+        ? resultFromSym(symRat(0n), state.setup)
+        : resultFromSym(sym, state.setup, format);
+    return decorateCompResult(base, ctx, state);
   } catch (err) {
     if (err instanceof CalcMathError || err instanceof CalcSyntaxError || err instanceof CalcArgumentError) {
       throw err;

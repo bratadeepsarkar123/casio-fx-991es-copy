@@ -59,6 +59,7 @@ export type Atom =
   | { t: "nthrt"; n: Atom[]; inner: Atom[] }
   | { t: "pow"; base: Atom[]; exp: Atom[] }
   | { t: "logb"; base: Atom[]; arg: Atom[] }
+  | { t: "sexagesimal"; deg: Atom[]; min: Atom[]; sec: Atom[] }
   | { t: "call"; name: string; args: Atom[][]; closed: boolean }
   | { t: "group"; inner: Atom[]; closed: boolean }
   | { t: "var"; name: VarName }
@@ -99,6 +100,11 @@ export interface ResultValue {
   sexagesimal?: string;
   /** Rectangular parts as decimal strings. Present when the value is (or was) complex. */
   complex?: { re: string; im: string };
+  /** ENG key offset in triples of three (0 = standard engineering). */
+  engOffset?: number;
+  engActive?: boolean;
+  remainder?: { quot: string; rem: string };
+  polRec?: { X: string; Y: string; kind: "pol" | "rec" };
 }
 
 export interface HistoryEntry {
@@ -136,6 +142,7 @@ export type MenuState =
   | { kind: "stat-reg" }
   | { kind: "stat-distr" }
   | { kind: "stat-minmax" }
+  | { kind: "comp-fn" }
   | { kind: "matrix-op" }
   | { kind: "vector-op" };
 

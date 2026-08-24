@@ -92,6 +92,7 @@ function evalAtom(atom: Atom, state: CalcState): Mx {
     case "num":
     case "frac":
     case "mixed":
+    case "sexagesimal":
     case "sqrt":
     case "cbrt":
     case "nthrt":
