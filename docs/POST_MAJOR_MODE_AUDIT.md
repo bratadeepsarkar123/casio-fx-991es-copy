@@ -19,7 +19,7 @@ Do **not** read `REQUIRED-COMPLETE-CLONE 7/7 VERIFIED` as “100% hardware clone
 | Hardware differential verification | **N/A** |
 | Target-manual verification | **limited by source availability** (`TARGET-MANUAL` = none of the supplied PDF) |
 | Visual verification | **NEEDS-HUMAN-REVIEW** |
-| Live deployment verification | **BLOCKED** (`C-P0-PWA` — origin up, serving source not `dist`) |
+| Live deployment verification | **UNVERIFIED** (`C-P0-PWA` — origin serves `dist/`; install/offline not tested) |
 
 ---
 
@@ -392,9 +392,9 @@ Do **not** implement these here.
 
 Local (this architecture): Vite `base` `/casio-fx-991es-copy/`; PWA plugin `registerType: "prompt"`; `start_url`/`scope` = base; Workbox `navigateFallback` `${base}index.html`; relative assets (`keymap.json`, `assets/…`); `registerSW({ immediate: true })` in `src/main.tsx`; CI can upload `dist/` via `actions/deploy-pages` when Pages source is **GitHub Actions**.
 
-**Live origin:** `https://bratadeepsarkar123.github.io/casio-fx-991es-copy/` is **HTTP 200** with Pages `build_type: legacy`, source branch `cursor/fx991es-plus2-web-clone-4c69`, path `/`. That publishes the Vite **source** `index.html`. The module `/src/main.tsx` is requested at `https://bratadeepsarkar123.github.io/src/main.tsx` → **404**. The calculator is a blank page (two module-load errors). This is **not** live PWA verification.
+**Live origin:** `https://bratadeepsarkar123.github.io/casio-fx-991es-copy/` is **HTTP 200** and serves hashed production assets (`/casio-fx-991es-copy/assets/index-*.js` **200**). GitHub Actions Pages. Live install/offline/update are **not** tested.
 
-**`C-P0-PWA = BLOCKED`** until that origin serves the production `dist` (GitHub Actions) or `docs/` (branch folder `/docs`) **and** install/offline/update are tested there.
+**`C-P0-PWA = UNVERIFIED`** (origin serves `dist/`; PWA install/offline not tested).
 
 ---
 
@@ -421,7 +421,7 @@ Local (this architecture): Vite `base` `/casio-fx-991es-copy/`; PWA plugin `regi
 | Display | **GREEN** | — | Projection only |
 | Evidence/provenance | **YELLOW** | process | Classes exist; 7/7 easy to misread; COMP goldens mostly inline |
 | Testing | **GREEN** | — | Gate proves source behavior; not hardware |
-| Deployment | **RED** | P0 product | Live origin 200 but serving Vite source (blank UI), not `dist` |
+| Deployment | **YELLOW** | P0 product | Origin serves `dist/`; live PWA install/offline not tested |
 | Maintainability | **YELLOW** | P2 | Large files (`machine`/`stat`/`matrix`/`vector`); coherent enough for additive work |
 
 RED is **deployment verification**, not a reason to redesign the calculator core.
@@ -521,7 +521,7 @@ Scored by value × source confidence × implementation risk × architectural fit
 17. Tests prove claims? **They prove clone source behavior, not hardware.**
 18. Hidden cross-mode regression? **MODE wipe + domain isolation; remaining risk is free `call.name` + persist atoms.**
 19. Ready for deferred functions? **Yes, without major redesign.**
-20. Ready for deployment? **Code/PWA artifacts yes; live origin no (`BLOCKED`).**
+20. Ready for deployment? **Code/PWA artifacts yes; live origin serves `dist/`; install/offline UNVERIFIED.**
 21. Next engineering phase? **Σ (with policy), not a rewrite; Pages enablement is ops.**
 
 ---
@@ -535,4 +535,4 @@ Scored by value × source confidence × implementation risk × architectural fit
 | `tsc --noEmit` | pass |
 | production build | pass — Workbox precache **15**; manifest scope `/casio-fx-991es-copy/` |
 | Playwright | **33 passed** (Chromium / Pixel 7 / iPad-sized Chromium — **not** iOS Safari) |
-| GitHub Pages | origin 200; `/src/main.tsx` 404; `C-P0-PWA` remains BLOCKED |
+| GitHub Pages | origin 200; hashed `assets/index-*.js` 200; `C-P0-PWA` UNVERIFIED (install/offline) |

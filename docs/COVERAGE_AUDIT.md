@@ -8,19 +8,19 @@ Statuses follow the three-axis model in `CAPABILITY_MATRIX.md`.
 ## A. Functional-v1 floor
 
 `REQUIRED-FUNCTIONAL-V1` rows: **26**  
-VERIFIED: **25** (PWA live origin is BLOCKED)  
+VERIFIED: **25** (PWA live origin serves `dist/`; install/offline UNVERIFIED)  
 **25 / 26**
 
 Not VERIFIED in this bucket:
 
-- `C-P0-PWA` — Impl `IMPLEMENTED`, Ver `BLOCKED`. **Remaining human click:** Settings → Pages → **GitHub Actions** or branch folder **`/docs`**. Agent cannot flip that setting. Pages is enabled (`html_url` 200, `build_type: legacy`, branch `cursor/fx991es-plus2-web-clone-4c69`, path `/`). Live HTML is the Vite **source** `index.html`; `/src/main.tsx` → **404** (blank calculator, 2 module errors). Not a live-PWA verification.
+- `C-P0-PWA` — Impl `IMPLEMENTED`, Ver `UNVERIFIED`. Origin `https://bratadeepsarkar123.github.io/casio-fx-991es-copy/` serves hashed `dist/` (`/casio-fx-991es-copy/assets/index-*.js` **200**). Live install/offline/update not tested.
 
 ## B. Complete-clone required surface
 
 `REQUIRED-COMPLETE-CLONE` rows: **7** (CMPLX, STAT, BASE-N, EQN, MATRIX, TABLE, VECTOR)  
 VERIFIED: **7** (source-derived — TABLE f(x); BASE-N; CMPLX; STAT; EQN; MATRIX; VECTOR; D-016 … D-022)  
 **Major-mode source verification: 7 / 7**  
-**Hardware differential verification: N/A** · **Target-manual verification: limited** · **Visual keymap: user signed off** · **Live PWA: BLOCKED**
+**Hardware differential verification: N/A** · **Target-manual verification: limited** · **Visual keymap: user signed off** · **Live PWA: UNVERIFIED** (origin serves `dist/`)
 
 VECTOR is Impl `IMPLEMENTED`, Ver `VERIFIED` for official Ex1–Ex4, Ex6, Ex7 (source-derived, not hardware). Ex5 2D×2D cross uses an inferred `(0,0,−2)` because the official HTML dropped the printed result (`NEEDS-HUMAN-REVIEW`). TABLE is Impl `IMPLEMENTED`, Ver `VERIFIED` for the official f(x) flow. BASE-N is Impl `IMPLEMENTED`, Ver `VERIFIED` for the official integer/logical flow. CMPLX is Impl `IMPLEMENTED`, Ver `VERIFIED` for official arithmetic/polar/arg/Conjg/Abs examples (not hardware). STAT is Impl `IMPLEMENTED`, Ver `VERIFIED` for official Ex2–Ex4 (and numeric Ex5 t/P); not hardware. EQN is Impl `IMPLEMENTED`, Ver `VERIFIED` for official Ex1–Ex5 (not hardware). MATRIX is Impl `IMPLEMENTED`, Ver `VERIFIED` for official Ex1–Ex8 (source-derived, not hardware). g(x) is not implemented. Bit shifts are DEFERRED. Complex STO and non-real trig/log/√ are PARTIAL/DEFERRED. STAT Q/R are INFERRED; Q1/Med/Q3 are 115/C-only. EQN vertex min/max is not implemented. MATRIX Ref/Rref is 115/C-only. VECTOR has no dedicated Angle command (Ex7 is a user formula).
 
@@ -30,7 +30,7 @@ VECTOR is Impl `IMPLEMENTED`, Ver `VERIFIED` for official Ex1–Ex4, Ex6, Ex7 (s
 | --- | --- | --- |
 | Identified (matrix rows) | 44 | |
 | PARTIAL (implementation) | 3 | INT + DIFF + SUM |
-| BLOCKED (verification) | 1 | C-P0-PWA |
+| BLOCKED (verification) | 0 | |
 | NEEDS-HUMAN-REVIEW (verification) | 2 | C-P0-PREANS, C-NHR-RND |
 | DEFERRED (priority) | 4 | C-P2-INT, DIFF, SUM, SOLVE |
 | UNSUPPORTED-BY-HARDWARE | 3 | INEQ, VERIFY, DIST |
@@ -43,12 +43,12 @@ This build must **not** be described as a complete clone or as hardware-equivale
 | Suite | Result |
 | --- | --- |
 | `npm ci` | pass |
-| Vitest (`npm test`) | **378 passed** (34 files). COMP leftovers + Natural Display goldens added. COMP `golden/acceptance.test.ts` still 30 passed. |
+| Vitest (`npm test`) | **383 passed** (36 files). LineO S⇔D + LCD menu goldens added. COMP `golden/acceptance.test.ts` still 30 passed. |
 | `npm run lint` (`tsc --noEmit`) | pass |
 | `npm run build` (`tsc` + Vite PWA) | pass |
-| Playwright (`CI=true npm run test:e2e`) | **42 passed** (Chromium desktop, Pixel 7, iPad-sized Chromium), including Natural Display frac/root/power. **Not** real iOS Safari. |
+| Playwright (`CI=true npm run test:e2e`) | **51 passed** (Chromium desktop, Pixel 7, iPad-sized Chromium), including MODE/SETUP menus and overlay default-off. **Not** real iOS Safari. |
 | Differential vs physical unit | N/A |
-| GitHub Pages API | enabled (`legacy` / branch root). Live `/` is Vite source `index.html`; `/src/main.tsx` **404**. `C-P0-PWA` still BLOCKED |
+| GitHub Pages API | Origin serves hashed `dist/` (`/casio-fx-991es-copy/assets/index-*.js` 200). `C-P0-PWA` UNVERIFIED (install/offline not tested) |
 
 ## Visual calibration
 

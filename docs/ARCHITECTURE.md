@@ -39,7 +39,7 @@ TABLE reuses `evaluateAtoms`; it is not a third numeric domain. BASE-N does **no
 Zustand (`src/store.ts`) holds one `CalcState`, injects `Date.now()` into events, and writes localStorage. React does not implement calculator semantics.
 
 **What this clone is:** a hardened COMP-mode foundation plus **TABLE f(x)**, **BASE-N** (integer domain), **CMPLX** (extended numeric domain), **STAT** (dataset + statistics domain), **EQN** (coefficient-entry solver), **MATRIX** (register + dimension editor), and **VECTOR** (2D/3D register + dimension editor). All major target modes in the official ToC (COMP…VECTOR) are implemented.
-**What this clone is not:** a complete clone of every optional/deferred function. Live PWA install/offline is **BLOCKED** (Pages origin is up but currently serving Vite source, not `dist`). Visual keymap vs the original chat photo is **NEEDS-HUMAN-REVIEW**. Physical hardware equivalence is **N/A**.
+**What this clone is not:** a complete clone of every optional/deferred function. Live PWA install/offline is **UNVERIFIED** (origin now serves `dist/`). Visual keymap D-pad signed off 2026-08-24. Physical hardware equivalence is **N/A**.
 
 ---
 
@@ -394,7 +394,7 @@ All **major target modes** (COMP, TABLE, BASE-N, CMPLX, STAT, EQN, MATRIX, VECTO
 | `reduce` god-function | P1 for scale | Split by mode later, keep single `reduce` entry |
 | ENG shift discarded (`void shifted`) | P2 | Documented; not COMP-core |
 | `menu.kind === "hyp"` dead | P2 | HYP is a latch |
-| Live PWA unverified | BLOCKED | Origin up; legacy `/(root)` serves source `index.html`; `/src/main.tsx` 404 |
+| Live PWA unverified | UNVERIFIED | Origin serves hashed `dist/`; install/offline not tested |
 | Visual keymap vs missing original photo | VERIFIED (user sign-off) | overlay off by default; `?debug=true` shows |
 | Hardware rounding ties | NHR | HALF_UP policy only |
 | PreAns on target chassis | NHR / UNCONFIRMED | D-012 |

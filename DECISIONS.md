@@ -213,7 +213,7 @@ Future modes (TABLE first — see `docs/ARCHITECTURE.md` §12) must be **additiv
 
 **Explicitly not done:** typed `call.name` union (still P1; COMP injection + MODE-wipe tests added); `SessionBase`; reducer split; any ∫ / d/dx / Σ / CALC / SOLVE implementation.
 
-**Verification language:** major-mode source verification is 7/7. Hardware differential = N/A. Visual = NHR. Live PWA = BLOCKED. Do not say “complete clone”.
+**Verification language:** major-mode source verification is 7/7. Hardware differential = N/A. Visual keymap = user signed off. Live origin serves `dist/`; PWA install/offline = UNVERIFIED. Do not say “complete clone”.
 
 **Status:** Recorded. See `docs/POST_MAJOR_MODE_AUDIT.md`.
 

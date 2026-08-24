@@ -66,16 +66,11 @@ npm run test:e2e  # Playwright (build + preview)
 
 GitHub Pages URL: `https://bratadeepsarkar123.github.io/casio-fx-991es-copy/`.
 
-**Remaining human click (agent cannot do this):** GitHub Settings → Pages.
+Pages Source is **GitHub Actions**. The origin serves the production `dist/` build (hashed `/casio-fx-991es-copy/assets/…`). Do **not** switch back to branch folder `/(root)`.
 
-**Do not** point Pages at the repository **root** of a source branch. That serves Vite’s `index.html` (`/src/main.tsx`), which 404s on github.io and shows a blank page. `C-P0-PWA` stays **BLOCKED** until the live origin serves the production build.
+Live PWA install/offline is **not verified**. Serving `dist/` is necessary but not a passing install/offline check.
 
-Use one of:
-
-1. **GitHub Actions** (preferred): Settings → Pages → Source **GitHub Actions**. CI uploads `dist/` (`pages` job).
-2. **Deploy from a branch** + folder **`/docs`**: Settings → Pages → Deploy from a branch → folder **`/docs`**. Run `npm run pages:sync` so `docs/` holds the production build beside the markdown. Folder must be `/docs`, not `/(root)`.
-
-Live PWA install/offline is **not verified** until the production build is what that origin actually serves. Do not treat a 200 on the origin as a passing PWA check while `/src/main.tsx` 404s.
+Fallback if Actions Pages is unavailable: Deploy from a branch + folder **`/docs`** (`npm run pages:sync`). Folder must be `/docs`, not `/(root)`.
 
 ## License / trademark
 

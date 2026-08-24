@@ -4,7 +4,7 @@
 | --- | --- | --- | --- | --- | --- |
 | Wrong target-model behavior imported | Medium | Critical | Source/model audit | Evidence classes; 115/C extras excluded; PreAns not promoted | Open — PDF is 115/C; PreAns UNCONFIRMED |
 | Numerical engine divergence | High | Critical | Golden + edge tests | decimal.js; native-float audit | Mitigated for COMP; ties NHR |
-| GitHub Pages serving source tree | High | High | Fetch live `index.html` + `/src/main.tsx` | Pages must be GitHub Actions (`dist`) or branch folder `/docs`; do not use `/(root)` | Open — origin 200, calculator blank until source is switched |
+| GitHub Pages serving source tree | High | High | Fetch live `index.html` + hashed `/assets/` | Pages Source = GitHub Actions (`dist`) | Mitigated 2026-08-24 — origin serves hashed `dist/` |
 | Coordinate calibration error | High | High | overlay `?debug=true` + Playwright | Shared transform | User signed off D-pad 2026-08-24 |
 | Context-window loss during manual ingestion | High | High | Coverage index | Incremental ToC audit | Partial ingestion |
 | Golden tests become circular | Medium | Critical | Source IDs in test names | Manual page citations | Mitigated |

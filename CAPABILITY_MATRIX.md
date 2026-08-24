@@ -29,7 +29,7 @@ Evidence classes and TargetConfirm: `docs/EVIDENCE_CLASSES.md`.
 | C-P0-PERSIST | localStorage schema v1 | REQUIRED-FUNCTIONAL-V1 | spec §8 | INFERRED | N/A | IMPLEMENTED | VERIFIED | persist.test.ts; e2e persist |
 | C-P0-KEYS | Physical overlay + keymap.json | REQUIRED-FUNCTIONAL-V1 | CHASSIS | EMPIRICAL | CONFIRMED | IMPLEMENTED | VERIFIED | coords.test.ts; overlay e2e |
 | C-P0-LCD | LCD expression/result/indicators | REQUIRED-FUNCTIONAL-V1 | SRC-P7–8; CHASSIS | CROSS-MODEL-SOURCE | CONFIRMED | IMPLEMENTED | VERIFIED | lcdIndicators; lcd-expr/result |
-| C-P0-PWA | Install + offline SW | REQUIRED-FUNCTIONAL-V1 | spec §9 | INFERRED | N/A | IMPLEMENTED | BLOCKED | Origin 200; Pages still serving Vite source (`/src/main.tsx` 404), not `dist`. Human must switch Settings → Pages to GitHub Actions or folder `/docs` |
+| C-P0-PWA | Install + offline SW | REQUIRED-FUNCTIONAL-V1 | spec §9 | INFERRED | N/A | IMPLEMENTED | UNVERIFIED | Origin serves hashed `dist/` (`assets/index-*.js` 200). Live install/offline not tested |
 | C-P0-LOG | log / ln / 10^x / e^x | REQUIRED-FUNCTIONAL-V1 | SRC-P37; TGT-TOC | CROSS-MODEL-SOURCE | CONFIRMED | IMPLEMENTED | VERIFIED | GT-P37 |
 | C-P0-PCT | Percent | REQUIRED-FUNCTIONAL-V1 | SRC-P23; TGT-TOC | CROSS-MODEL-SOURCE | CONFIRMED | IMPLEMENTED | VERIFIED | GT-P23 |
 | C-P0-FIX | Fix/Sci/Norm | REQUIRED-FUNCTIONAL-V1 | SRC-P13; TGT-TOC setup | CROSS-MODEL-SOURCE | CONFIRMED | IMPLEMENTED | VERIFIED | GT-P13 Fix3 |
@@ -55,7 +55,7 @@ Evidence classes and TargetConfirm: `docs/EVIDENCE_CLASSES.md`.
 | C-NHR-CAL | Visual keymap vs chat photo | OPTIONAL-V1 | chassis; user sign-off 2026-08-24 | EMPIRICAL | CONFIRMED | IMPLEMENTED | VERIFIED | overlay off by default; `?debug=true` shows |
 | C-NHR-RND | Rounding ties vs hardware | OPTIONAL-V1 | SRC-P13 “rounded off” | CROSS-MODEL-SOURCE | UNCONFIRMED | IMPLEMENTED | NEEDS-HUMAN-REVIEW | HALF_UP policy tests |
 
-P1 modes are on the target device (`TARGET-OFFICIAL-DOC`) and are required for a **source-complete major-mode surface**. They are **not** part of the functional-v1 floor. TABLE f(x) (D-016), BASE-N (D-017), CMPLX (D-018), STAT (D-019), EQN (D-020), MATRIX (D-021), and VECTOR (D-022) are IMPLEMENTED/VERIFIED (**source-derived, not hardware**). VECTOR 2D×2D cross result is **NEEDS-HUMAN-REVIEW** (official HTML dropped Ex5). GitHub Pages/PWA remains BLOCKED: the origin exists but currently serves the Vite source tree (blank calculator), not the production `dist` build.
+P1 modes are on the target device (`TARGET-OFFICIAL-DOC`) and are required for a **source-complete major-mode surface**. They are **not** part of the functional-v1 floor. TABLE f(x) (D-016), BASE-N (D-017), CMPLX (D-018), STAT (D-019), EQN (D-020), MATRIX (D-021), and VECTOR (D-022) are IMPLEMENTED/VERIFIED (**source-derived, not hardware**). VECTOR 2D×2D cross result is **NEEDS-HUMAN-REVIEW** (official HTML dropped Ex5). GitHub Pages origin serves production `dist/` (hashed `/assets/index-*.js`). Live PWA install/offline is **UNVERIFIED**.
 
 Do **not** interpret the 7/7 row as a 100% hardware clone.
 
@@ -64,8 +64,8 @@ Do **not** interpret the 7/7 row as a 100% hardware clone.
 | Major-mode source verification | **7/7** |
 | Hardware differential verification | **N/A** |
 | Target-manual verification | **limited by source availability** |
-| Visual verification | **NEEDS-HUMAN-REVIEW** |
-| Live deployment verification | **BLOCKED** (origin up; serving source, not `dist`) |
+| Visual verification | **keymap signed off** (not pixel-perfect LCD) |
+| Live deployment verification | **UNVERIFIED** (origin serves `dist/`; install/offline not tested) |
 
 All seven major target modes are implemented and source-verified; hardware differential verification, visual sign-off, and live PWA verification remain outstanding. See `docs/POST_MAJOR_MODE_AUDIT.md`.
 
