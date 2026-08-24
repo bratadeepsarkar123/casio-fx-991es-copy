@@ -28,10 +28,27 @@ export function Lcd({ state, style }: LcdProps) {
   const menu = lcdMenuView(state);
   const contrast = 0.75 + state.setup.contrast * 0.05;
   const menuOpen = lcdShowsMenu(state);
+  const stackedResult =
+    Boolean(state.result) &&
+    mathO &&
+    (state.screen.kind === "result" || state.screen.kind === "replay") &&
+    (state.result?.naturalKind === "fraction" || state.result?.naturalKind === "mixed");
+  const panelClass = [
+    "lcd-panel",
+    "overflow-hidden",
+    "rounded-[2%]",
+    "px-[3%]",
+    "py-[3%]",
+    "font-mono",
+    menuOpen ? "is-menu" : "",
+    stackedResult ? "has-nat-result" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   return (
     <div
-      className={menuOpen ? "lcd-panel is-menu overflow-hidden rounded-[2%] px-[3%] py-[3%] font-mono" : "lcd-panel overflow-hidden rounded-[2%] px-[3%] py-[3%] font-mono"}
+      className={panelClass}
       style={{
         ...style,
         background: "#c3d1c4",

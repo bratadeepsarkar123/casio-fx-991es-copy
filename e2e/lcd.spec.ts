@@ -21,4 +21,23 @@ test.describe("Natural Textbook Display", () => {
     await expect(page.getByTestId("nat-pow")).toBeVisible();
     await expect(page.getByTestId("ind-math")).toHaveText("Math");
   });
+
+  test("MathO fraction result is not clipped in lcd-result", async ({ page }) => {
+    await page.goto("./");
+    for (const key of ["9", "6", "frac", "6", "9", "equals"] as const) {
+      await page.locator(`[data-key="${key}"]`).click();
+    }
+    const result = page.getByTestId("lcd-result");
+    const frac = result.getByTestId("nat-result-frac");
+    await expect(frac).toBeVisible();
+    await expect(frac).toContainText("32");
+    await expect(frac).toContainText("23");
+    const resultBox = await result.boundingBox();
+    const fracBox = await frac.boundingBox();
+    expect(resultBox).toBeTruthy();
+    expect(fracBox).toBeTruthy();
+    expect(fracBox!.y).toBeGreaterThanOrEqual(resultBox!.y - 1);
+    expect(fracBox!.y + fracBox!.height).toBeLessThanOrEqual(resultBox!.y + resultBox!.height + 1);
+    expect(fracBox!.height).toBeGreaterThan(16);
+  });
 });

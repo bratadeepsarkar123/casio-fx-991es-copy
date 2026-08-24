@@ -64,17 +64,32 @@
 }
 
 .lcd-result {
-  flex: 0 0 30%;
-  min-height: 0;
+  flex: 0 0 36%;
+  min-height: 2.85em;
   text-align: right;
-  font-size: 1.12em;
+  font-size: 1.05em;
   font-weight: 650;
   display: flex;
   align-items: flex-end;
   justify-content: flex-end;
   overflow: hidden;
   white-space: normal;
-  line-height: 1.15;
+  line-height: 1;
+  padding-top: 0.12em;
+}
+
+.lcd-panel.has-nat-result .lcd-expr {
+  flex: 1 1 40%;
+}
+
+.lcd-panel.has-nat-result .lcd-result {
+  flex: 0 0 46%;
+  min-height: 3.15em;
+}
+
+.lcd-result .nat-frac,
+.lcd-result .nat-mixed {
+  line-height: 1;
 }
 
 .lcd-panel.is-menu .lcd-menu {
