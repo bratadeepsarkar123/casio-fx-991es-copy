@@ -115,10 +115,11 @@ describe("persist schema v1", () => {
   });
 
   it("loads a v1 COMP envelope that omits stat", () => {
-    const { table: _t, stat: _s, ...rest } = createInitialState(0);
+    const { table: _t, stat: _s, eqn: _e, ...rest } = createInitialState(0);
     const back = deserializeState({ schemaVersion: 1, savedAt: 0, state: rest }, 1);
     expect(back?.mode).toBe("COMP");
     expect(back?.stat).toBeNull();
+    expect(back?.eqn).toBeNull();
   });
 
   it("does not persist BASE-N tokens (INFERRED; NHR vs hardware)", () => {
@@ -133,5 +134,46 @@ describe("persist schema v1", () => {
     expect(back?.baseN.radix).toBe(2);
     expect(back?.baseN.tokens).toEqual([]);
     expect(back?.screen.kind).toBe("input");
+  });
+
+  it("does not persist EQN coefficients or solutions (INFERRED; NHR vs hardware)", () => {
+    const filled = dispatchKeys(
+      createInitialState(0),
+      [
+        "mode",
+        "5",
+        "1",
+        "1",
+        "equals",
+        "2",
+        "equals",
+        "3",
+        "equals",
+        "2",
+        "equals",
+        "3",
+        "equals",
+        "4",
+        "equals",
+        "equals",
+      ],
+      0,
+    );
+    expect(filled.eqn?.phase).toBe("solutions");
+    const env = serializeState(filled);
+    expect(env.schemaVersion).toBe(1);
+    expect(env.state.eqn).toBeNull();
+    const back = deserializeState(JSON.parse(JSON.stringify(env)), 0);
+    expect(back?.mode).toBe("EQN");
+    expect(back?.eqn?.phase).toBe("type");
+    expect(back?.eqn?.coeffs).toEqual([]);
+    expect(back?.screen.kind).toBe("input");
+  });
+
+  it("loads a v1 COMP envelope that omits eqn", () => {
+    const { table: _t, stat: _s, eqn: _e, ...rest } = createInitialState(0);
+    const back = deserializeState({ schemaVersion: 1, savedAt: 0, state: rest }, 1);
+    expect(back?.mode).toBe("COMP");
+    expect(back?.eqn).toBeNull();
   });
 });

@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { createInitialState, dispatchKeys } from "../src/calc/machine.ts";
-import { lcdResult } from "../src/ui/lcdModel.ts";
+import { lcdExpression, lcdResult } from "../src/ui/lcdModel.ts";
 import type { KeyId } from "../src/calc/keys.ts";
 import { isKeyId } from "../src/calc/keys.ts";
 
@@ -169,6 +169,44 @@ describe("independent golden fixtures", () => {
         }));
         expect(got).toEqual(fx.expected.dataset);
       }
+    },
+  );
+
+  it.each(["GT-EQ-OFFICIAL-EX1", "GT-EQ-OFFICIAL-EX2", "GT-EQ-OFFICIAL-EX4", "GT-EQ-OFFICIAL-EX5"])(
+    "%s JSON fixture matches EQN solver state TARGET-OFFICIAL-DOC",
+    (id) => {
+      const raw = readFileSync(new URL(`./fixtures/${id}.json`, import.meta.url), "utf8");
+      const fx = JSON.parse(raw) as {
+        id: string;
+        evidenceClass: string;
+        targetConfirm: string;
+        keys: string[];
+        expected: {
+          mode: string;
+          type: string;
+          phase: string;
+          labels: string[];
+          values?: string[];
+          expression: string;
+          display: string;
+        };
+      };
+      expect(fx.id).toBe(id);
+      expect(fx.evidenceClass).toBe("TARGET-OFFICIAL-DOC");
+      expect(fx.targetConfirm).toBe("CONFIRMED");
+      const keys = fx.keys.map((k) => {
+        if (!isKeyId(k)) {
+          throw new Error(k);
+        }
+        return k;
+      }) as KeyId[];
+      const s = dispatchKeys(createInitialState(0), keys, 0);
+      expect(s.mode).toBe(fx.expected.mode);
+      expect(s.eqn?.type).toBe(fx.expected.type);
+      expect(s.eqn?.phase).toBe(fx.expected.phase);
+      expect(s.eqn?.solutions.map((x) => x.label)).toEqual(fx.expected.labels);
+      expect(lcdExpression(s)).toBe(fx.expected.expression);
+      expect(lcdResult(s)).toBe(fx.expected.display);
     },
   );
 });
