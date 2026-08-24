@@ -36,6 +36,7 @@ import { D, createUint32Rng } from "./numeric.ts";
 import { emptyTableSession, reduceTable, tableReturnToFx } from "./table.ts";
 import { applyBaseOpMenu, emptyBaseN, reduceBaseN, reduceBaseNError } from "./baseN.ts";
 import { emptyStatSession, handleStatMenu, isStatMenuKind, reduceStat, wipeStatData } from "./stat.ts";
+import { emptyEqnSession, reduceEqn } from "./eqn.ts";
 import type {
   Atom,
   CalcMode,
@@ -93,6 +94,7 @@ export function createInitialState(nowMs = 0): CalcState {
     baseN: emptyBaseN(10),
     table: null,
     stat: null,
+    eqn: null,
   };
 }
 
@@ -147,6 +149,7 @@ function handleMenu(state: CalcState, keyId: KeyId): CalcState | null {
         preAnsIm: mode === "COMP" || mode === "CMPLX" ? state.preAnsIm : "0",
         table: mode === "TABLE" ? emptyTableSession() : null,
         stat: mode === "STAT" ? emptyStatSession() : null,
+        eqn: mode === "EQN" ? emptyEqnSession() : null,
         baseN: emptyBaseN(10),
       };
     }
@@ -448,6 +451,7 @@ function runConfirm(state: CalcState, action: "setup" | "memory" | "all"): CalcS
       history: [],
       table: null,
       stat: null,
+      eqn: null,
       baseN: emptyBaseN(10),
     };
   }
@@ -620,6 +624,13 @@ export function reduce(state: CalcState, event: KeyEvent): CalcState {
     const statHandled = reduceStat(s, event);
     if (statHandled) {
       return statHandled;
+    }
+  }
+
+  if (s.mode === "EQN") {
+    const eqnHandled = reduceEqn(s, event);
+    if (eqnHandled) {
+      return eqnHandled;
     }
   }
 

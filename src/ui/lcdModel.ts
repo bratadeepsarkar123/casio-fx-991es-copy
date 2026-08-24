@@ -3,6 +3,14 @@ import { atomsToLinear } from "../calc/editor.ts";
 import { formatBaseNExpression, radixLabel } from "../calc/baseN.ts";
 import { STAT_CALL_LABELS } from "../calc/statNumeric.ts";
 import { statEditorExpression, statEditorValue, statMenuText, statTypeMenuText } from "../calc/stat.ts";
+import {
+  eqnEditorExpression,
+  eqnEditorValue,
+  eqnMessageText,
+  eqnSolutionExpression,
+  eqnSolutionValue,
+  eqnTypeMenuText,
+} from "../calc/eqn.ts";
 
 function relabelStatCalls(expr: string): string {
   let out = expr;
@@ -46,6 +54,20 @@ export function lcdExpression(state: CalcState): string {
   }
   if (state.mode === "STAT" && state.stat?.phase === "type") {
     return "STAT";
+  }
+  if (state.mode === "EQN" && state.eqn) {
+    if (state.eqn.phase === "type") {
+      return "EQN";
+    }
+    if (state.eqn.phase === "editor") {
+      return eqnEditorExpression(state);
+    }
+    if (state.eqn.phase === "solutions") {
+      return eqnSolutionExpression(state.eqn);
+    }
+    if (state.eqn.phase === "message") {
+      return "EQN";
+    }
   }
   if (state.mode === "TABLE" && state.table?.phase === "view") {
     const row = state.table.rows[state.table.rowIndex];
@@ -97,6 +119,20 @@ export function lcdResult(state: CalcState): string {
     }
     if (state.stat.phase === "editor") {
       return statEditorValue(state.stat);
+    }
+  }
+  if (state.mode === "EQN" && state.eqn) {
+    if (state.eqn.phase === "type") {
+      return eqnTypeMenuText();
+    }
+    if (state.eqn.phase === "editor") {
+      return eqnEditorValue(state);
+    }
+    if (state.eqn.phase === "solutions") {
+      return eqnSolutionValue(state)?.display ?? "";
+    }
+    if (state.eqn.phase === "message") {
+      return eqnMessageText(state.eqn);
     }
   }
   if (state.mode === "TABLE" && state.table) {

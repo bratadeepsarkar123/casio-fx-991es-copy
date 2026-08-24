@@ -1,4 +1,5 @@
 import type { KeyEvent } from "./keys.ts";
+import type { Sym } from "./symbolic.ts";
 
 export type CalcMode =
   | "COMP"
@@ -207,6 +208,44 @@ export interface StatSession {
   editing: boolean;
 }
 
+/** Official EQN families (TARGET-OFFICIAL-DOC). */
+export type EqnType = "lin2" | "lin3" | "quad" | "cubic";
+
+export type EqnPhase = "type" | "editor" | "solutions" | "message";
+
+export type EqnMessage = "no-solution" | "infinite";
+
+/**
+ * One EQN unknown or root. `sym` is the mathematical value (may be `cplx`).
+ * LCD text is a projection — never the only copy of the solution.
+ */
+export interface EqnSolution {
+  label: string;
+  sym: Sym;
+}
+
+/** Committed coefficient cell. Empty `atoms` means the default 0. */
+export interface EqnCoeff {
+  atoms: Atom[];
+  sym: Sym;
+}
+
+/**
+ * Additive EQN session. Structured coefficient solver — not a COMP Atom[] polynomial.
+ * Transient; not persisted (D-020).
+ */
+export interface EqnSession {
+  type: EqnType | null;
+  phase: EqnPhase;
+  coeffIndex: number;
+  coeffs: EqnCoeff[];
+  solutions: EqnSolution[];
+  solutionIndex: number;
+  message: EqnMessage | null;
+  /** After committing the last coefficient, the next `=` solves. */
+  readyToSolve: boolean;
+}
+
 /** Additive TABLE session. Not a COMP Atom[] encoding of the grid. */
 export interface TableSession {
   phase: TablePhase;
@@ -246,6 +285,8 @@ export interface CalcState {
   table: TableSession | null;
   /** Additive STAT session. `null` outside STAT. Dataset is not COMP `Atom[]`. */
   stat: StatSession | null;
+  /** Additive EQN session. `null` outside EQN. Coefficients are not a COMP polynomial AST. */
+  eqn: EqnSession | null;
 }
 
 export interface DispatchOptions {

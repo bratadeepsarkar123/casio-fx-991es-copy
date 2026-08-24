@@ -4,6 +4,7 @@ import { createInitialState } from "./machine.ts";
 import { emptyTableSession } from "./table.ts";
 import { emptyBaseN } from "./baseN.ts";
 import { emptyStatSession } from "./stat.ts";
+import { emptyEqnSession } from "./eqn.ts";
 
 export const PERSIST_KEY = "fx991es-plus2/v1";
 export const SCHEMA_VERSION = 1;
@@ -226,16 +227,20 @@ export function serializeState(state: CalcState): PersistEnvelope {
       ...state,
       table: null,
       stat: null,
+      eqn: null,
       baseN: emptyBaseN(state.baseN.radix),
       editor:
-        state.mode === "TABLE" || state.mode === "BASE-N" || state.mode === "STAT"
+        state.mode === "TABLE" || state.mode === "BASE-N" || state.mode === "STAT" || state.mode === "EQN"
           ? createInitialState(0).editor
           : state.editor,
       screen:
-        state.mode === "TABLE" || state.mode === "BASE-N" || state.mode === "STAT"
+        state.mode === "TABLE" || state.mode === "BASE-N" || state.mode === "STAT" || state.mode === "EQN"
           ? { kind: "input" }
           : state.screen,
-      result: state.mode === "TABLE" || state.mode === "BASE-N" || state.mode === "STAT" ? null : state.result,
+      result:
+        state.mode === "TABLE" || state.mode === "BASE-N" || state.mode === "STAT" || state.mode === "EQN"
+          ? null
+          : state.result,
     },
   };
 }
@@ -258,13 +263,14 @@ export function deserializeState(raw: unknown, nowMs = 0): CalcState | null {
     preAnsIm: typeof persisted.preAnsIm === "string" ? persisted.preAnsIm : "0",
     table: env.state.mode === "TABLE" ? emptyTableSession() : null,
     stat: env.state.mode === "STAT" ? emptyStatSession() : null,
+    eqn: env.state.mode === "EQN" ? emptyEqnSession() : null,
     baseN: emptyBaseN(env.state.baseN.radix),
     lastActivityMs: nowMs,
     power: "on",
     screen:
       env.state.power === "off"
         ? { kind: "input" }
-        : env.state.mode === "TABLE" || env.state.mode === "BASE-N" || env.state.mode === "STAT"
+        : env.state.mode === "TABLE" || env.state.mode === "BASE-N" || env.state.mode === "STAT" || env.state.mode === "EQN"
           ? { kind: "input" }
           : env.state.screen,
   };

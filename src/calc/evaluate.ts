@@ -514,6 +514,31 @@ function applyOp(op: string, a: Sym, b: Sym, ctx: EvalContext): Sym {
   }
 }
 
+/** Evaluate an expression to `Sym` without formatting. EQN coefficients use this. */
+export function evaluateToSym(
+  atoms: Atom[],
+  state: CalcState,
+  nextUint32: () => number,
+): Sym {
+  const ctx = ctxFromState(state, nextUint32);
+  const sym = evalSlot(atoms, ctx);
+  if (sym.k === "cplx") {
+    if (!ctx.complexOk) {
+      throw new CalcMathError();
+    }
+    const { re, im } = asCplx(sym);
+    assertRange(toDec(re));
+    assertRange(toDec(im));
+    return packCplx(re, im);
+  }
+  const raw = toDec(sym);
+  const dec = assertRange(raw);
+  if (raw.isZero() || (dec.isZero() && !raw.isZero())) {
+    return symRat(0n);
+  }
+  return sym;
+}
+
 export function evaluateAtoms(
   atoms: Atom[],
   state: CalcState,
