@@ -64,7 +64,16 @@ npm run test:e2e  # Playwright (build + preview)
 
 ## Deploy
 
-GitHub Pages path: `/casio-fx-991es-copy/`. CI deploys `dist/` from `main` when Pages is enabled.
+GitHub Pages URL: `https://bratadeepsarkar123.github.io/casio-fx-991es-copy/`.
+
+**Do not** point Pages at the repository **root** of a source branch. That serves Vite’s `index.html` (`/src/main.tsx`), which 404s on github.io and shows a blank page.
+
+Use one of:
+
+1. **GitHub Actions** (preferred): Settings → Pages → Source **GitHub Actions**. CI uploads `dist/` (`pages` job).
+2. **Deploy from a branch** + folder **`/docs`**: run `npm run pages:sync` (copies the production build into `docs/` beside the markdown). Folder must be `/docs`, not `/(root)`.
+
+Live PWA install/offline is **not verified** until the production build is what that origin actually serves.
 
 ## License / trademark
 

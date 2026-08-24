@@ -13,7 +13,7 @@ VERIFIED: **25** (PWA live origin is BLOCKED)
 
 Not VERIFIED in this bucket:
 
-- `C-P0-PWA` — Impl `IMPLEMENTED`, Ver `BLOCKED` (GitHub Pages not enabled; `GET /repos/.../pages` → 404). Intended URL: https://bratadeepsarkar123.github.io/casio-fx-991es-copy/
+- `C-P0-PWA` — Impl `IMPLEMENTED`, Ver `BLOCKED`. Pages is enabled (`html_url` 200, `build_type: legacy`, branch `cursor/fx991es-plus2-web-clone-4c69`, path `/`). Live HTML is the Vite **source** `index.html`; `/src/main.tsx` → **404** (blank calculator, 2 module errors). Not a live-PWA verification. Fix: Pages source **GitHub Actions**, or branch folder **`/docs`**.
 
 ## B. Complete-clone required surface
 
@@ -48,7 +48,7 @@ This build must **not** be described as a complete clone or as hardware-equivale
 | `npm run build` (`tsc` + Vite PWA) | pass — Workbox precache **15** entries; manifest `start_url`/`scope` `/casio-fx-991es-copy/` |
 | Playwright (`npx playwright install --with-deps chromium` then `CI=true npm run test:e2e`) | **33 passed** (Chromium desktop, Pixel 7, iPad-sized Chromium). **Not** real iOS Safari. |
 | Differential vs physical unit | N/A |
-| GitHub Pages API | `GET /repos/bratadeepsarkar123/casio-fx-991es-copy/pages` → **404** (`C-P0-PWA` still BLOCKED) |
+| GitHub Pages API | enabled (`legacy` / branch root). Live `/` is Vite source `index.html`; `/src/main.tsx` **404**. `C-P0-PWA` still BLOCKED |
 
 ## Visual calibration
 
@@ -56,9 +56,8 @@ Inspected via geometric keymap. **Not** signed off against the original chat bin
 
 ## Deployment
 
-Workflow: `.github/workflows/ci.yml` (verify job + Pages deploy from `main`).  
-Live Pages: **BLOCKED** until repository Pages is enabled.  
-Intended URL: `https://bratadeepsarkar123.github.io/casio-fx-991es-copy/`
+Workflow: `.github/workflows/ci.yml` (verify job + Pages deploy of `dist/`).  
+Live origin: **https://bratadeepsarkar123.github.io/casio-fx-991es-copy/** — HTTP 200 but currently **legacy branch `/(root)`**, so it serves Vite source (blank UI). Production files are in `docs/` for folder `/docs`, or via GitHub Actions. **Do not claim live PWA verification.**
 
 ## Provenance
 

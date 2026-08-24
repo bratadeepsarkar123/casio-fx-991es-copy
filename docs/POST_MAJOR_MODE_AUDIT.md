@@ -19,7 +19,7 @@ Do **not** read `REQUIRED-COMPLETE-CLONE 7/7 VERIFIED` as “100% hardware clone
 | Hardware differential verification | **N/A** |
 | Target-manual verification | **limited by source availability** (`TARGET-MANUAL` = none of the supplied PDF) |
 | Visual verification | **NEEDS-HUMAN-REVIEW** |
-| Live deployment verification | **BLOCKED** (`C-P0-PWA`) |
+| Live deployment verification | **BLOCKED** (`C-P0-PWA` — origin up, serving source not `dist`) |
 
 ---
 
@@ -390,11 +390,11 @@ Do **not** implement these here.
 
 ## 14. Deployment status
 
-Local (this architecture): Vite `base` `/casio-fx-991es-copy/`; PWA plugin `registerType: "prompt"`; `start_url`/`scope` = base; Workbox `navigateFallback` `${base}index.html`; relative assets (`keymap.json`, `assets/…`); `registerSW({ immediate: true })` in `src/main.tsx`; CI workflow builds and **would** deploy `dist/` from `main` when Pages exists.
+Local (this architecture): Vite `base` `/casio-fx-991es-copy/`; PWA plugin `registerType: "prompt"`; `start_url`/`scope` = base; Workbox `navigateFallback` `${base}index.html`; relative assets (`keymap.json`, `assets/…`); `registerSW({ immediate: true })` in `src/main.tsx`; CI can upload `dist/` via `actions/deploy-pages` when Pages source is **GitHub Actions**.
 
-**Live origin:** `GET /repos/bratadeepsarkar123/casio-fx-991es-copy/pages` → **404**.
+**Live origin:** `https://bratadeepsarkar123.github.io/casio-fx-991es-copy/` is **HTTP 200** with Pages `build_type: legacy`, source branch `cursor/fx991es-plus2-web-clone-4c69`, path `/`. That publishes the Vite **source** `index.html`. The module `/src/main.tsx` is requested at `https://bratadeepsarkar123.github.io/src/main.tsx` → **404**. The calculator is a blank page (two module-load errors). This is **not** live PWA verification.
 
-**`C-P0-PWA = BLOCKED`** until the actual deployed origin is tested (install, offline, update prompt). Do not claim GitHub Pages is live. Runtime self-host via `npm run preview` is local-only evidence.
+**`C-P0-PWA = BLOCKED`** until that origin serves the production `dist` (GitHub Actions) or `docs/` (branch folder `/docs`) **and** install/offline/update are tested there.
 
 ---
 
@@ -421,7 +421,7 @@ Local (this architecture): Vite `base` `/casio-fx-991es-copy/`; PWA plugin `regi
 | Display | **GREEN** | — | Projection only |
 | Evidence/provenance | **YELLOW** | process | Classes exist; 7/7 easy to misread; COMP goldens mostly inline |
 | Testing | **GREEN** | — | Gate proves source behavior; not hardware |
-| Deployment | **RED** | P0 product | Live PWA **BLOCKED** (Pages not enabled) — not an architecture defect |
+| Deployment | **RED** | P0 product | Live origin 200 but serving Vite source (blank UI), not `dist` |
 | Maintainability | **YELLOW** | P2 | Large files (`machine`/`stat`/`matrix`/`vector`); coherent enough for additive work |
 
 RED is **deployment verification**, not a reason to redesign the calculator core.
@@ -433,7 +433,7 @@ RED is **deployment verification**, not a reason to redesign the calculator core
 ### P0
 
 - **None in the calculator architecture.**
-- **Product P0:** live PWA verification remains **BLOCKED** (cannot be fixed in code).
+- **Product P0:** live origin is enabled but misconfigured (`/(root)` source). Calculator does not render. PWA still **BLOCKED**.
 
 ### P1 (fixed this phase)
 
@@ -535,4 +535,4 @@ Scored by value × source confidence × implementation risk × architectural fit
 | `tsc --noEmit` | pass |
 | production build | pass — Workbox precache **15**; manifest scope `/casio-fx-991es-copy/` |
 | Playwright | **33 passed** (Chromium / Pixel 7 / iPad-sized Chromium — **not** iOS Safari) |
-| GitHub Pages | **404** — `C-P0-PWA` remains BLOCKED |
+| GitHub Pages | origin 200; `/src/main.tsx` 404; `C-P0-PWA` remains BLOCKED |

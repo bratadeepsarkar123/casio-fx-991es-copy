@@ -3,6 +3,7 @@ name: CI
 on:
   push:
   pull_request:
+  workflow_dispatch:
 
 jobs:
   verify:
@@ -23,7 +24,11 @@ jobs:
           CI: "true"
 
   pages:
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'push' &&
+        (github.ref == 'refs/heads/main' ||
+          github.ref == 'refs/heads/cursor/fx991es-plus2-web-clone-4c69'))
     needs: verify
     runs-on: ubuntu-latest
     permissions:
