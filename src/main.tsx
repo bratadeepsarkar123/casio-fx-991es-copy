@@ -4,6 +4,7 @@ import { registerSW } from "virtual:pwa-register";
 import { App } from "./App.tsx";
 import "./index.css";
 
+// vite.config.ts uses registerType: "autoUpdate" so waiting SWs apply after Pages deploys.
 registerSW({ immediate: true });
 
 const root = document.getElementById("root");

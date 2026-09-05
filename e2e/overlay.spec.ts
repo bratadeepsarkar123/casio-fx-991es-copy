@@ -52,4 +52,22 @@ test.describe("physical overlay", () => {
     await box.dispatchEvent("pointerdown");
     await expect(page.getByTestId("lcd-expr")).toContainText("8");
   });
+
+  test("Enter on a focused chassis key dispatches that key, not equals", async ({ page }) => {
+    await page.goto("./");
+    const seven = page.locator('[data-key="7"]');
+    await seven.focus();
+    await page.keyboard.press("Enter");
+    await expect(page.getByTestId("lcd-expr")).toContainText("7");
+    await expect(page.getByTestId("lcd-caret")).toBeVisible();
+  });
+
+  test("Space on a focused chassis key dispatches that key", async ({ page }) => {
+    await page.goto("./");
+    const eight = page.locator('[data-key="8"]');
+    await eight.focus();
+    await page.keyboard.press(" ");
+    await expect(page.getByTestId("lcd-expr")).toContainText("8");
+    await expect(page.getByTestId("lcd-caret")).toBeVisible();
+  });
 });

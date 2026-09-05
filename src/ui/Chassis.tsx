@@ -97,6 +97,25 @@ export function Chassis({ keymap, imageSrc, state, debug, onKey }: ChassisProps)
                 onKey(key.id);
               }
             }}
+            onKeyDown={(ev) => {
+              if (ev.key !== "Enter" && ev.key !== " ") {
+                return;
+              }
+              ev.preventDefault();
+              ev.stopPropagation();
+              if (isKeyId(key.id)) {
+                onKey(key.id);
+              }
+            }}
+            onClick={(ev) => {
+              if (ev.detail !== 0) {
+                return;
+              }
+              ev.preventDefault();
+              if (isKeyId(key.id)) {
+                onKey(key.id);
+              }
+            }}
           />
         );
       })}

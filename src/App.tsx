@@ -28,6 +28,14 @@ export function App() {
       if (!mapped) {
         return;
       }
+      const target = ev.target;
+      if (
+        target instanceof HTMLElement &&
+        target.closest("[data-key]") &&
+        (ev.key === "Enter" || ev.key === " ")
+      ) {
+        return;
+      }
       ev.preventDefault();
       dispatch({ keyId: mapped, source: "keyboard" });
     };

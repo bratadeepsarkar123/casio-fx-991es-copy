@@ -2,8 +2,9 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { VitePWA } from "vite-plugin-pwa";
+import { normalizeViteBase } from "./src/viteBase.ts";
 
-const base = process.env.VITE_BASE ?? "/casio-fx-991es-copy/";
+const base = normalizeViteBase(process.env.VITE_BASE);
 
 export default defineConfig({
   base,
@@ -11,7 +12,7 @@ export default defineConfig({
     react(),
     tailwindcss(),
     VitePWA({
-      registerType: "prompt",
+      registerType: "autoUpdate",
       includeAssets: [
         "assets/chassis-fx-991es-plus-2.png",
         "keymap.json",

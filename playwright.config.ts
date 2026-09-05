@@ -1,7 +1,8 @@
 import { defineConfig, devices } from "@playwright/test";
+import { normalizeViteBase } from "./src/viteBase.ts";
 
 const port = 4173;
-const base = process.env.VITE_BASE ?? "/casio-fx-991es-copy/";
+const base = normalizeViteBase(process.env.VITE_BASE);
 
 export default defineConfig({
   testDir: "e2e",
