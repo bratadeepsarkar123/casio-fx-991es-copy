@@ -28,12 +28,9 @@ export function App() {
       if (!mapped) {
         return;
       }
-      const target = ev.target;
-      if (
-        target instanceof HTMLElement &&
-        target.closest("[data-key]") &&
-        (ev.key === "Enter" || ev.key === " ")
-      ) {
+      const active =
+        document.activeElement instanceof HTMLElement ? document.activeElement.closest("[data-key]") : null;
+      if (active && (ev.key === "Enter" || ev.key === " ")) {
         return;
       }
       ev.preventDefault();

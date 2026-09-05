@@ -70,4 +70,15 @@ test.describe("physical overlay", () => {
     await expect(page.getByTestId("lcd-expr")).toContainText("8");
     await expect(page.getByTestId("lcd-caret")).toBeVisible();
   });
+
+  test("pointer then Enter on the same key types it again, not equals", async ({ page }) => {
+    await page.goto("./");
+    const seven = page.locator('[data-key="7"]');
+    await seven.click();
+    await expect(page.getByTestId("lcd-expr")).toContainText("7");
+    await expect(page.getByTestId("lcd-caret")).toBeVisible();
+    await page.keyboard.press("Enter");
+    await expect(page.getByTestId("lcd-expr")).toContainText("77");
+    await expect(page.getByTestId("lcd-caret").first()).toBeVisible();
+  });
 });

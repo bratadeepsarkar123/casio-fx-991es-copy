@@ -93,6 +93,7 @@ export function Chassis({ keymap, imageSrc, state, debug, onKey }: ChassisProps)
             }}
             onPointerDown={(ev) => {
               ev.preventDefault();
+              ev.currentTarget.focus();
               if (isKeyId(key.id)) {
                 onKey(key.id);
               }
