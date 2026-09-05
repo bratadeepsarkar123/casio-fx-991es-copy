@@ -1,0 +1,26 @@
+{
+  "id": "GT-EQ-OFFICIAL-EX3",
+  "sourceEvidenceId": "TGT-TOC-EQN",
+  "evidenceClass": "TARGET-OFFICIAL-DOC",
+  "targetConfirm": "CONFIRMED",
+  "page": null,
+  "section": "Equation Calculations (EQN) Example 3 — quadratic complex pair",
+  "source": "https://support.casio.com/global/en/calc/manual/fx-570ESPLUS_991ESPLUS_en/using_calculation_modes/equation_calculations.html",
+  "keys": [
+    "mode", "5", "3",
+    "1", "equals",
+    "1", "equals",
+    "3", "frac", "4", "equals",
+    "equals"
+  ],
+  "expected": {
+    "mode": "EQN",
+    "type": "quad",
+    "phase": "solutions",
+    "solutionIndex": 0,
+    "labels": ["X1", "X2"],
+    "expression": "X1=",
+    "displayContains": ["-1/2", "i"],
+    "naturalKind": "complex"
+  }
+}

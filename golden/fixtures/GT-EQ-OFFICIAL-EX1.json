@@ -1,0 +1,25 @@
+{
+  "id": "GT-EQ-OFFICIAL-EX1",
+  "sourceEvidenceId": "TGT-TOC-EQN",
+  "evidenceClass": "TARGET-OFFICIAL-DOC",
+  "targetConfirm": "CONFIRMED",
+  "page": null,
+  "section": "Equation Calculations (EQN) Example 1 — simultaneous 2 unknowns",
+  "source": "https://support.casio.com/global/en/calc/manual/fx-570ESPLUS_991ESPLUS_en/using_calculation_modes/equation_calculations.html",
+  "keys": [
+    "mode", "5", "1",
+    "1", "equals", "2", "equals", "3", "equals",
+    "2", "equals", "3", "equals", "4", "equals",
+    "equals"
+  ],
+  "expected": {
+    "mode": "EQN",
+    "type": "lin2",
+    "phase": "solutions",
+    "solutionIndex": 0,
+    "labels": ["X", "Y"],
+    "values": ["-1", "2"],
+    "expression": "X=",
+    "display": "-1"
+  }
+}

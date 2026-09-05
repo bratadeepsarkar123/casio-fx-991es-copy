@@ -1,0 +1,17 @@
+{
+  "id": "GT-TBL-XSQ-DEFAULTS",
+  "sourceEvidenceId": "TGT-TOC-TABLE",
+  "evidenceClass": "TARGET-OFFICIAL-DOC",
+  "targetConfirm": "CONFIRMED",
+  "page": null,
+  "section": "Creating a Numerical Table from a Function (TABLE)",
+  "initialMode": "TABLE",
+  "keys": ["mode", "7", "alpha", "rparen", "square", "equals", "equals", "equals", "equals"],
+  "expected": {
+    "mode": "TABLE",
+    "phase": "view",
+    "rowIndex": 0,
+    "xs": ["1", "2", "3", "4", "5"],
+    "fx": ["1", "4", "9", "16", "25"]
+  }
+}

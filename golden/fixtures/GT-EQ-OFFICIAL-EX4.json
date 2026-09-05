@@ -1,0 +1,26 @@
+{
+  "id": "GT-EQ-OFFICIAL-EX4",
+  "sourceEvidenceId": "TGT-TOC-EQN",
+  "evidenceClass": "TARGET-OFFICIAL-DOC",
+  "targetConfirm": "CONFIRMED",
+  "page": null,
+  "section": "Equation Calculations (EQN) Example 4 — repeated quadratic root √2",
+  "source": "https://support.casio.com/global/en/calc/manual/fx-570ESPLUS_991ESPLUS_en/using_calculation_modes/equation_calculations.html",
+  "keys": [
+    "mode", "5", "3",
+    "1", "equals",
+    "neg", "2", "mul", "sqrt", "2", "equals",
+    "2", "equals",
+    "equals"
+  ],
+  "expected": {
+    "mode": "EQN",
+    "type": "quad",
+    "phase": "solutions",
+    "solutionIndex": 0,
+    "labels": ["X"],
+    "values": ["√2"],
+    "expression": "X=",
+    "display": "√2"
+  }
+}

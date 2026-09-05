@@ -1,0 +1,255 @@
+import { Decimal } from "decimal.js";
+
+/** SRC-P97: internal calculation uses 15 digits. */
+export const INTERNAL_DIGITS = 15;
+/** Display mantissa width (10 + 2 exponent). Official spec: 10+2 digits. */
+export const DISPLAY_DIGITS = 10;
+/** SRC-P97: ±1×10^-99 to ±9.999999999×10^99 or 0 */
+export const EXP_MIN = -99;
+export const EXP_MAX = 99;
+
+/**
+ * SRC-P36: π is displayed as 3.141592654, but
+ * π = 3.14159265358980 is used for internal calculations.
+ */
+export const PI_INTERNAL = "3.14159265358980";
+/**
+ * SRC-P36: e is displayed as 2.718281828, but
+ * e = 2.71828182845904 is used for internal calculations.
+ */
+export const E_INTERNAL = "2.71828182845904";
+
+Decimal.set({
+  precision: INTERNAL_DIGITS + 5,
+  rounding: Decimal.ROUND_HALF_UP,
+  toExpNeg: -(INTERNAL_DIGITS + 5),
+  toExpPos: INTERNAL_DIGITS + 5,
+});
+
+export type Dec = Decimal;
+
+export function D(value: Decimal.Value): Decimal {
+  return new Decimal(value);
+}
+
+/**
+ * Parse a stored calculator number. Display strings like `1.23×10+03` are
+ * not decimal.js-legal; convert the ×10 marker to `e` first.
+ */
+export function parseCalcNumber(value: string): Decimal {
+  const normalized = value.replace(/×10/, "e").trim();
+  return D(normalized.length > 0 ? normalized : "0");
+}
+
+export const PI = D(PI_INTERNAL);
+export const E = D(E_INTERNAL);
+export const ZERO = D(0);
+export const ONE = D(1);
+export const TEN = D(10);
+
+export class CalcMathError extends Error {
+  readonly code = "Math ERROR" as const;
+  constructor(message = "Math ERROR") {
+    super(message);
+    this.name = "CalcMathError";
+  }
+}
+
+export class CalcSyntaxError extends Error {
+  readonly code = "Syntax ERROR" as const;
+  constructor(message = "Syntax ERROR") {
+    super(message);
+    this.name = "CalcSyntaxError";
+  }
+}
+
+export class CalcArgumentError extends Error {
+  readonly code = "Argument ERROR" as const;
+  constructor(message = "Argument ERROR") {
+    super(message);
+    this.name = "CalcArgumentError";
+  }
+}
+
+export class CalcStackError extends Error {
+  readonly code = "Stack ERROR" as const;
+  constructor(message = "Stack ERROR") {
+    super(message);
+    this.name = "CalcStackError";
+  }
+}
+
+/**
+ * Shared Dimension ERROR. MATRIX and VECTOR both use this code
+ * (`TARGET-OFFICIAL-DOC`). The class lives here so VECTOR algebra does not
+ * import MATRIX algebra.
+ */
+export class CalcDimensionError extends Error {
+  readonly code = "Dimension ERROR" as const;
+  constructor(message = "Dimension ERROR") {
+    super(message);
+    this.name = "CalcDimensionError";
+  }
+}
+
+export function isZero(x: Decimal): boolean {
+  return x.isZero();
+}
+
+export function toRad(x: Decimal, unit: "Deg" | "Rad" | "Gra"): Decimal {
+  switch (unit) {
+    case "Deg":
+      return x.times(PI).div(180);
+    case "Rad":
+      return x;
+    case "Gra":
+      return x.times(PI).div(200);
+    default: {
+      const _never: never = unit;
+      return _never;
+    }
+  }
+}
+
+export function fromRad(x: Decimal, unit: "Deg" | "Rad" | "Gra"): Decimal {
+  switch (unit) {
+    case "Deg":
+      return x.times(180).div(PI);
+    case "Rad":
+      return x;
+    case "Gra":
+      return x.times(200).div(PI);
+    default: {
+      const _never: never = unit;
+      return _never;
+    }
+  }
+}
+
+/** SRC-P97 range check. */
+export function assertRange(x: Decimal): Decimal {
+  if (x.isNaN() || !x.isFinite()) {
+    throw new CalcMathError();
+  }
+  if (x.isZero()) {
+    return ZERO;
+  }
+  const mag = x.abs();
+  const min = D("1e-99");
+  const max = D("9.999999999e99");
+  if (mag.lt(min) && !mag.isZero()) {
+    return ZERO;
+  }
+  if (mag.gt(max)) {
+    throw new CalcMathError();
+  }
+  return x;
+}
+
+export function roundInternal(x: Decimal): Decimal {
+  const y = x.toSignificantDigits(INTERNAL_DIGITS, Decimal.ROUND_HALF_UP);
+  return assertRange(y);
+}
+
+export function gcdBig(a: bigint, b: bigint): bigint {
+  let x = a < 0n ? -a : a;
+  let y = b < 0n ? -b : b;
+  while (y !== 0n) {
+    const t = x % y;
+    x = y;
+    y = t;
+  }
+  return x === 0n ? 1n : x;
+}
+
+export function factorial(n: Decimal): Decimal {
+  if (!n.isInteger() || n.lt(0) || n.gt(69)) {
+    throw new CalcMathError();
+  }
+  let acc = ONE;
+  let i = D(2);
+  while (i.lte(n)) {
+    acc = acc.times(i);
+    i = i.plus(1);
+  }
+  return roundInternal(acc);
+}
+
+export function nPr(n: Decimal, r: Decimal): Decimal {
+  if (!n.isInteger() || !r.isInteger() || n.lt(0) || r.lt(0) || r.gt(n) || n.gte("1e10")) {
+    throw new CalcMathError();
+  }
+  let acc = ONE;
+  let i = ZERO;
+  while (i.lt(r)) {
+    acc = acc.times(n.minus(i));
+    i = i.plus(1);
+  }
+  return roundInternal(acc);
+}
+
+export function nCr(n: Decimal, r: Decimal): Decimal {
+  if (!n.isInteger() || !r.isInteger() || n.lt(0) || r.lt(0) || r.gt(n) || n.gte("1e10")) {
+    throw new CalcMathError();
+  }
+  const k = Decimal.min(r, n.minus(r));
+  let acc = ONE;
+  let i = ONE;
+  while (i.lte(k)) {
+    acc = acc.times(n.minus(k).plus(i)).div(i);
+    i = i.plus(1);
+  }
+  return roundInternal(acc);
+}
+
+/**
+ * 32-bit LCG control stream (Numerical Recipes). `Math.imul` is a bounded
+ * integer control-flow primitive, not calculator-semantic IEEE-754 math.
+ * Hardware Ran# algorithm is unspecified (INFERRED).
+ */
+export function createUint32Rng(seed: number): () => number {
+  let s = seed >>> 0;
+  return () => {
+    s = (Math.imul(1664525, s) + 1013904223) >>> 0;
+    return s;
+  };
+}
+
+/** Unit-interval wrapper kept for non-semantic callers. Prefer `createUint32Rng`. */
+export function seededRng(seed: number): () => number {
+  const next = createUint32Rng(seed);
+  return () => next() / 0x100000000;
+}
+
+/** Ran#: 0.000–0.999 in thousandths. Uses integer remainder, not Math.floor. */
+export function ranHash(u: number): Decimal {
+  return D(u).mod(1000).div(1000);
+}
+
+export function ranInt(a: Decimal, b: Decimal, u: number): Decimal {
+  if (!a.isInteger() || !b.isInteger() || a.gte(b) || a.abs().gte("1e10") || b.abs().gte("1e10")) {
+    throw new CalcMathError();
+  }
+  const span = b.minus(a).plus(1);
+  if (span.lte(0) || span.gte("1e10")) {
+    throw new CalcMathError();
+  }
+  return a.plus(D(u).mod(span));
+}
+
+export function lcmBig(a: bigint, b: bigint): bigint {
+  if (a === 0n || b === 0n) {
+    return 0n;
+  }
+  const aa = a < 0n ? -a : a;
+  const bb = b < 0n ? -b : b;
+  return (aa / gcdBig(aa, bb)) * bb;
+}
+
+/** Exact integer as bigint. Non-integers are Math ERROR. */
+export function toBigIntExact(x: Decimal): bigint {
+  if (!x.isInteger()) {
+    throw new CalcMathError();
+  }
+  return BigInt(x.toFixed(0));
+}

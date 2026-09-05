@@ -1,0 +1,109 @@
+# Manual extract index
+
+One file per PDF page. Extracted with pypdf (no OCR).
+
+- [001-casio-worldwide-education-website.md](001-casio-worldwide-education-website.md) — EN
+- [002-table-of-contents.md](002-table-of-contents.md) — Table of Contents
+- [003-clearing-the-contents-of-all-memories.md](003-clearing-the-contents-of-all-memories.md) — Independent Memory (M)..........................................................
+- [004-base-n-calculations-base-n-66.md](004-base-n-calculations-base-n-66.md) — Base-n Calculations (BASE-N) ...................................................
+- [005-before-using-the-calculator.md](005-before-using-the-calculator.md) — Before Using the Calculator
+- [006-use-only-the-type-of-battery-specified-for-this-calculator-i.md](006-use-only-the-type-of-battery-specified-for-this-calculator-i.md) — • Use only the type of battery specified for this calculator in this
+- [007-turning-power-on-and-off.md](007-turning-power-on-and-off.md) — Turning Power On and Off
+- [008-example.md](008-example.md) — Example:
+- [009-display-indicators.md](009-display-indicators.md) — Display indicators
+- [010-calculation-history-memory-data-is-available-and.md](010-calculation-history-memory-data-is-available-and.md) — Calculation history memory data is available and
+- [011-calculation-modes-and.md](011-calculation-modes-and.md) — Calculation Modes and
+- [012-configuring-the-calculator-setup.md](012-configuring-the-calculator-setup.md) — Configuring the Calculator Setup
+- [013-mthio-lineo.md](013-mthio-lineo.md) — MthIO-LineO
+- [014-number-of-significant.md](014-number-of-significant.md) — Number of Significant
+- [015-specifying-the-complex-number-format.md](015-specifying-the-complex-number-format.md) — Specifying the Complex Number Format
+- [016-do-not-use-recurring.md](016-do-not-use-recurring.md) — Do not use recurring
+- [017-complex-number.md](017-complex-number.md) — Complex Number
+- [018-inputting-expressions-and.md](018-inputting-expressions-and.md) — Inputting Expressions and
+- [019-when-natural-display-is-selected-pressing.md](019-when-natural-display-is-selected-pressing.md) — • When Natural Display is selected, pressing
+- [020-ab-d-ab-a-b-d-e.md](020-ab-d-ab-a-b-d-e.md) — ± a√b, ± d ± a√b, ± a'√b ± d'√e
+- [021-overwrite-input-mode-linear.md](021-overwrite-input-mode-linear.md) — Overwrite Input Mode (Linear
+- [022-basic-calculations.md](022-basic-calculations.md) — Basic Calculations
+- [023-important.md](023-important.md) — Important!
+- [024-will-cause-the-result-to-be-displayed-as-a-decimal-value.md](024-will-cause-the-result-to-be-displayed-as-a-decimal-value.md) — Note
+- [025-you-also-can-convert-between-sexagesimal-and-decimal.md](025-you-also-can-convert-between-sexagesimal-and-decimal.md) — You also can convert between sexagesimal and decimal.
+- [026-0-123103.md](026-0-123103.md) — 123
+- [027-positive-integer-or-positive-fractional-value.md](027-positive-integer-or-positive-fractional-value.md) — • When the quotient is not a positive integer, or if the remainder is not a
+- [028-example-3-t-o-calculate-1-021-2-312.md](028-example-3-t-o-calculate-1-021-2-312.md) — 428571
+- [029-decimal-value-according-to-norm-1-setting.md](029-decimal-value-according-to-norm-1-setting.md) — Decimal value according to Norm 1 setting:
+- [030-example-4-1-7-0-1428571429-norm-1-1.md](030-example-4-1-7-0-1428571429-norm-1-1.md) — Example 4: 1 ÷ 7 = 0.1428571429 (Norm 1) = 1
+- [031-example-2-1-6-2-8-4-5-mthio-matho.md](031-example-2-1-6-2-8-4-5-mthio-matho.md) — 0
+- [032-1-1-2.md](032-1-1-2.md) — 1 + 1 = 2
+- [033-scrolls-back.md](033-scrolls-back.md) — (Scrolls back.)
+- [034-inputting-ans-memory-contents-into-an-expression.md](034-inputting-ans-memory-contents-into-an-expression.md) — Inputting Ans Memory Contents into an Expression
+- [035-variables-a-b-c-d-e-f-m-x-y.md](035-variables-a-b-c-d-e-f-m-x-y.md) — Variables (A, B, C, D, E, F, M, X, Y)
+- [036-clearing-the-contents-of-all-memories.md](036-clearing-the-contents-of-all-memories.md) — Clearing the Contents of All Memories
+- [037-function-calculations.md](037-function-calculations.md) — Function Calculations
+- [038-sinh-1.md](038-sinh-1.md) — (sinh) 1
+- [039-mthio-matho-mthio-lineo.md](039-mthio-matho-mthio-lineo.md) — 2
+- [040-mthio-matho.md](040-mthio-matho.md) — (MthIO-MathO)
+- [041-example-2-1.md](041-example-2-1.md) — Example 2: ∫(1
+- [042-1-positive-part.md](042-1-positive-part.md) — (1) Positive Part
+- [043-page.md](043-page.md) — (
+- [044-f-x-a-or-b-d-dx.md](044-f-x-a-or-b-d-dx.md) — Note
+- [045-1-rectangular-coordinates-rec.md](045-1-rectangular-coordinates-rec.md) — (1) Rectangular Coordinates (Rec)
+- [046-example.md](046-example.md) — Example:
+- [047-permutation-npr-and-combination.md](047-permutation-npr-and-combination.md) — (Results shown here are for illustrative purposes only. Actual results will
+- [048-example-t-o-determine-the-greatest-common-divisor-of-28-and-.md](048-example-t-o-determine-the-greatest-common-divisor-of-28-and-.md) — Example: T o determine the greatest common divisor of 28 and 35
+- [049-variables-on-the-right-a-b-c-y-x2-x-3.md](049-variables-on-the-right-a-b-c-y-x2-x-3.md) — • Equations with a single variable on the left and an expression including
+- [050-to-exit-calc.md](050-to-exit-calc.md) — To exit CALC:
+- [051-3-current-value-of-x.md](051-3-current-value-of-x.md) — 0
+- [052-1-equation-the-equation-you-input.md](052-1-equation-the-equation-you-input.md) — (1) Equation (The equation you input.)
+- [053-scientific-constants.md](053-scientific-constants.md) — Scientific Constants
+- [054-13-p-proton-gyromagnetic-ratio-14-cp-proton-compton.md](054-13-p-proton-gyromagnetic-ratio-14-cp-proton-compton.md) — 13: (γp) proton gyromagnetic ratio 14: (λCp) proton Compton
+- [055-conv-and-then-input-the-two-digit-number-that-corresponds-to.md](055-conv-and-then-input-the-two-digit-number-that-corresponds-to.md) — (CONV) and then input the two-digit number that corresponds to the
+- [056-c-38-c.md](056-c-38-c.md) — 37: °F
+- [057-using-calculation-modes.md](057-using-calculation-modes.md) — Using Calculation Modes
+- [058-cmplx-mode-calculation-examples.md](058-cmplx-mode-calculation-examples.md) — CMPLX Mode Calculation Examples
+- [059-to-select-this-type-of-statistical-calculation.md](059-to-select-this-type-of-statistical-calculation.md) — To select this type of statistical calculation:
+- [060-column-only-or-when-there-are-x-and-y-columns-20-rows-when-t.md](060-column-only-or-when-there-are-x-and-y-columns-20-rows-when-t.md) — The Statistics Editor provides 40 rows for data input when there is an X
+- [061-to-delete-all-statistics-editor-contents.md](061-to-delete-all-statistics-editor-contents.md) — To delete all Statistics Editor contents:
+- [062-var-display-the-var-sub-menu-of-commands-for.md](062-var-display-the-var-sub-menu-of-commands-for.md) — (Var) Display the Var sub-menu of commands for
+- [063-distr-sub-menu.md](063-distr-sub-menu.md) — Distr Sub-menu (
+- [064-x4-sum-of-biquadrate-of-the-x-data.md](064-x4-sum-of-biquadrate-of-the-x-data.md) — (∑x4) Sum of biquadrate of the X-data
+- [065-miny-minimum-value-of-the-y-data.md](065-miny-minimum-value-of-the-y-data.md) — (minY) Minimum value of the Y-data
+- [066-results.md](066-results.md) — Results:
+- [067-results.md](067-results.md) — Results:
+- [068-the-initial-default-number-mode-when-you-enter-the-base-n-mo.md](068-the-initial-default-number-mode-when-you-enter-the-base-n-mo.md) — The initial default number mode when you enter the BASE-N Mode is
+- [069-positive.md](069-positive.md) — Positive:
+- [070-logical-and-negation-operations.md](070-logical-and-negation-operations.md) — Logical and Negation Operations
+- [071-xnor-101.md](071-xnor-101.md) — Example 4: T o determine the logical XNOR of 11112 and 1012  (11112 xnor
+- [072-quadratic-equation.md](072-quadratic-equation.md) — Quadratic equation
+- [073-anx-bny-cn.md](073-anx-bny-cn.md) — (EQN)
+- [074-x3-1.md](074-x3-1.md) — (X3=)    1
+- [075-2-ans-stands-for-matans.md](075-2-ans-stands-for-matans.md) — (2) "Ans" stands for "MatAns".
+- [076-example-2-t-o-assign.md](076-example-2-t-o-assign.md) — Example 2: T o assign
+- [077-matrix.md](077-matrix.md) — (MATRIX)
+- [078-other-in-the-format-g-x.md](078-other-in-the-format-g-x.md) — 2. Use the X variable to input two functions, one in the format f(x) and the
+- [079-and-g-x-x2-1.md](079-and-g-x-x2-1.md) — Example: T o generate a numerical table for the functions f(x) = x2 + 1
+- [080-vector-calculations-vector.md](080-vector-calculations-vector.md) — Vector Calculations (VECTOR)
+- [081-vector-answer-memory.md](081-vector-answer-memory.md) — Vector Answer Memory
+- [082-2-press.md](082-2-press.md) — 2. Press
+- [083-vector.md](083-vector.md) — (SETUP)
+- [084-5-after-all-the-values-are-the-way-you-want-press.md](084-5-after-all-the-values-are-the-way-you-want-press.md) — 5. After all the values are the way you want, press
+- [085-note-solutions-are-displayed-as-shown-here.md](085-note-solutions-are-displayed-as-shown-here.md) — Note: Solutions are displayed as shown here
+- [086-using-verify-verif.md](086-using-verify-verif.md) — Using VERIFY (VERIF)
+- [087-using-the-value-currently-assigned-to-the-variable.md](087-using-the-value-currently-assigned-to-the-variable.md) — •  Any variable (A, B, C, D, E, F, X, Y, M) input into an expression is treated 
+- [088-verify.md](088-verify.md) — 5
+- [089-stat-dist.md](089-stat-dist.md) — Note
+- [090-to-edit-sample-data.md](090-to-edit-sample-data.md) — To edit sample data:
+- [091-results.md](091-results.md) — Results:
+- [092-corresponding-sample-data-is-outside-the-allowable-range.md](092-corresponding-sample-data-is-outside-the-allowable-range.md) — • An error message appears if the input value is outside the allowable range. "E
+- [093-technical-information.md](093-technical-information.md) — Technical Information
+- [094-functions.md](094-functions.md) — • Your input exceeds the allowable input range (particularly when using
+- [095-dimensions-do-not-allow-that-type-of-calculation.md](095-dimensions-do-not-allow-that-type-of-calculation.md) — • You are trying to perform a calculation with matrices or vectors whose
+- [096-time-out-error.md](096-time-out-error.md) — Time Out Error
+- [097-1-press.md](097-1-press.md) — 1. Press
+- [098-5-negative-sign-base-n-symbols-d-h-b-o.md](098-5-negative-sign-base-n-symbols-d-h-b-o.md) — 5 Negative sign ((-)), base-n symbols (d, h, b, o)
+- [099-precision.md](099-precision.md) — Precision
+- [100-x-0-x-1-10100.md](100-x-0-x-1-10100.md) — √x 0 ≦ x < 1 × 10100
+- [101-ranint-a-b-a-b-a-b-1-1010-b-a-1-10-10.md](101-ranint-a-b-a-b-a-b-1-1010-b-a-1-10-10.md) — RanInt#(a, b) a < b; |a|, |b| < 1 × 1010; b - a < 1 × 10 10
+- [102-1-press.md](102-1-press.md) — 1. Press
+- [103-frequently-asked-questions.md](103-frequently-asked-questions.md) — Frequently Asked Questions
+- [104-0-7071067812.md](104-0-7071067812.md) — 0.7071067812
+- [105-2019-casio-computer-co-ltd.md](105-2019-casio-computer-co-ltd.md) — © 2019 CASIO COMPUTER CO., LTD.

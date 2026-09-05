@@ -1,0 +1,74 @@
+# CAPABILITY_MATRIX.md
+
+Three-axis model. **VERIFIED** means Implementation Status `IMPLEMENTED` **and** Verification Status `VERIFIED`.
+
+Implementation: `NOT_STARTED` | `PARTIAL` | `IMPLEMENTED` | `UNSUPPORTED`  
+Verification: `UNVERIFIED` | `VERIFIED` | `BLOCKED` | `NEEDS-HUMAN-REVIEW` | `N/A`  
+Priority: `REQUIRED-FUNCTIONAL-V1` | `REQUIRED-COMPLETE-CLONE` | `OPTIONAL-V1` | `DEFERRED` | `UNSUPPORTED-BY-HARDWARE`
+
+Evidence classes and TargetConfirm: `docs/EVIDENCE_CLASSES.md`.
+
+| ID | Capability | Priority | Source | EvidenceClass | TargetConfirm | Impl | Ver | Tests |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| C-P0-COMP | COMP mode arithmetic | REQUIRED-FUNCTIONAL-V1 | SRC-P18,P21; TGT-TOC COMP | CROSS-MODEL-SOURCE | CONFIRMED | IMPLEMENTED | VERIFIED | GT-P18-EX1, GT-P21-* |
+| C-P0-PREC | Operator priority | REQUIRED-FUNCTIONAL-V1 | SRC-P96; TGT-TOC priority | CROSS-MODEL-SOURCE | CONFIRMED | IMPLEMENTED | VERIFIED | GT-P96 |
+| C-P0-TRIG | sin/cos/tan + inverse | REQUIRED-FUNCTIONAL-V1 | SRC-P36; TGT-TOC functions | CROSS-MODEL-SOURCE | CONFIRMED | IMPLEMENTED | VERIFIED | GT-P36-EX1, EX2; special-angles |
+| C-P0-ANG | Deg/Rad/Gra | REQUIRED-FUNCTIONAL-V1 | SRC-P12; TGT-TOC setup | CROSS-MODEL-SOURCE | CONFIRMED | IMPLEMENTED | VERIFIED | GT-P12-RAD |
+| C-P0-FRAC | Natural fractions | REQUIRED-FUNCTIONAL-V1 | SRC-P22; TGT-TOC fractions | CROSS-MODEL-SOURCE | CONFIRMED | IMPLEMENTED | VERIFIED | GT-P22-EX1 |
+| C-P0-SD | S⇔D toggle | REQUIRED-FUNCTIONAL-V1 | SRC-P21; TGT-TOC | CROSS-MODEL-SOURCE | CONFIRMED | IMPLEMENTED | VERIFIED | GT-P21-EX1, EX3 |
+| C-P0-POW | Exponents / x² / x³ | REQUIRED-FUNCTIONAL-V1 | SRC-P38; TGT-TOC | CROSS-MODEL-SOURCE | CONFIRMED | IMPLEMENTED | VERIFIED | GT-P38-EX1–3 |
+| C-P0-ROOT | Square/cube/nth roots | REQUIRED-FUNCTIONAL-V1 | SRC-P18,P38; TGT-TOC | CROSS-MODEL-SOURCE | CONFIRMED | IMPLEMENTED | VERIFIED | GT-P38-EX4 ⁵√32; cuberoot 8 |
+| C-P0-EDIT | Cursor / DEL / insert | REQUIRED-FUNCTIONAL-V1 | SRC-P20; TGT-TOC input | CROSS-MODEL-SOURCE | CONFIRMED | IMPLEMENTED | VERIFIED | editor.test.ts; GT-P32 |
+| C-P0-SHIFT | SHIFT latch consume | REQUIRED-FUNCTIONAL-V1 | SRC-P6; CHASSIS | CROSS-MODEL-SOURCE | CONFIRMED | IMPLEMENTED | VERIFIED | SHIFT test |
+| C-P0-ALPHA | ALPHA A–F,X,Y,M | REQUIRED-FUNCTIONAL-V1 | SRC-P34; TGT-TOC vars; CHASSIS | CROSS-MODEL-SOURCE | CONFIRMED | IMPLEMENTED | VERIFIED | ALPHA store/recall |
+| C-P0-REPLAY | History/replay | REQUIRED-FUNCTIONAL-V1 | SRC-P31–32; TGT-TOC | CROSS-MODEL-SOURCE | CONFIRMED | IMPLEMENTED | VERIFIED | GT-P32 |
+| C-P0-ERR | Math/Syntax error + recover | REQUIRED-FUNCTIONAL-V1 | SRC-P92; TGT-TOC errors | CROSS-MODEL-SOURCE | CONFIRMED | IMPLEMENTED | VERIFIED | GT-P92 recover/AC |
+| C-P0-ANS | Ans memory | REQUIRED-FUNCTIONAL-V1 | SRC-P32; TGT-TOC Ans | CROSS-MODEL-SOURCE | CONFIRMED | IMPLEMENTED | VERIFIED | GT-P32 Ans |
+| C-P0-MEM | Variables + M+/M− | REQUIRED-FUNCTIONAL-V1 | SRC-P34–35; TGT-TOC M | CROSS-MODEL-SOURCE | CONFIRMED | IMPLEMENTED | VERIFIED | ALPHA; M+ 10×5 |
+| C-P0-AC | AC vs CLR Setup/Memory/All | REQUIRED-FUNCTIONAL-V1 | SRC-P4,P15,P35; TGT-TOC CLR | CROSS-MODEL-SOURCE | CONFIRMED | IMPLEMENTED | VERIFIED | state-transitions.test.ts |
+| C-P0-PERSIST | localStorage schema v1 | REQUIRED-FUNCTIONAL-V1 | spec §8 | INFERRED | N/A | IMPLEMENTED | VERIFIED | persist.test.ts; e2e persist |
+| C-P0-KEYS | Physical overlay + keymap.json | REQUIRED-FUNCTIONAL-V1 | CHASSIS | EMPIRICAL | CONFIRMED | IMPLEMENTED | VERIFIED | coords.test.ts; overlay e2e |
+| C-P0-LCD | LCD expression/result/indicators | REQUIRED-FUNCTIONAL-V1 | SRC-P7–8; CHASSIS | CROSS-MODEL-SOURCE | CONFIRMED | IMPLEMENTED | VERIFIED | lcdIndicators; lcd-expr/result |
+| C-P0-PWA | Install + offline SW | REQUIRED-FUNCTIONAL-V1 | spec §9 | INFERRED | N/A | IMPLEMENTED | UNVERIFIED | Origin serves hashed `dist/` (`assets/index-*.js` 200). Live install/offline not tested |
+| C-P0-LOG | log / ln / 10^x / e^x | REQUIRED-FUNCTIONAL-V1 | SRC-P37; TGT-TOC | CROSS-MODEL-SOURCE | CONFIRMED | IMPLEMENTED | VERIFIED | GT-P37 |
+| C-P0-PCT | Percent | REQUIRED-FUNCTIONAL-V1 | SRC-P23; TGT-TOC | CROSS-MODEL-SOURCE | CONFIRMED | IMPLEMENTED | VERIFIED | GT-P23 |
+| C-P0-FIX | Fix/Sci/Norm | REQUIRED-FUNCTIONAL-V1 | SRC-P13; TGT-TOC setup | CROSS-MODEL-SOURCE | CONFIRMED | IMPLEMENTED | VERIFIED | GT-P13 Fix3 |
+| C-P0-PI | π / e constants | REQUIRED-FUNCTIONAL-V1 | SRC-P36; TGT-TOC | CROSS-MODEL-SOURCE | CONFIRMED | IMPLEMENTED | VERIFIED | GT-P21-EX1 |
+| C-P0-HYP | hyp prefix | REQUIRED-FUNCTIONAL-V1 | SRC-P36; TGT-TOC; CHASSIS hyp | CROSS-MODEL-SOURCE | CONFIRMED | IMPLEMENTED | VERIFIED | GT-P36 sinh 1 |
+| C-P0-MULTI | Colon multi-statement | REQUIRED-FUNCTIONAL-V1 | SRC-P24; CHASSIS ALPHA : | CROSS-MODEL-SOURCE | CONFIRMED | IMPLEMENTED | VERIFIED | GT-P24 |
+| C-P0-PREANS | PreAns memory + ALPHA+Ans entry | OPTIONAL-V1 | SRC-P32–33; TGT-TOC omits | CROSS-MODEL-SOURCE | UNCONFIRMED | IMPLEMENTED | NEEDS-HUMAN-REVIEW | GT-P33 Fibonacci (clone) |
+| C-OPT-KBD | Physical keyboard map | OPTIONAL-V1 | spec §5 | INFERRED | N/A | IMPLEMENTED | UNVERIFIED | repeat ignored |
+| C-P1-CMPLX | CMPLX mode | REQUIRED-COMPLETE-CLONE | TGT-TOC CMPLX; SRC-P56 | TARGET-OFFICIAL-DOC | CONFIRMED | IMPLEMENTED | VERIFIED | complex.test.ts; cmplx-state.test.ts; GT-CX-*; e2e/cmplx.spec.ts |
+| C-P1-STAT | STAT mode | REQUIRED-COMPLETE-CLONE | TGT-TOC STAT; SRC-P57 | TARGET-OFFICIAL-DOC | CONFIRMED | IMPLEMENTED | VERIFIED | statNumeric.test.ts; stat-state.test.ts; GT-ST-*; e2e/stat.spec.ts |
+| C-P1-BASE | BASE-N | REQUIRED-COMPLETE-CLONE | TGT-TOC BASE-N; SRC-P66 | TARGET-OFFICIAL-DOC | CONFIRMED | IMPLEMENTED | VERIFIED | baseNNumeric.test.ts; baseN-state.test.ts; GT-BN-*; e2e/baseN.spec.ts |
+| C-P1-EQN | EQN | REQUIRED-COMPLETE-CLONE | TGT-TOC EQN; SRC-P70 | TARGET-OFFICIAL-DOC | CONFIRMED | IMPLEMENTED | VERIFIED | eqnSolve.test.ts; eqn-state.test.ts; GT-EQ-*; e2e/eqn.spec.ts |
+| C-P1-MAT | MATRIX | REQUIRED-COMPLETE-CLONE | TGT-TOC MATRIX | TARGET-OFFICIAL-DOC | CONFIRMED | IMPLEMENTED | VERIFIED | matrixNumeric.test.ts; matrix-state.test.ts; GT-MX-*; e2e/matrix.spec.ts |
+| C-P1-TBL | TABLE | REQUIRED-COMPLETE-CLONE | TGT-TOC TABLE; SRC-P76 | TARGET-OFFICIAL-DOC | CONFIRMED | IMPLEMENTED | VERIFIED | table.test.ts; table-state.test.ts; GT-TBL-*; e2e/table.spec.ts |
+| C-P1-VCT | VECTOR | REQUIRED-COMPLETE-CLONE | SRC-P79; TGT-TOC VECTOR | TARGET-OFFICIAL-DOC | CONFIRMED | IMPLEMENTED | VERIFIED | vectorNumeric.test.ts; vector-state.test.ts; GT-VC-*; e2e/vector.spec.ts |
+| C-P2-INT | Numerical integration | DEFERRED | SRC-P39; TGT-TOC | CROSS-MODEL-SOURCE | CONFIRMED | PARTIAL | UNVERIFIED | token only |
+| C-P2-DIFF | d/dx | DEFERRED | SRC-P41; TGT-TOC | CROSS-MODEL-SOURCE | CONFIRMED | PARTIAL | UNVERIFIED | token only |
+| C-P2-SUM | Σ / Π | DEFERRED | SRC-P42–43; TGT-TOC | CROSS-MODEL-SOURCE | CONFIRMED | PARTIAL | UNVERIFIED | token only |
+| C-P2-SOLVE | CALC/SOLVE | DEFERRED | SRC-P47–51; TGT-TOC | CROSS-MODEL-SOURCE | CONFIRMED | UNSUPPORTED | UNVERIFIED | |
+| C-HW-INEQ | INEQ | UNSUPPORTED-BY-HARDWARE | 115/C PDF only | CROSS-MODEL-SOURCE | N/A | UNSUPPORTED | N/A | |
+| C-HW-VERIF | VERIFY | UNSUPPORTED-BY-HARDWARE | 115/C PDF only | CROSS-MODEL-SOURCE | N/A | UNSUPPORTED | N/A | |
+| C-HW-DIST | DIST | UNSUPPORTED-BY-HARDWARE | 115/C PDF only | CROSS-MODEL-SOURCE | N/A | UNSUPPORTED | N/A | |
+| C-NHR-CAL | Visual keymap vs chat photo | OPTIONAL-V1 | chassis; user sign-off 2026-08-24 | EMPIRICAL | CONFIRMED | IMPLEMENTED | VERIFIED | overlay off by default; `?debug=true` shows |
+| C-NHR-RND | Rounding ties vs hardware | OPTIONAL-V1 | SRC-P13 “rounded off” | CROSS-MODEL-SOURCE | UNCONFIRMED | IMPLEMENTED | NEEDS-HUMAN-REVIEW | HALF_UP policy tests |
+
+P1 modes are on the target device (`TARGET-OFFICIAL-DOC`) and are required for a **source-complete major-mode surface**. They are **not** part of the functional-v1 floor. TABLE f(x) (D-016), BASE-N (D-017), CMPLX (D-018), STAT (D-019), EQN (D-020), MATRIX (D-021), and VECTOR (D-022) are IMPLEMENTED/VERIFIED (**source-derived, not hardware**). VECTOR 2D×2D cross result is **NEEDS-HUMAN-REVIEW** (official HTML dropped Ex5). GitHub Pages origin serves production `dist/` (hashed `/assets/index-*.js`). Live PWA install/offline is **UNVERIFIED**.
+
+Do **not** interpret the 7/7 row as a 100% hardware clone.
+
+| Label | Status |
+| --- | --- |
+| Major-mode source verification | **7/7** |
+| Hardware differential verification | **N/A** |
+| Target-manual verification | **limited by source availability** |
+| Visual verification | **keymap signed off** (not pixel-perfect LCD) |
+| Live deployment verification | **UNVERIFIED** (origin serves `dist/`; install/offline not tested) |
+
+All seven major target modes are implemented and source-verified; hardware differential verification, visual sign-off, and live PWA verification remain outstanding. See `docs/POST_MAJOR_MODE_AUDIT.md`.
+
+## Counts
+
+Computed after the last test/build gate in `docs/COVERAGE_AUDIT.md`.

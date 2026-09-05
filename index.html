@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#8a97a8" />
+    <meta
+      name="description"
+      content="Casio fx-991ES PLUS 2nd edition web clone"
+    />
+    <link rel="icon" href="icons/icon-192.png" />
+    <title>fx-991ES PLUS-2</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+    <script>
+      (function () {
+        function showPagesHint() {
+          var root = document.getElementById("root");
+          if (!root || root.childElementCount > 0) {
+            return;
+          }
+          root.innerHTML =
+            '<p style="font-family:system-ui,sans-serif;padding:1.5rem;max-width:40rem;line-height:1.45;color:#1a1d22">' +
+            "This URL is serving the Vite source tree, not the production build. " +
+            "In repository Settings → Pages, set <strong>Source</strong> to <strong>GitHub Actions</strong> " +
+            "(CI uploads <code>dist/</code>), or keep Deploy from a branch and set the folder to <strong>/docs</strong>." +
+            "</p>";
+        }
+        window.addEventListener(
+          "error",
+          function (event) {
+            var el = event && event.target;
+            var src = (el && el.src) || "";
+            if (src.indexOf("main.tsx") !== -1) {
+              showPagesHint();
+            }
+          },
+          true,
+        );
+        setTimeout(showPagesHint, 2500);
+      })();
+    </script>
+  </body>
+</html>

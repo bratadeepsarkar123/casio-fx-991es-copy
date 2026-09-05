@@ -1,0 +1,20 @@
+{
+  "id": "GT-MX-OFFICIAL-EX4",
+  "sourceEvidenceId": "TGT-TOC-MATRIX",
+  "evidenceClass": "TARGET-OFFICIAL-DOC",
+  "targetConfirm": "CONFIRMED",
+  "page": null,
+  "section": "Matrix Calculations Example 4 — det(MatA)",
+  "source": "https://support.casio.com/global/en/calc/manual/fx-570ESPLUS_991ESPLUS_en/using_calculation_modes/matrix.html",
+  "keys": [
+    "mode", "6", "1", "5",
+    "2", "equals", "1", "equals", "1", "equals", "1", "equals", "ac",
+    "shift", "4", "7", "shift", "4", "3", "equals"
+  ],
+  "expected": {
+    "mode": "MATRIX",
+    "phase": "calc",
+    "display": "1",
+    "screen": "result"
+  }
+}
