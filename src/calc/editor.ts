@@ -374,6 +374,13 @@ export function insertLogab(ed: EditorState): EditorState {
   return { ...inserted, cursor: { path, index: 0, offset: null } };
 }
 
+/** Physical ×10^x scientific-notation entry. Not SHIFT+log `exp10(...)`. */
+export const SCI10_CALL_NAME = "sci10";
+
+function callLinearName(name: string): string {
+  return name === SCI10_CALL_NAME ? "×10^" : name;
+}
+
 export function insertCall(ed: EditorState, name: string): EditorState {
   const atom: Atom = { t: "call", name, args: [[]], closed: false };
   const inserted = insertAtom(ed, atom);
@@ -874,7 +881,7 @@ export function atomsToLinear(atoms: Atom[], format: DisplayFormat): string {
           parts.push(")");
           break;
         case "call":
-          parts.push(a.name);
+          parts.push(callLinearName(a.name));
           parts.push("(");
           a.args.forEach((arg, i) => {
             if (i) {
@@ -1038,7 +1045,7 @@ export function atomsToLinearSplit(
           emit(")");
           break;
         case "call":
-          emit(a.name);
+          emit(callLinearName(a.name));
           emit("(");
           a.args.forEach((arg, argIndex) => {
             if (argIndex) {
@@ -1123,6 +1130,10 @@ export function prepareForBinaryOp(ed: EditorState): EditorState {
   }
   switch (atom.t) {
     case "call":
+      if (atom.name === SCI10_CALL_NAME) {
+        return closeGroupOrCall(ed);
+      }
+      return ed;
     case "group":
     case "pow":
     case "logb":

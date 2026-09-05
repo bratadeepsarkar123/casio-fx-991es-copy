@@ -116,4 +116,35 @@ describe("COMP leftovers (CROSS-MODEL-SOURCE)", () => {
     const s = run(["5", "alpha", "div", "2", "equals"], lineIo);
     expect(lcdResult(s)).toBe("2 R 1");
   });
+
+  it("Sci ×10 display is LCD-only; Ans stays parseable for later use", () => {
+    const s = run(["shift", "mode", "7", "3", "1", "2", "3", "4", "equals"], lineIo);
+    expect(s.setup.numberFormat).toEqual({ kind: "Sci", n: 3 });
+    expect(lcdResult(s)).toMatch(/1\.23×10\+03/);
+    expect(s.ans).not.toMatch(/×/);
+    expect(s.result?.approx).not.toMatch(/×/);
+    const next = dispatchKeys(s, ["ans", "add", "0", "equals"], 0);
+    expect(next.screen.kind).toBe("result");
+    expect(lcdResult(next)).toMatch(/1\.23×10\+03/);
+    const mem = dispatchKeys(s, ["mplus", "ac", "rcl", "mplus"], 0);
+    expect(lcdExpression(mem)).toMatch(/M/);
+    const recalled = dispatchKeys(mem, ["equals"], 0);
+    expect(recalled.screen.kind).toBe("result");
+    expect(lcdResult(recalled)).toMatch(/1\.23×10\+03/);
+  });
+
+  it("MathO Sci integer LCD still stores a parseable Ans", () => {
+    const s = run(["shift", "mode", "7", "3", "1", "2", "3", "4", "equals"]);
+    expect(s.ans).not.toMatch(/×/);
+    const next = dispatchKeys(s, ["ans", "add", "0", "equals"], 0);
+    expect(next.screen.kind).toBe("result");
+  });
+
+  it("Norm1 values outside 10^10 stay parseable in Ans", () => {
+    const s = run(["1", "exp10", "1", "1", "equals"], lineIo);
+    expect(lcdResult(s)).toMatch(/×10/);
+    expect(s.ans).not.toMatch(/×/);
+    const next = dispatchKeys(s, ["ans", "div", "1", "0", "equals"], 0);
+    expect(next.screen.kind).toBe("result");
+  });
 });

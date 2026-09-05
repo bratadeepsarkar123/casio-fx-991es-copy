@@ -17,4 +17,10 @@ describe("state machine latches", () => {
     s = dispatchKeys(s, ["on"]);
     expect(s.power).toBe("on");
   });
+
+  it("equals advances rngSeed so Ran# is not stuck", () => {
+    const start = createInitialState(0);
+    const s = dispatchKeys(start, ["1", "equals"], 0);
+    expect(s.rngSeed).toBe(start.rngSeed + 1);
+  });
 });

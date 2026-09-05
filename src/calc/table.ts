@@ -9,7 +9,7 @@ import {
 import { resultFromSym } from "./format.ts";
 import { fromDec } from "./symbolic.ts";
 import { evaluateAtoms } from "./evaluate.ts";
-import { createUint32Rng, D, type Dec } from "./numeric.ts";
+import { createUint32Rng, D, parseCalcNumber, type Dec } from "./numeric.ts";
 import type { KeyEvent } from "./keys.ts";
 import type {
   Atom,
@@ -181,7 +181,7 @@ function tableError(state: CalcState, code: ErrorCode, expression: Atom[]): Calc
 function evalParam(state: CalcState, atoms: Atom[]): { ok: true; value: Dec; result: ReturnType<typeof evaluateAtoms> } | { ok: false; code: ErrorCode } {
   try {
     const result = evaluateAtoms(atoms, state, createUint32Rng(state.rngSeed));
-    const value = D(result.approx);
+    const value = parseCalcNumber(result.approx);
     if (!value.isFinite()) {
       return { ok: false, code: "Math ERROR" };
     }

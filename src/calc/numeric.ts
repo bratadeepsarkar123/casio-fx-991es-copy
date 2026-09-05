@@ -32,6 +32,15 @@ export function D(value: Decimal.Value): Decimal {
   return new Decimal(value);
 }
 
+/**
+ * Parse a stored calculator number. Display strings like `1.23×10+03` are
+ * not decimal.js-legal; convert the ×10 marker to `e` first.
+ */
+export function parseCalcNumber(value: string): Decimal {
+  const normalized = value.replace(/×10/, "e").trim();
+  return D(normalized.length > 0 ? normalized : "0");
+}
+
 export const PI = D(PI_INTERNAL);
 export const E = D(E_INTERNAL);
 export const ZERO = D(0);

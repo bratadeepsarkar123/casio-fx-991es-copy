@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { Decimal } from "decimal.js";
-import { formatBySetup } from "./format.ts";
+import { formatBySetup, formatNumeric, formatSci } from "./format.ts";
 import {
   CalcMathError,
   D,
@@ -10,6 +10,7 @@ import {
   factorial,
   nCr,
   nPr,
+  parseCalcNumber,
   ranHash,
   ranInt,
   roundInternal,
@@ -68,5 +69,21 @@ describe("numeric policy", () => {
       true,
     );
     expect(Decimal.rounding).toBe(Decimal.ROUND_HALF_UP);
+  });
+});
+
+describe("Sci / ×10 storage", () => {
+  it("formatSci is display-only; formatNumeric stays parseable", () => {
+    const setup = { ...defaultSetup(), numberFormat: { kind: "Sci" as const, n: 3 } };
+    const x = D("1234");
+    expect(formatSci(x, 3)).toBe("1.23×10+03");
+    expect(formatBySetup(x, setup)).toBe("1.23×10+03");
+    const numeric = formatNumeric(x, setup);
+    expect(numeric).not.toMatch(/×/);
+    expect(parseCalcNumber(numeric).eq(D(numeric))).toBe(true);
+  });
+
+  it("parseCalcNumber accepts leftover ×10 display strings", () => {
+    expect(parseCalcNumber("1.23×10+03").eq(D("1.23e+3"))).toBe(true);
   });
 });

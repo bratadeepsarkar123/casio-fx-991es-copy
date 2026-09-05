@@ -1,5 +1,5 @@
 import { Decimal } from "decimal.js";
-import { D, DISPLAY_DIGITS, PI } from "./numeric.ts";
+import { D, DISPLAY_DIGITS, PI, parseCalcNumber } from "./numeric.ts";
 import type { ResultValue, SetupState } from "./types.ts";
 import {
   asCplx,
@@ -104,6 +104,37 @@ export function formatBySetup(x: Decimal, setup: SetupState): string {
   }
 }
 
+/** Same rounding as `formatBySetup`, but always decimal.js-parseable (no `×10`). */
+export function formatNumeric(x: Decimal, setup: SetupState): string {
+  switch (setup.numberFormat.kind) {
+    case "Fix": {
+      const n = setup.numberFormat.n;
+      return x.toFixed(n, Decimal.ROUND_HALF_UP);
+    }
+    case "Sci": {
+      const n = setup.numberFormat.n === 0 ? DISPLAY_DIGITS : setup.numberFormat.n;
+      return x.toExponential(n - 1, Decimal.ROUND_HALF_UP);
+    }
+    case "Norm": {
+      if (x.isZero()) {
+        return "0";
+      }
+      const mag = x.abs();
+      const expThresholdLow = setup.numberFormat.n === 1 ? D("1e-2") : D("1e-9");
+      const expThresholdHigh = D("1e10");
+      if (mag.lt(expThresholdLow) || mag.gte(expThresholdHigh)) {
+        return x.toExponential(DISPLAY_DIGITS - 1, Decimal.ROUND_HALF_UP);
+      }
+      const s = x.toSignificantDigits(DISPLAY_DIGITS, Decimal.ROUND_HALF_UP).toFixed();
+      return stripTrailingZeros(s);
+    }
+    default: {
+      const _never: never = setup.numberFormat;
+      return _never;
+    }
+  }
+}
+
 function ratDigits(r: Rat, mixed: boolean): number {
   const abs = ratAbs(r);
   if (!mixed || abs.n < abs.d) {
@@ -115,7 +146,7 @@ function ratDigits(r: Rat, mixed: boolean): number {
 }
 
 function fractionDisplay(r: Rat, setup: SetupState): ResultValue | null {
-  const approx = formatBySetup(ratToDec(r), setup);
+  const approx = formatNumeric(ratToDec(r), setup);
   const abs = ratAbs(r);
   const sign = r.n < 0n ? "-" : "";
   if (abs.d === 1n) {
@@ -231,40 +262,41 @@ function formatPolar(re: Sym, im: Sym, setup: SetupState): string {
 export function resultFromSym(s: Sym, setup: SetupState, complexFormat = setup.complexFormat): ResultValue {
   if (s.k === "cplx") {
     const { re, im } = asCplx(s);
-    const reApprox = formatBySetup(toDec(re), setup);
-    const imApprox = formatBySetup(toDec(im), setup);
+    const reApprox = formatNumeric(toDec(re), setup);
+    const imApprox = formatNumeric(toDec(im), setup);
     const form = complexFormat;
     const display = form === "r∠θ" ? formatPolar(re, im, setup) : formatRectangular(re, im, setup);
     return {
-      approx: display,
+      approx: reApprox,
       display,
       naturalKind: form === "r∠θ" ? "polar" : "complex",
       complex: { re: reApprox, im: imApprox },
     };
   }
   const approxDec = toDec(s);
-  const approx = formatBySetup(approxDec, setup);
+  const approx = formatNumeric(approxDec, setup);
+  const shown = formatBySetup(approxDec, setup);
   const matho = setup.displayFormat === "MthIO-MathO";
-  const exact = exactRealResult(s, setup, approx, approxDec);
+  const exact = exactRealResult(s, setup, approx, shown, approxDec);
 
   if (!matho) {
     if (exact.fraction || exact.pi || exact.sqrt) {
-      return { ...exact, display: approx, naturalKind: "decimal" };
+      return { ...exact, display: shown, naturalKind: "decimal" };
     }
-    return { approx, display: approx, naturalKind: "decimal" };
+    return { approx, display: shown, naturalKind: "decimal" };
   }
   return exact;
 }
 
-function exactRealResult(s: Sym, setup: SetupState, approx: string, approxDec: Decimal): ResultValue {
+function exactRealResult(s: Sym, setup: SetupState, approx: string, shown: string, approxDec: Decimal): ResultValue {
   switch (s.k) {
     case "rat": {
       const frac = fractionDisplay(s.r, setup);
-      return frac ?? { approx, display: approx, naturalKind: "decimal" };
+      return frac ?? { approx, display: shown, naturalKind: "decimal" };
     }
     case "pi": {
       if (approxDec.abs().gte("1e6")) {
-        return { approx, display: approx, naturalKind: "decimal" };
+        return { approx, display: shown, naturalKind: "decimal" };
       }
       const abs = ratAbs(s.r);
       const sign = s.r.n < 0n ? "-" : "";
@@ -288,14 +320,14 @@ function exactRealResult(s: Sym, setup: SetupState, approx: string, approxDec: D
     case "quad": {
       const text = formatQuad(s);
       if (!text) {
-        return { approx, display: approx, naturalKind: "decimal" };
+        return { approx, display: shown, naturalKind: "decimal" };
       }
       return { approx, display: text, naturalKind: "sqrt", sqrt: text };
     }
     case "real":
-      return { approx, display: approx, naturalKind: "decimal" };
+      return { approx, display: shown, naturalKind: "decimal" };
     case "cplx":
-      return { approx, display: approx, naturalKind: "decimal" };
+      return { approx, display: shown, naturalKind: "decimal" };
     default: {
       const _never: never = s;
       return _never;
@@ -303,17 +335,17 @@ function exactRealResult(s: Sym, setup: SetupState, approx: string, approxDec: D
   }
 }
 
-export function toggleSexagesimal(result: ResultValue): ResultValue {
+export function toggleSexagesimal(result: ResultValue, setup: SetupState): ResultValue {
   if (!result.sexagesimal) {
     return result;
   }
   if (result.display === result.sexagesimal) {
-    return { ...result, display: result.approx, naturalKind: "decimal" };
+    return { ...result, display: formatBySetup(parseCalcNumber(result.approx), setup), naturalKind: "decimal" };
   }
   return { ...result, display: result.sexagesimal, naturalKind: "decimal" };
 }
 
-export function toggleDecimal(result: ResultValue): ResultValue {
+export function toggleDecimal(result: ResultValue, setup: SetupState): ResultValue {
   if (result.naturalKind === "complex" || result.naturalKind === "polar") {
     return result;
   }
@@ -338,7 +370,7 @@ export function toggleDecimal(result: ResultValue): ResultValue {
     }
     return result;
   }
-  return { ...result, display: result.approx, naturalKind: "decimal" };
+  return { ...result, display: formatBySetup(parseCalcNumber(result.approx), setup), naturalKind: "decimal" };
 }
 
 export function tryPiForm(x: Decimal, setup: SetupState): ResultValue | null {

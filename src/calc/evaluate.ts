@@ -9,6 +9,7 @@ import {
   factorial,
   nCr,
   nPr,
+  parseCalcNumber,
   ranHash,
   ranInt,
   roundInternal,
@@ -18,7 +19,7 @@ import {
   toBigIntExact,
   type Dec,
 } from "./numeric.ts";
-import { resultFromSym, formatBySetup, formatSexagesimal } from "./format.ts";
+import { resultFromSym, formatBySetup, formatNumeric, formatSexagesimal } from "./format.ts";
 import { specialTrigFromSym } from "./specialTrig.ts";
 import {
   asCplx,
@@ -62,16 +63,16 @@ export interface EvalContext {
 function ctxFromState(state: CalcState, nextUint32: () => number): EvalContext {
   const vars = {} as Record<VarName, Dec>;
   for (const k of Object.keys(state.variables) as VarName[]) {
-    vars[k] = D(state.variables[k] ?? "0");
+    vars[k] = parseCalcNumber(state.variables[k] ?? "0");
   }
   return {
     angle: state.setup.angleUnit,
-    ans: D(state.ans),
-    ansIm: D(state.ansIm ?? "0"),
-    preAns: D(state.preAns),
-    preAnsIm: D(state.preAnsIm ?? "0"),
+    ans: parseCalcNumber(state.ans),
+    ansIm: parseCalcNumber(state.ansIm ?? "0"),
+    preAns: parseCalcNumber(state.preAns),
+    preAnsIm: parseCalcNumber(state.preAnsIm ?? "0"),
     variables: vars,
-    memoryM: D(state.memoryM),
+    memoryM: parseCalcNumber(state.memoryM),
     nextUint32,
     complexOk: state.mode === "CMPLX",
     complexFormatOverride: null,
@@ -337,6 +338,7 @@ function evalCall(name: string, args: Atom[][], ctx: EvalContext): Sym {
       }
       return fromDec(roundInternal(x.ln()));
     }
+    case "sci10":
     case "exp10":
       return fromDec(roundInternal(D(10).pow(vals[0] ? requireReal(vals[0]) : D(0))));
     case "exp":
@@ -605,18 +607,20 @@ function decorateCompResult(result: ResultValue, ctx: EvalContext, state: CalcSt
   const mathO = state.setup.displayFormat === "MthIO-MathO";
   let next: ResultValue = result.complex
     ? result
-    : { ...result, sexagesimal: formatSexagesimal(D(result.approx)) };
+    : { ...result, sexagesimal: formatSexagesimal(parseCalcNumber(result.approx)) };
   if (ctx.polRec) {
-    const X = formatBySetup(ctx.polRec.x, state.setup);
-    const Y = formatBySetup(ctx.polRec.y, state.setup);
+    const X = formatNumeric(ctx.polRec.x, state.setup);
+    const Y = formatNumeric(ctx.polRec.y, state.setup);
+    const Xd = formatBySetup(ctx.polRec.x, state.setup);
+    const Yd = formatBySetup(ctx.polRec.y, state.setup);
     const display =
       ctx.polRec.kind === "pol"
         ? mathO
-          ? `r=${X} θ=${Y}`
-          : `r=${X}`
+          ? `r=${Xd} θ=${Yd}`
+          : `r=${Xd}`
         : mathO
-          ? `X=${X} Y=${Y}`
-          : `X=${X}`;
+          ? `X=${Xd} Y=${Yd}`
+          : `X=${Xd}`;
     next = {
       ...next,
       display,
@@ -626,11 +630,13 @@ function decorateCompResult(result: ResultValue, ctx: EvalContext, state: CalcSt
     };
   }
   if (ctx.divR) {
-    const q = formatBySetup(ctx.divR.quot, state.setup);
-    const r = formatBySetup(ctx.divR.rem, state.setup);
+    const q = formatNumeric(ctx.divR.quot, state.setup);
+    const r = formatNumeric(ctx.divR.rem, state.setup);
+    const qd = formatBySetup(ctx.divR.quot, state.setup);
+    const rd = formatBySetup(ctx.divR.rem, state.setup);
     next = {
       ...next,
-      display: `${q} R ${r}`,
+      display: `${qd} R ${rd}`,
       approx: q,
       remainder: { quot: q, rem: r },
       naturalKind: "decimal",

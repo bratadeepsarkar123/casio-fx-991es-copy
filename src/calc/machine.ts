@@ -30,10 +30,11 @@ import {
   moveRight,
   moveUp,
   prepareForBinaryOp,
+  SCI10_CALL_NAME,
 } from "./editor.ts";
 import { evaluateEquals } from "./evaluate.ts";
-import { formatEngineering, toggleDecimal, toggleSexagesimal } from "./format.ts";
-import { D, createUint32Rng } from "./numeric.ts";
+import { formatBySetup, formatEngineering, toggleDecimal, toggleSexagesimal } from "./format.ts";
+import { D, createUint32Rng, parseCalcNumber } from "./numeric.ts";
 import { emptyTableSession, reduceTable, tableReturnToFx } from "./table.ts";
 import { applyBaseOpMenu, emptyBaseN, reduceBaseN, reduceBaseNError } from "./baseN.ts";
 import { emptyStatSession, handleStatMenu, isStatMenuKind, reduceStat, wipeStatData } from "./stat.ts";
@@ -786,7 +787,11 @@ export function reduce(state: CalcState, event: KeyEvent): CalcState {
     if (s.shift) {
       try {
         const result = evaluateEquals(s, rng);
-        const approx: ResultValue = { ...result, display: result.approx, naturalKind: "decimal" };
+        const approx: ResultValue = {
+          ...result,
+          display: formatBySetup(parseCalcNumber(result.complex?.re ?? result.approx), s.setup),
+          naturalKind: "decimal",
+        };
         return {
           ...clearLatches(s),
           screen: { kind: "result" },
@@ -821,7 +826,7 @@ export function reduce(state: CalcState, event: KeyEvent): CalcState {
       if (s.result.remainder) {
         return clearLatches(s);
       }
-      const toggled = toggleDecimal(s.result);
+      const toggled = toggleDecimal(s.result, s.setup);
       return { ...clearLatches(s), result: toggled, resultDecimal: toggled.naturalKind === "decimal" };
     }
     return clearLatches(s);
@@ -875,8 +880,8 @@ export function reduce(state: CalcState, event: KeyEvent): CalcState {
         result: null,
       };
     }
-    const value = D(base.result?.complex?.re ?? base.result?.approx ?? base.ans);
-    const next = s.shift ? D(base.memoryM).minus(value) : D(base.memoryM).plus(value);
+    const value = parseCalcNumber(base.result?.complex?.re ?? base.result?.approx ?? base.ans);
+    const next = s.shift ? parseCalcNumber(base.memoryM).minus(value) : parseCalcNumber(base.memoryM).plus(value);
     const mStr = next.toString();
     return {
       ...clearLatches(base),
@@ -903,7 +908,11 @@ export function reduce(state: CalcState, event: KeyEvent): CalcState {
     if (s.shift) {
       return { ...clearLatches(s), editor: insertSym(beginInputIfResult(s).editor, "pi"), screen: { kind: "input" } };
     }
-    return { ...clearLatches(s), editor: insertCall(beginInputIfResult(s).editor, "exp10"), screen: { kind: "input" } };
+    return {
+      ...clearLatches(s),
+      editor: insertCall(beginInputIfResult(s).editor, SCI10_CALL_NAME),
+      screen: { kind: "input" },
+    };
   }
 
   if (event.keyId === "dot") {
@@ -1052,14 +1061,14 @@ export function reduce(state: CalcState, event: KeyEvent): CalcState {
       return { ...clearLatches(s), editor: insertVar(beginInputIfResult(s).editor, "B"), screen: { kind: "input" } };
     }
     if (s.screen.kind === "result" && s.result) {
-      const toggled = toggleSexagesimal(s.result);
+      const toggled = toggleSexagesimal(s.result, s.setup);
       return { ...clearLatches(s), result: toggled };
     }
     return { ...clearLatches(s), editor: insertDms(beginInputIfResult(s).editor), screen: { kind: "input" } };
   }
   if (event.keyId === "eng") {
     if (s.result) {
-      const x = D(s.result.approx);
+      const x = parseCalcNumber(s.result.approx);
       const prev = s.result.engActive ? (s.result.engOffset ?? 0) : 0;
       const nextOffset = s.result.engActive ? prev + (s.shift ? 1 : -1) : s.shift ? 1 : 0;
       const eng = formatEngineering(x, D(nextOffset));

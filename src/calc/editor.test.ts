@@ -39,4 +39,21 @@ describe("cursor / editing goldens", () => {
     const s = run(["4", "mul", "3", "add", "2", "equals", "left", "del", "del", "sub", "7", "equals"]);
     expect(lcdResult(s)).toBe("5");
   });
+
+  it("physical ×10^x does not swallow the following operator into the exponent", () => {
+    const s = run(["2", "exp10", "3", "add", "4", "equals"]);
+    expect(lcdResult(s)).toBe("2004");
+    const expr = run(["2", "exp10", "3", "add", "4"]);
+    expect(lcdExpression(expr)).toMatch(/2×10\^\(?3\)?\+4/);
+  });
+
+  it("SHIFT+log exp10 still keeps following operators inside the exponent", () => {
+    const s = run(["shift", "log", "3", "add", "4", "equals"]);
+    expect(lcdResult(s)).toBe("10000000");
+  });
+
+  it("caret ^ still keeps following operators inside the exponent", () => {
+    const s = run(["2", "power", "3", "add", "4", "equals"]);
+    expect(lcdResult(s)).toBe("128");
+  });
 });
