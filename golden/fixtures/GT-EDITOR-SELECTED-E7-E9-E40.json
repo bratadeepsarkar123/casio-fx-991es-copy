@@ -1,0 +1,426 @@
+{
+  "id": "GT-EDITOR-SELECTED-E7-E9-E40",
+  "sourceEvidenceId": "SELECTED-MANUAL-E7-E9-E40",
+  "evidenceClass": "OWNER-SELECTED-MANUAL",
+  "targetConfirm": "UNCONFIRMED",
+  "pages": [
+    8,
+    10,
+    41
+  ],
+  "traces": [
+    {
+      "id": "E7-NATURAL-123-LEFT-RIGHT",
+      "keys": [
+        "1",
+        "2",
+        "3",
+        "left",
+        "right",
+        "right",
+        "left"
+      ],
+      "checkpoints": [
+        {
+          "after": 3,
+          "expected": {
+            "expression": "123",
+            "before": "123",
+            "after": "",
+            "cursor": {
+              "path": [],
+              "index": 1,
+              "offset": 3
+            },
+            "screen": "input"
+          }
+        },
+        {
+          "after": 4,
+          "expected": {
+            "expression": "123",
+            "before": "12",
+            "after": "3",
+            "cursor": {
+              "path": [],
+              "index": 1,
+              "offset": 2
+            },
+            "screen": "input"
+          }
+        },
+        {
+          "after": 5,
+          "expected": {
+            "expression": "123",
+            "before": "123",
+            "after": "",
+            "cursor": {
+              "path": [],
+              "index": 1,
+              "offset": 3
+            },
+            "screen": "input"
+          }
+        },
+        {
+          "after": 6,
+          "expected": {
+            "expression": "123",
+            "before": "",
+            "after": "123",
+            "cursor": {
+              "path": [],
+              "index": 0,
+              "offset": 0
+            },
+            "screen": "input"
+          }
+        },
+        {
+          "after": 7,
+          "expected": {
+            "expression": "123",
+            "before": "123",
+            "after": "",
+            "cursor": {
+              "path": [],
+              "index": 1,
+              "offset": 3
+            },
+            "screen": "input"
+          }
+        }
+      ]
+    },
+    {
+      "id": "E9-LINEIO-OVERWRITE-HOME",
+      "keys": [
+        "shift",
+        "mode",
+        "2",
+        "1",
+        "2",
+        "3",
+        "up",
+        "shift",
+        "del",
+        "9"
+      ],
+      "checkpoints": [
+        {
+          "after": 6,
+          "expected": {
+            "expression": "123",
+            "before": "123",
+            "after": "",
+            "cursor": {
+              "path": [],
+              "index": 1,
+              "offset": 3
+            },
+            "screen": "input"
+          }
+        },
+        {
+          "after": 7,
+          "expected": {
+            "expression": "123",
+            "before": "",
+            "after": "123",
+            "cursor": {
+              "path": [],
+              "index": 1,
+              "offset": 0
+            },
+            "screen": "input"
+          }
+        },
+        {
+          "after": 9,
+          "expected": {
+            "expression": "123",
+            "before": "",
+            "after": "123",
+            "cursor": {
+              "path": [],
+              "index": 1,
+              "offset": 0
+            },
+            "screen": "input",
+            "insertMode": "overwrite"
+          }
+        },
+        {
+          "after": 10,
+          "expected": {
+            "expression": "923",
+            "before": "9",
+            "after": "23",
+            "cursor": {
+              "path": [],
+              "index": 1,
+              "offset": 1
+            },
+            "screen": "input",
+            "insertMode": "overwrite"
+          }
+        }
+      ]
+    },
+    {
+      "id": "E9-INSERT-OPERATOR-MID-NUMBER",
+      "keys": [
+        "1",
+        "2",
+        "3",
+        "left",
+        "add"
+      ],
+      "checkpoints": [
+        {
+          "after": 4,
+          "expected": {
+            "expression": "123",
+            "before": "12",
+            "after": "3",
+            "cursor": {
+              "path": [],
+              "index": 1,
+              "offset": 2
+            },
+            "screen": "input"
+          }
+        },
+        {
+          "after": 5,
+          "expected": {
+            "expression": "12+3",
+            "before": "12+",
+            "after": "3",
+            "cursor": {
+              "path": [],
+              "index": 2,
+              "offset": null
+            },
+            "screen": "input"
+          }
+        }
+      ]
+    },
+    {
+      "id": "E40-DIVIDE-BY-ZERO-CORRECTION",
+      "keys": [
+        "1",
+        "4",
+        "div",
+        "0",
+        "mul",
+        "2",
+        "equals",
+        "right",
+        "left",
+        "1",
+        "equals"
+      ],
+      "checkpoints": [
+        {
+          "after": 7,
+          "expected": {
+            "expression": "14\u00f70\u00d72",
+            "before": "14\u00f70\u00d72",
+            "after": "",
+            "cursor": {
+              "path": [],
+              "index": 5,
+              "offset": 1
+            },
+            "screen": "error"
+          }
+        },
+        {
+          "after": 8,
+          "expected": {
+            "expression": "14\u00f70\u00d72",
+            "before": "14\u00f70",
+            "after": "\u00d72",
+            "cursor": {
+              "path": [],
+              "index": 3,
+              "offset": null
+            },
+            "screen": "input"
+          }
+        },
+        {
+          "after": 9,
+          "expected": {
+            "expression": "14\u00f70\u00d72",
+            "before": "14\u00f7",
+            "after": "0\u00d72",
+            "cursor": {
+              "path": [],
+              "index": 3,
+              "offset": 0
+            },
+            "screen": "input"
+          }
+        },
+        {
+          "after": 10,
+          "expected": {
+            "expression": "14\u00f710\u00d72",
+            "before": "14\u00f71",
+            "after": "0\u00d72",
+            "cursor": {
+              "path": [],
+              "index": 3,
+              "offset": 1
+            },
+            "screen": "input"
+          }
+        },
+        {
+          "after": 11,
+          "expected": {
+            "expression": "14\u00f710\u00d72",
+            "before": "14\u00f710\u00d72",
+            "after": "",
+            "cursor": {
+              "path": [],
+              "index": 3,
+              "offset": 1
+            },
+            "screen": "result",
+            "result": "14/5"
+          }
+        }
+      ]
+    },
+    {
+      "id": "E9-MANUAL-1+7/6-FOUR-LEFT",
+      "keys": [
+        "1",
+        "add",
+        "7",
+        "frac",
+        "6",
+        "left",
+        "left",
+        "left",
+        "left",
+        "shift",
+        "del",
+        "sqrt"
+      ],
+      "checkpoints": [
+        {
+          "after": 5,
+          "expected": {
+            "expression": "1+(7/6)",
+            "before": "1+(7/6",
+            "after": ")",
+            "cursor": {
+              "path": [
+                2,
+                1
+              ],
+              "index": 1,
+              "offset": 1
+            },
+            "screen": "input"
+          }
+        },
+        {
+          "after": 9,
+          "expected": {
+            "expression": "1+(7/6)",
+            "before": "1+",
+            "after": "(7/6)",
+            "cursor": {
+              "path": [],
+              "index": 2,
+              "offset": null
+            },
+            "screen": "input"
+          }
+        },
+        {
+          "after": 11,
+          "expected": {
+            "expression": "1+(7/6)",
+            "before": "1+",
+            "after": "(7/6)",
+            "cursor": {
+              "path": [],
+              "index": 2,
+              "offset": null
+            },
+            "screen": "input",
+            "capture": true
+          }
+        },
+        {
+          "after": 12,
+          "expected": {
+            "expression": "1+\u221a((7/6))",
+            "before": "1+\u221a((7/6)",
+            "after": ")",
+            "cursor": {
+              "path": [
+                2,
+                2
+              ],
+              "index": 1,
+              "offset": null
+            },
+            "screen": "input",
+            "capture": false
+          }
+        }
+      ]
+    },
+    {
+      "id": "E9-DEL-PLUS-AT-NUMBER-START",
+      "keys": [
+        "1",
+        "add",
+        "2",
+        "3",
+        "left",
+        "left",
+        "del"
+      ],
+      "checkpoints": [
+        {
+          "after": 6,
+          "expected": {
+            "expression": "1+23",
+            "before": "1+",
+            "after": "23",
+            "cursor": {
+              "path": [],
+              "index": 3,
+              "offset": 0
+            },
+            "screen": "input"
+          }
+        },
+        {
+          "after": 7,
+          "expected": {
+            "expression": "123",
+            "before": "1",
+            "after": "23",
+            "cursor": {
+              "path": [],
+              "index": 2,
+              "offset": 0
+            },
+            "screen": "input"
+          }
+        }
+      ]
+    }
+  ]
+}

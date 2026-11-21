@@ -48,26 +48,26 @@ describe("COMP leftovers (CROSS-MODEL-SOURCE)", () => {
 
   it("GT-P24-ENG 1234 ENG then ENG again SRC-P24–25", () => {
     const first = run(["1", "2", "3", "4", "equals", "eng"]);
-    expect(lcdResult(first)).toMatch(/1\.234×10\+03/);
+    expect(lcdResult(first)).toBe("1.234×10³");
     expect(first.ans).toBe("1234");
     const second = dispatchKeys(first, ["eng"], 0);
-    expect(lcdResult(second)).toMatch(/1234×10\+00/);
+    expect(lcdResult(second)).toBe("1234×10⁰");
   });
 
   it("GT-P24-ENG SHIFT ENG on 123 shifts the decimal left SRC-P24–25", () => {
     const s = run(["1", "2", "3", "equals", "shift", "eng"]);
-    expect(lcdResult(s)).toMatch(/0\.123×10\+03/);
+    expect(lcdResult(s)).toBe("0.123×10³");
     expect(s.ans).toBe("123");
   });
 
   it("GT-P23-DMS 2°15′18″ toggles to 2.255 SRC-P23–24", () => {
-    const s = run(["2", "dms", "1", "5", "dms", "1", "8", "equals"]);
+    const s = run(["2", "dms", "1", "5", "dms", "1", "8", "dms", "equals"]);
     expect(lcdExpression(s)).toMatch(/2°15′18″/);
-    expect(lcdResult(s)).toMatch(/^2\.255/);
+    expect(lcdResult(s)).toContain("18");
     const sex = dispatchKeys(s, ["dms"], 0);
-    expect(lcdResult(sex)).toBe("2°15′18″");
+    expect(lcdResult(sex)).toBe("2.255");
     const back = dispatchKeys(sex, ["dms"], 0);
-    expect(lcdResult(back)).toMatch(/^2\.255/);
+    expect(lcdResult(back)).toContain("18");
   });
 
   it("GT-P23-DMS 2°20′30″ + 0°39′30″ = 3 SRC-P23–24", () => {
@@ -79,6 +79,7 @@ describe("COMP leftovers (CROSS-MODEL-SOURCE)", () => {
       "dms",
       "3",
       "0",
+      "dms",
       "add",
       "0",
       "dms",
@@ -87,9 +88,11 @@ describe("COMP leftovers (CROSS-MODEL-SOURCE)", () => {
       "dms",
       "3",
       "0",
+      "dms",
       "equals",
     ]);
     expect(lcdResult(s)).toMatch(/^3/);
+    expect(lcdResult(s)).toContain("0");
   });
 
   it("GT-P48-GCD GCD(28,35)=7 SRC-P46–47 INFERRED menu ALPHA 0", () => {
@@ -120,17 +123,17 @@ describe("COMP leftovers (CROSS-MODEL-SOURCE)", () => {
   it("Sci ×10 display is LCD-only; Ans stays parseable for later use", () => {
     const s = run(["shift", "mode", "7", "3", "1", "2", "3", "4", "equals"], lineIo);
     expect(s.setup.numberFormat).toEqual({ kind: "Sci", n: 3 });
-    expect(lcdResult(s)).toMatch(/1\.23×10\+03/);
+    expect(lcdResult(s)).toBe("1.23×10³");
     expect(s.ans).not.toMatch(/×/);
     expect(s.result?.approx).not.toMatch(/×/);
     const next = dispatchKeys(s, ["ans", "add", "0", "equals"], 0);
     expect(next.screen.kind).toBe("result");
-    expect(lcdResult(next)).toMatch(/1\.23×10\+03/);
+    expect(lcdResult(next)).toBe("1.23×10³");
     const mem = dispatchKeys(s, ["mplus", "ac", "rcl", "mplus"], 0);
     expect(lcdExpression(mem)).toMatch(/M/);
     const recalled = dispatchKeys(mem, ["equals"], 0);
     expect(recalled.screen.kind).toBe("result");
-    expect(lcdResult(recalled)).toMatch(/1\.23×10\+03/);
+    expect(lcdResult(recalled)).toBe("1.23×10³");
   });
 
   it("MathO Sci integer LCD still stores a parseable Ans", () => {

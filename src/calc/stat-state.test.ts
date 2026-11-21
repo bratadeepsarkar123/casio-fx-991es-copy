@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createInitialState, dispatchKeys } from "./machine.ts";
 import { lcdExpression, lcdResult } from "../ui/lcdModel.ts";
+import { lcdGridModel } from "../ui/gridModel.ts";
 import type { KeyId } from "./keys.ts";
 import type { CalcState } from "./types.ts";
 
@@ -64,7 +65,7 @@ describe("STAT reducer / dataset domain", () => {
   it("FREQ ON 1-VAR Ex2 mean and σx via keys TARGET-OFFICIAL-DOC", () => {
     let s = run(["shift", "mode", "down", "4", "1"]);
     expect(s.setup.statFreq).toBe(true);
-    s = run(["mode", "3", "1", ...enterValues(["1", "2", "3", "4", "5"]), "right", "up", "up", "up", "up", "up", ...enterValues(["1", "2", "3", "2"]), "ac"], s);
+    s = run(["mode", "3", "1", ...enterValues(["1", "2", "3", "4", "5"]), "down", "right", ...enterValues(["1", "2", "3", "2"]), "ac"], s);
     expect(s.stat?.phase).toBe("calc");
     expect(s.stat?.rows.slice(0, 5).map((r) => ({ x: r.x, f: r.freq }))).toEqual([
       { x: "1", f: "1" },
@@ -77,6 +78,113 @@ describe("STAT reducer / dataset domain", () => {
     expect(lcdResult(s)).toBe("3");
     s = run(["shift", "1", "4", "3", "equals"], s);
     expect(lcdResult(s)).toBe("1.154700538");
+  });
+
+  it("E-23 printed DOWN, RIGHT path aligns paired regression rows", () => {
+    const s = run([
+      "mode", "3", "2",
+      ...enterValues(["170", "173", "179"]),
+      "down", "right",
+      ...enterValues(["66", "68", "75"]),
+    ]);
+    expect(s.stat?.rows.slice(0, 3).map(({ x, y }) => [x, y])).toEqual([
+      ["170", "66"],
+      ["173", "68"],
+      ["179", "75"],
+    ]);
+    expect(s.stat?.rowIndex).toBe(3);
+    expect(s.stat?.col).toBe("y");
+    expect(lcdExpression(s)).toBe("Y4=");
+  });
+
+  it("E-24 regression and estimate examples follow printed selection keys", () => {
+    let s = run([
+      "shift", "mode", "6", "3", "mode", "3", "2",
+      ...enterValues(["20", "110", "200", "290"]),
+      "down", "right",
+      ...enterValues(["3150", "7310", "8800", "9310"]),
+      "ac",
+    ]);
+    expect(s.stat?.rows.slice(0, 4).map(({ x, y }) => [x, y])).toEqual([
+      ["20", "3150"],
+      ["110", "7310"],
+      ["200", "8800"],
+      ["290", "9310"],
+    ]);
+
+    s = run(["shift", "1", "5", "3", "equals"], s);
+    expect(lcdResult(s)).toBe("0.923");
+    s = run(["ac", "shift", "1", "1", "4"], s);
+    s = run(["ac", "shift", "1", "5", "3", "equals"], s);
+    expect(lcdResult(s)).toBe("0.998");
+    s = run(["ac", "shift", "1", "5", "1", "equals"], s);
+    expect(lcdResult(s)).toBe("-3857.984");
+    s = run(["ac", "shift", "1", "5", "2", "equals"], s);
+    expect(lcdResult(s)).toBe("2357.532");
+    s = run(["ac", "1", "6", "0", "shift", "1", "5", "5", "equals"], s);
+    expect(lcdResult(s)).toBe("8106.898");
+  });
+
+  it("E-25 printed FREQ distribution paths return t and P(Ans)", () => {
+    let s = run(["shift", "mode", "down", "4", "1", "shift", "mode", "6", "3"]);
+    s = run([
+      "mode", "3", "1",
+      ...enterValues(["0", "1", "2", "3", "4", "5", "6", "7", "9", "10"]),
+      "down", "right",
+      ...enterValues(["1", "2", "1", "2", "2", "2", "3", "4", "2", "1"]),
+      "ac", "3", "shift", "1", "5", "4", "equals",
+    ], s);
+    expect(lcdResult(s)).toBe("-0.762");
+    s = run(["shift", "1", "5", "1", "ans", "rparen", "equals"], s);
+    expect(lcdExpression(s)).toBe("P(Ans)");
+    expect(lcdResult(s)).toBe("0.223");
+  });
+
+  it("Fix 3 displays but does not store-round a STAT CONV result", () => {
+    let s = run(["shift", "mode", "6", "3", "mode", "3", "1", "1", "shift", "8", "0", "2", "equals"]);
+    expect(s.stat?.rows[0]?.x).toBe("0.393700787401575");
+    expect(lcdGridModel(s)?.rows.find((row) => row.index === 0)?.cells[0]?.value).toBe("0.394");
+    s = run(["0", "dot", "0", "0", "1", "2", "equals", "ac"], s);
+    s = run(["shift", "1", "4", "2", "equals"], s);
+    expect(lcdResult(s)).toBe("0.197");
+
+    const rounded = run([
+      "shift", "mode", "6", "3", "mode", "3", "1",
+      "0", "dot", "3", "9", "4", "equals",
+      "0", "dot", "0", "0", "1", "2", "equals", "ac",
+      "shift", "1", "4", "2", "equals",
+    ]);
+    expect(lcdResult(rounded)).toBe("0.198");
+  });
+
+  it("E-23 Stat Editor ignores operations the selected guide excludes", () => {
+    const s = run([
+      "mode", "3", "2",
+      "mplus", "shift", "mplus", "shift", "rcl",
+      "shift", "add", "shift", "sub", "alpha", "integral",
+    ]);
+    expect(s.mode).toBe("STAT");
+    expect(s.stat?.input).toBe("");
+    expect(s.editor.root).toEqual([]);
+    expect(s.stat?.rows).toEqual([{ x: null, y: null, freq: null }]);
+    expect(s.variables.A).toBe("0");
+  });
+
+  it("E-22 STAT editor enforces the documented 80/40/26 row counts", () => {
+    const fill = (count: number) => Array.from({ length: count }, (_, index) => [...numKeys(String(index + 1)), "equals"] as KeyId[]).flat();
+    const plainOneVar = run(["mode", "3", "1", ...fill(80)]);
+    expect(plainOneVar.stat?.rows).toHaveLength(80);
+
+    let freqOneVar = run(["shift", "mode", "down", "4", "1"]);
+    freqOneVar = run(["mode", "3", "1", ...fill(40)], freqOneVar);
+    expect(freqOneVar.stat?.rows).toHaveLength(40);
+
+    const paired = run(["mode", "3", "2", ...fill(40)]);
+    expect(paired.stat?.rows).toHaveLength(40);
+
+    let pairedFreq = run(["shift", "mode", "down", "4", "1"]);
+    pairedFreq = run(["mode", "3", "2", ...fill(26)], pairedFreq);
+    expect(pairedFreq.stat?.rows).toHaveLength(26);
   });
 
   it("DEL deletes the current editor line (TARGET-OFFICIAL-DOC)", () => {

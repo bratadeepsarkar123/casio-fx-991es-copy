@@ -51,7 +51,7 @@ export interface SetupState {
 
 export type Atom =
   | { t: "num"; s: string }
-  | { t: "op"; op: "+" | "-" | "×" | "÷" | "÷R" | "nPr" | "nCr" | "∠" }
+  | { t: "op"; op: "+" | "-" | "×" | "÷" | "÷R" | "nPr" | "nCr" | "∠" | "=" }
   | { t: "frac"; num: Atom[]; den: Atom[] }
   | { t: "mixed"; whole: Atom[]; num: Atom[]; den: Atom[] }
   | { t: "sqrt"; inner: Atom[] }
@@ -76,9 +76,9 @@ export type Atom =
 export interface Cursor {
   /** Path of slot indices from the root slot. */
   path: number[];
-  /** Index in the current slot (cursor sits before this atom, or at end). */
+  /** Number of atoms before the cursor in the current slot. */
   index: number;
-  /** If the atom at index-1 is a number, offset into its string. */
+  /** Character boundary within the number at index-1; null means an atom boundary. */
   offset: number | null;
 }
 
@@ -86,6 +86,8 @@ export interface EditorState {
   root: Atom[];
   cursor: Cursor;
   insertMode: InsertMode;
+  /** Natural-display SHIFT+DEL: the range to wrap on the next supported function key. */
+  argumentCapture?: { path: number[]; start: number; end: number; offset: number | null };
 }
 
 export type NaturalKind = "decimal" | "fraction" | "mixed" | "sqrt" | "pi" | "complex" | "polar";
@@ -94,12 +96,14 @@ export interface ResultValue {
   approx: string;
   display: string;
   naturalKind: NaturalKind;
-  fraction?: { mixed?: string; num: string; den: string };
+  fraction?: { mixed?: string; num: string; den: string; /** Signed improper numerator retained for format changes. */ improper?: string };
   pi?: { num: string; den: string };
   sqrt?: string;
   sexagesimal?: string;
   /** Rectangular parts as decimal strings. Present when the value is (or was) complex. */
   complex?: { re: string; im: string };
+  /** Fifteen-digit calculator value retained independently of the LCD format. */
+  internal?: { re: string; im?: string; x?: string; y?: string };
   /** ENG key offset in triples of three (0 = standard engineering). */
   engOffset?: number;
   engActive?: boolean;
@@ -110,13 +114,45 @@ export interface ResultValue {
 export interface HistoryEntry {
   expression: Atom[];
   result: ResultValue;
+  /** BASE-N keeps a linear token stream instead of a COMP Atom[] expression. */
+  baseN?: BaseNState;
+}
+
+export interface CalcSession {
+  source: Atom[];
+  statements: Atom[][];
+  promptVars: VarName[];
+  promptIndex: number;
+  statementIndex: number;
+  assignmentTarget: VarName | null;
+  phase: "prompt" | "result";
+}
+
+export interface MultiStatementSession {
+  source: Atom[];
+  statements: Atom[][];
+  statementIndex: number;
+}
+
+export interface SolveSession {
+  source: Atom[];
+  left: Atom[];
+  right: Atom[];
+  target: VarName;
+  promptVars: VarName[];
+  promptIndex: number;
+  phase: "parameters" | "initial" | "solution" | "continue";
+  initialGuess: string;
+  repeating: boolean;
+  solution?: string;
+  residual?: string;
 }
 
 export type MenuState =
   | { kind: "none" }
   | { kind: "mode"; page: number }
   | { kind: "setup"; page: number }
-  | { kind: "hyp" }
+  | { kind: "hyp"; page: 0 | 1 }
   | { kind: "clr" }
   | { kind: "confirm"; action: "setup" | "memory" | "all" }
   | { kind: "sto" }
@@ -143,6 +179,8 @@ export type MenuState =
   | { kind: "stat-distr" }
   | { kind: "stat-minmax" }
   | { kind: "comp-fn" }
+  | { kind: "const-entry"; digits: string }
+  | { kind: "conv-entry"; digits: string }
   | { kind: "matrix-op" }
   | { kind: "vector-op" };
 
@@ -170,7 +208,7 @@ export type BaseNOp = "+" | "-" | "×" | "÷" | "and" | "or" | "xor" | "xnor";
 
 /** Linear BASE-N tokens. Not COMP decimal `Atom[]`. */
 export type BaseNToken =
-  | { t: "num"; digits: string; suffix: BaseNRadix | null }
+  | { t: "num"; digits: string; suffix: BaseNRadix | null; prefix?: boolean }
   | { t: "op"; op: BaseNOp }
   | { t: "not" }
   | { t: "negfn" }
@@ -344,6 +382,8 @@ export interface TableSession {
   stepAtoms: Atom[];
   rows: TableRow[];
   rowIndex: number;
+  /** Selected result column; optional for persisted sessions written before grid selection. */
+  col?: "x" | "fx";
 }
 
 export interface CalcState {
@@ -357,6 +397,10 @@ export interface CalcState {
   editor: EditorState;
   screen: Screen;
   result: ResultValue | null;
+  /** Transient worker calculation state; never restored as active work. */
+  calculationPending?: boolean;
+  /** AC revealed an expression after LCD overflow; cleared by navigation or first entry. */
+  pendingInputRecall?: boolean;
   resultDecimal: boolean;
   ans: string;
   preAns: string;
@@ -367,6 +411,12 @@ export interface CalcState {
   variables: Record<VarName, string>;
   memoryM: string;
   history: HistoryEntry[];
+  /** Transient CALC prompt/result context; serialized states restore the source expression. */
+  calcSession: CalcSession | null;
+  /** Transient stepwise result for colon-separated expressions. */
+  multiStatement: MultiStatementSession | null;
+  /** Transient Newton SOLVE operation. */
+  solveSession: SolveSession | null;
   menu: MenuState;
   lastActivityMs: number;
   rngSeed: number;

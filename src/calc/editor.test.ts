@@ -23,9 +23,16 @@ describe("cursor / editing goldens", () => {
     expect(lcdExpression(s)).toMatch(/sin\(30\+1/);
   });
 
-  it("exits a fraction denominator on infix +", () => {
-    const s = run(["1", "frac", "2", "add", "3"]);
-    expect(lcdExpression(s)).toBe("(1/2)+3");
+  it("requires RIGHT to leave a fraction denominator before infix +", () => {
+    // Natural Display keeps operators in the denominator until RIGHT is pressed;
+    // the selected E-8 trace depends on that behavior.  E-10 explicitly presses
+    // RIGHT before the following operator.
+    const explicitExit = run(["1", "frac", "2", "right", "add", "3"]);
+    expect(lcdExpression(explicitExit)).toBe("(1/2)+3");
+    expect(lcdResult(run(["1", "frac", "2", "right", "add", "3", "equals"]))).toBe("7/2");
+
+    const denominatorOperator = run(["1", "frac", "2", "add", "3", "equals"]);
+    expect(lcdResult(denominatorOperator)).toBe("1/5");
   });
 
   it("nth-root template: cursor in n, then right into radicand", () => {
@@ -33,6 +40,11 @@ describe("cursor / editing goldens", () => {
     expect(lcdExpression(n)).toMatch(/5√/);
     const full = dispatchKeys(n, ["right", "3", "2"], 0);
     expect(lcdExpression(full)).toMatch(/5√32/);
+  });
+
+  it("LineIO indexed-root entry keeps the printed index before SHIFT power", () => {
+    const s = run(["shift", "mode", "2", "5", "shift", "power", "3", "2", "rparen", "equals"]);
+    expect(lcdResult(s)).toBe("2");
   });
 
   it("replay then edit replaces the last operator", () => {

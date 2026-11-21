@@ -44,7 +44,8 @@ describe("canonical acceptance (manual-derived)", () => {
     const s = run(["1", "div", "5", "equals"], lineIo);
     expect(lcdResult(s)).toBe("0.2");
     const frac = dispatchKeys(s, ["sd"], 0);
-    expect(lcdResult(frac)).toMatch(/1\/5/);
+    // LineIO's physical LCD fraction separator is the corner glyph, not a slash.
+    expect(lcdResult(frac)).toBe("1\u25185");
   });
 
   it("GT-P23-EX1 percent 150×20% = 30 SRC-P23", () => {
@@ -77,9 +78,14 @@ describe("canonical acceptance (manual-derived)", () => {
     expect(lcdResult(s)).toBe("16");
   });
 
-  it("GT-P38-EX3 (5²)³ = 15625 SRC-P38", () => {
-    const s = run(["5", "square", "shift", "square", "equals"]);
+  it("Selected E-16 (5²)³ = 15625 with the printed parentheses", () => {
+    const s = run(["lparen", "5", "square", "rparen", "shift", "square", "equals"]);
     expect(lcdResult(s)).toBe("15625");
+  });
+
+  it("Selected E-14 does not chain postfix square and cube without parentheses", () => {
+    const s = run(["5", "square", "shift", "square", "equals"]);
+    expect(lcdResult(s)).toBe("25");
   });
 
   it("GT-P32 replay 4×3+2 then edit to -7 SRC-P32", () => {
@@ -162,14 +168,16 @@ describe("canonical acceptance (manual-derived)", () => {
     expect(lcdResult(s)).toBe("2");
   });
 
-  it("GT-P36 sinh 1 = 1.175201194 SRC-P36", () => {
-    const s = run(["hyp", "sin", "1", "equals"], lineIo);
+  it("Selected E-16 HYP row 1 sinh(1) = 1.175201194", () => {
+    const s = run(["hyp", "1", "1", "rparen", "equals"], lineIo);
     expect(lcdResult(s)).toMatch(/^1\.175201194/);
   });
 
   it("GT-P24 multi-statement 3+3:3×3 last result 9 SRC-P24", () => {
-    const s = run(["3", "add", "3", "alpha", "integral", "3", "mul", "3", "equals"], lineIo);
-    expect(lcdExpression(s)).toMatch(/:/);
+    const first = run(["3", "add", "3", "alpha", "integral", "3", "mul", "3", "equals"], lineIo);
+    expect(lcdExpression(first)).toMatch(/:/);
+    expect(lcdResult(first)).toBe("6");
+    const s = dispatchKeys(first, ["equals"], 0);
     expect(lcdResult(s)).toBe("9");
   });
 
@@ -215,8 +223,9 @@ describe("canonical acceptance (manual-derived)", () => {
     expect(s.screen.kind).toBe("result");
     expect(s.result?.naturalKind).toBe("fraction");
     expect(lcdResult(s).replace(/\s/g, "")).toBe("7/6");
-    // 10-digit Norm-1 approx, ROUND_HALF_UP — not a hardware-tie claim.
-    expect(s.ans).toBe("1.166666667");
+    // Ans retains the selected manual's 15-digit internal value independently
+    // of the ten-digit Norm-1 result projection.
+    expect(s.ans).toBe("1.16666666666667");
     expect(s.result?.approx).toBe("1.166666667");
   });
 

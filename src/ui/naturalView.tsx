@@ -1,6 +1,9 @@
 import type { ReactNode } from "react";
 import type { Atom, Cursor, DisplayFormat, ResultValue } from "../calc/types.ts";
+import { fractionNumeratorForResult } from "../calc/format.ts";
+import type { SlotField } from "../calc/editor.ts";
 import { childPath, pathsEqual } from "../calc/editor.ts";
+import { scientificConstantByCallName, unitConversionByCallName } from "../calc/scientificData.ts";
 
 function Caret() {
   return <span data-testid="lcd-caret" className="lcd-caret" aria-hidden="true" />;
@@ -19,9 +22,11 @@ function slotNodes(
 ): ReactNode[] {
   const nodes: ReactNode[] = [];
   const atSlot = cursor !== null && pathsEqual(slotPath, cursor.path);
+  let caretRendered = false;
   const pushCaret = () => {
-    if (showCaret) {
+    if (showCaret && !caretRendered) {
       nodes.push(<Caret key={`caret-${slotPath.join(".")}-${nodes.length}`} />);
+      caretRendered = true;
     }
   };
 
@@ -43,7 +48,7 @@ function slotNodes(
       <span key={`a-${slotPath.join(".")}-${i}`}>{atomNode(a, format, cursor, showCaret, slotPath, i)}</span>,
     );
   }
-  if (atSlot && cursor.index >= xs.length) {
+  if (atSlot && cursor.index >= xs.length && !caretRendered) {
     pushCaret();
   }
   return nodes;
@@ -150,7 +155,64 @@ function atomNode(
           {wrapSlot(a.arg, format, cursor, showCaret, childPath(slotPath, i, "arg"))})
         </>
       );
-    case "call":
+    case "call": {
+      const constant = scientificConstantByCallName(a.name);
+      if (constant) {
+        return constant.symbol;
+      }
+      const conversion = unitConversionByCallName(a.name);
+      if (conversion) {
+        return (
+          <span className="nat-conversion" data-testid="nat-conversion">
+            {wrapSlot(a.args[0] ?? [], format, cursor, showCaret, childPath(slotPath, i, "args0"))}
+            {conversion.label}
+          </span>
+        );
+      }
+      if (a.name === "int" || a.name === "diff" || a.name === "Σ") {
+        const slot = (argIndex: number) => wrapSlot(
+          a.args[argIndex] ?? [],
+          format,
+          cursor,
+          showCaret,
+          childPath(slotPath, i, `args${argIndex}` as SlotField),
+        );
+        if (a.name === "int") {
+          return (
+            <span className="nat-int" data-testid="nat-int">
+              <span className="nat-int-symbol">
+                <span className="nat-int-glyph">∫</span>
+                <span className="nat-int-upper">{slot(2)}</span>
+                <span className="nat-int-lower">{slot(1)}</span>
+              </span>
+              <span className="nat-int-function">({slot(0)})</span>
+            </span>
+          );
+        }
+        if (a.name === "diff") {
+          return (
+            <span className="nat-diff" data-testid="nat-diff">
+              <span className="nat-diff-operator">
+                <span className="nat-diff-numerator">d</span>
+                <span className="nat-diff-bar" />
+                <span className="nat-diff-denominator">dx</span>
+              </span>
+              <span className="nat-diff-function">({slot(0)})</span>
+              <sub className="nat-diff-at">x={slot(1)}</sub>
+            </span>
+          );
+        }
+        return (
+          <span className="nat-sigma" data-testid="nat-sigma">
+            <span className="nat-sigma-symbol">
+              <span className="nat-sigma-upper">{slot(2)}</span>
+              <span className="nat-sigma-glyph">Σ</span>
+              <span className="nat-sigma-lower">x={slot(1)}</span>
+            </span>
+            <span className="nat-sigma-function">({slot(0)})</span>
+          </span>
+        );
+      }
       return (
         <>
           {a.name}(
@@ -169,6 +231,7 @@ function atomNode(
           {a.closed ? ")" : ""}
         </>
       );
+    }
     case "group":
       return (
         <>
@@ -246,13 +309,15 @@ export function NaturalResultView(props: { result: ResultValue; mathO: boolean }
     return result.display;
   }
   if ((result.naturalKind === "fraction" || result.naturalKind === "mixed") && result.fraction) {
+    const { fraction } = result;
+    const numerator = fractionNumeratorForResult(result);
     return (
       <span className="nat-mixed" data-testid="nat-result-frac">
-        {result.fraction.mixed ? <span>{result.fraction.mixed}</span> : null}
+        {result.naturalKind === "mixed" && fraction.mixed ? <span>{fraction.mixed}</span> : null}
         <span className="nat-frac" data-testid="nat-frac">
-          <span className="nat-frac-num">{result.fraction.num}</span>
+          <span className="nat-frac-num">{numerator}</span>
           <span className="nat-frac-bar" />
-          <span className="nat-frac-den">{result.fraction.den}</span>
+          <span className="nat-frac-den">{fraction.den}</span>
         </span>
       </span>
     );

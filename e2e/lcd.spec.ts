@@ -40,4 +40,24 @@ test.describe("Natural Textbook Display", () => {
     expect(fracBox!.y + fracBox!.height).toBeLessThanOrEqual(resultBox!.y + resultBox!.height + 1);
     expect(fracBox!.height).toBeGreaterThan(16);
   });
+
+  test("MathO fraction and SHIFT Sâ‡”D show improper then mixed form", async ({ page }) => {
+    await page.goto("./");
+    for (const key of ["shift", "mode", "down", "2"] as const) {
+      await page.locator(`[data-key="${key}"]`).click();
+    }
+    for (const key of ["2", "frac", "3", "right", "add", "1", "frac", "2", "right", "equals"] as const) {
+      await page.locator(`[data-key="${key}"]`).click();
+    }
+    const fraction = page.getByTestId("nat-result-frac");
+    await expect(fraction.locator(".nat-frac-num")).toHaveText("7");
+    await expect(fraction.locator(".nat-frac-den")).toHaveText("6");
+    await expect(fraction.locator(".nat-mixed > span:first-child")).toHaveCount(0);
+
+    await page.locator('[data-key="shift"]').click();
+    await page.locator('[data-key="sd"]').click();
+    await expect(fraction.locator(":scope > span").first()).toHaveText("1");
+    await expect(fraction.locator(".nat-frac-num")).toHaveText("1");
+    await expect(fraction.locator(".nat-frac-den")).toHaveText("6");
+  });
 });

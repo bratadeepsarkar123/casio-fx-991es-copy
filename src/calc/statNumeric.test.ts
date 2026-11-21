@@ -9,6 +9,7 @@ import {
   predictX,
   sampleSdFromSums,
   statP,
+  statMaxRows,
   type StatPoint,
 } from "./statNumeric.ts";
 import type { StatRow } from "./types.ts";
@@ -22,6 +23,13 @@ function rowsXY(pairs: Array<[string, string]>): StatRow[] {
 }
 
 describe("STAT numeric (decimal.js; official examples)", () => {
+  it("E-22 Stat Editor row capacity follows the X/Y/FREQ column shape", () => {
+    expect(statMaxRows("1-VAR", false)).toBe(80);
+    expect(statMaxRows("1-VAR", true)).toBe(40);
+    expect(statMaxRows("A+BX", false)).toBe(40);
+    expect(statMaxRows("A+BX", true)).toBe(26);
+    expect(statMaxRows("_+CX2", true)).toBe(26);
+  });
   it("Ex2 FREQ ON 1-VAR mean=3 σx=1.154700538 TARGET-OFFICIAL-DOC", () => {
     const rows = rows1Var([
       ["1", "1"],

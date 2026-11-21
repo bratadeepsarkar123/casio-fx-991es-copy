@@ -1,12 +1,18 @@
 import type { KeyEvent, KeyId } from "./keys.ts";
 import {
   closeGroupOrCall,
+  byteCount,
+  captureRightArgument,
+  deleteAtCursor,
   deleteLeft,
   emptyEditor,
   editorFromAtoms,
   insertAbs,
+  insertAngle as wrapAngle,
   insertAtom,
   insertCall,
+  insertCallTemplate,
+  insertClosedCall,
   insertColon,
   insertComma,
   insertCbrt,
@@ -15,15 +21,18 @@ import {
   insertDot,
   insertDms,
   insertFraction,
+  insertLinearFraction,
   insertGroup,
   insertLogab,
   insertNeg,
   insertNthRoot,
+  insertNthRootWithIndex,
   insertOp,
   insertPost,
   insertPower,
   insertSqrt,
   insertSym,
+  insertUnitConversion,
   insertVar,
   moveDown,
   moveLeft,
@@ -31,10 +40,21 @@ import {
   moveUp,
   prepareForBinaryOp,
   SCI10_CALL_NAME,
+  wrapCapturedArgument,
+  MAX_BYTES,
+  trimHistory,
 } from "./editor.ts";
 import { evaluateEquals } from "./evaluate.ts";
-import { formatBySetup, formatEngineering, toggleDecimal, toggleSexagesimal } from "./format.ts";
-import { D, createUint32Rng, parseCalcNumber } from "./numeric.ts";
+import { advanceMultiStatement, reduceCalcSession, reduceSolveSession, startCalc, startMultiStatement, startSolve } from "./calcSession.ts";
+import { applyDecimalMark, effectiveDisplayFormat, formatBySetup, formatEngineering, fractionResultForSetup, toggleDecimal, toggleSexagesimal } from "./format.ts";
+import { D, createUint32Rng, parseCalcNumber, roundInternal } from "./numeric.ts";
+import { naturalFormulaHeightLines, naturalFormulaMaxHeightLines } from "./naturalHeight.ts";
+import {
+  scientificConstantCallName,
+  scientificConstantByCallName,
+  unitConversionCallName,
+  unitConversionByCallName,
+} from "./scientificData.ts";
 import { emptyTableSession, reduceTable, tableReturnToFx } from "./table.ts";
 import { applyBaseOpMenu, emptyBaseN, reduceBaseN, reduceBaseNError } from "./baseN.ts";
 import { emptyStatSession, handleStatMenu, isStatMenuKind, reduceStat, wipeStatData } from "./stat.ts";
@@ -46,6 +66,7 @@ import type {
   CalcMode,
   CalcState,
   ErrorCode,
+  HistoryEntry,
   MenuState,
   ResultValue,
   SetupState,
@@ -55,6 +76,13 @@ import { VAR_NAMES } from "./types.ts";
 
 const AUTO_OFF_MS = 10 * 60 * 1000;
 export { AUTO_OFF_MS };
+
+export function applyIdleTimeout(state: CalcState, nowMs: number): CalcState {
+  if (state.power === "on" && nowMs - state.lastActivityMs >= AUTO_OFF_MS) {
+    return { ...state, power: "off", screen: { kind: "off" }, pendingInputRecall: false };
+  }
+  return state;
+}
 
 export function defaultSetup(): SetupState {
   return {
@@ -84,6 +112,7 @@ export function createInitialState(nowMs = 0): CalcState {
     editor: emptyEditor(),
     screen: { kind: "input" },
     result: null,
+    pendingInputRecall: false,
     resultDecimal: false,
     ans: "0",
     preAns: "0",
@@ -92,6 +121,9 @@ export function createInitialState(nowMs = 0): CalcState {
     variables: zeros,
     memoryM: "0",
     history: [],
+    calcSession: null,
+    multiStatement: null,
+    solveSession: null,
     menu: { kind: "none" },
     lastActivityMs: nowMs,
     rngSeed: 1,
@@ -112,11 +144,26 @@ function clearLatches(state: CalcState): CalcState {
   return { ...state, shift: false, alpha: false, hyp: false };
 }
 
+function replayHistoryEntry(state: CalcState, entry: HistoryEntry, index: number): CalcState {
+  const baseN = entry.baseN;
+  const isBaseN = state.mode === "BASE-N" && baseN !== undefined;
+  return {
+    ...clearLatches(state),
+    editor: isBaseN ? emptyEditor() : editorFromAtoms(entry.expression),
+    baseN: isBaseN && baseN
+      ? { ...baseN, tokens: baseN.tokens.slice(), value: entry.result.approx }
+      : state.baseN,
+    screen: { kind: "replay", historyIndex: index },
+    result: entry.result,
+  };
+}
+
 function withBinaryOp(state: CalcState, op: "+" | "-" | "×" | "÷" | "÷R" | "nPr" | "nCr" | "∠"): CalcState {
   const base = continueFromResult(state);
+  const lineIO = effectiveDisplayFormat(base.mode, base.setup.displayFormat) === "LineIO";
   return {
     ...clearLatches(base),
-    editor: insertOp(prepareForBinaryOp(base.editor), op),
+    editor: insertOp(prepareForBinaryOp(base.editor, lineIO), op),
     screen: { kind: "input" },
   };
 }
@@ -140,6 +187,51 @@ function handleMenu(state: CalcState, keyId: KeyId): CalcState | null {
   if (keyId === "ac") {
     return { ...state, menu: { kind: "none" } };
   }
+  if (menu.kind === "const-entry" || menu.kind === "conv-entry") {
+    if (keyId < "0" || keyId > "9") {
+      return state;
+    }
+    const digits = menu.digits + keyId;
+    if (digits.length < 2) {
+      return { ...state, menu: { ...menu, digits } };
+    }
+    const code = Number(digits);
+    const isConstant = menu.kind === "const-entry";
+    const name = isConstant ? scientificConstantCallName(code) : unitConversionCallName(code);
+    const valid = isConstant
+      ? scientificConstantByCallName(name) !== undefined
+      : unitConversionByCallName(name) !== undefined;
+    if (!valid) {
+      return {
+        ...clearLatches(state),
+        menu: { kind: "none" },
+        screen: { kind: "error", code: "Argument ERROR", expression: state.editor.root, errorIndex: 0 },
+        result: null,
+      };
+    }
+    if (isConstant) {
+      const base = beginInputIfResult(prepareStatExpression({ ...state, menu: { kind: "none" } }));
+      return {
+        ...clearLatches(base),
+        menu: { kind: "none" },
+        editor: insertAtom(base.editor, { t: "call", name, args: [], closed: true }),
+        screen: { kind: "input" },
+      };
+    }
+    const prepared = prepareStatExpression({ ...state, menu: { kind: "none" } });
+    const base = prepared.screen.kind === "result"
+      ? { ...prepared, editor: insertSym(emptyEditor(), "ans"), screen: { kind: "input" as const }, result: null }
+      : prepared.editor.root.length === 0
+        ? { ...prepared, editor: insertSym(prepared.editor, "ans") }
+        : prepared;
+    return {
+      ...clearLatches(base),
+      menu: { kind: "none" },
+      editor: insertUnitConversion(base.editor, name),
+      screen: { kind: "input" },
+      result: null,
+    };
+  }
   if (menu.kind === "mode") {
     const mode = MODE_BY_DIGIT[keyId];
     if (mode) {
@@ -151,6 +243,9 @@ function handleMenu(state: CalcState, keyId: KeyId): CalcState | null {
         screen: { kind: "input" },
         result: null,
         history: [],
+        calcSession: null,
+        multiStatement: null,
+        solveSession: null,
         preAns: mode === "COMP" || mode === "CMPLX" ? state.preAns : "0",
         preAnsIm: mode === "COMP" || mode === "CMPLX" ? state.preAnsIm : "0",
         table: mode === "TABLE" ? emptyTableSession() : null,
@@ -202,12 +297,8 @@ function handleMenu(state: CalcState, keyId: KeyId): CalcState | null {
       case "4":
         return { ...state, menu: { kind: "stat-fmt" } };
       case "5":
-        return { ...state, menu: { kind: "table-fmt" } };
-      case "6":
-        return { ...state, menu: { kind: "rdec" } };
-      case "7":
         return { ...state, menu: { kind: "disp" } };
-      case "8":
+      case "6":
         return { ...state, menu: { kind: "contrast" } };
       default:
         return state;
@@ -318,8 +409,8 @@ function handleMenu(state: CalcState, keyId: KeyId): CalcState | null {
         return { ...base, menu: { kind: "none" } };
       }
     }
-    const value = base.result?.complex?.re ?? base.result?.approx ?? base.ans;
-    const imag = base.result?.complex?.im ?? "0";
+    const value = base.result?.internal?.re ?? base.result?.complex?.re ?? base.result?.approx ?? base.ans;
+    const imag = base.result?.internal?.im ?? base.result?.complex?.im ?? "0";
     if (imag !== "0" && !D(imag).isZero()) {
       return {
         ...clearLatches(base),
@@ -336,6 +427,19 @@ function handleMenu(state: CalcState, keyId: KeyId): CalcState | null {
     const name = alphaVar(keyId);
     if (!name) {
       return state;
+    }
+    const recallToResult = state.screen.kind === "result" || (state.screen.kind === "input" && state.editor.root.length === 0);
+    if (recallToResult && (state.mode === "COMP" || state.mode === "CMPLX")) {
+      return onEquals(
+        {
+          ...clearLatches(state),
+          menu: { kind: "none" },
+          editor: editorFromAtoms([{ t: "var", name }]),
+          screen: { kind: "input" },
+          result: null,
+        },
+        createUint32Rng(state.rngSeed),
+      );
     }
     return {
       ...clearLatches(state),
@@ -357,14 +461,35 @@ function handleMenu(state: CalcState, keyId: KeyId): CalcState | null {
     return state;
   }
   if (menu.kind === "hyp") {
-    return null;
+    if (keyId === "up" || keyId === "down") {
+      return { ...state, menu: { kind: "hyp", page: keyId === "up" ? 0 : 1 } };
+    }
+    const names = {
+      "1": "sinh",
+      "2": "cosh",
+      "3": "tanh",
+      "4": "asinh",
+      "5": "acosh",
+      "6": "atanh",
+    };
+    const name = names[keyId as keyof typeof names];
+    if (!name) {
+      return state;
+    }
+    const base = beginInputIfResult({ ...state, menu: { kind: "none" } });
+    return {
+      ...clearLatches(base),
+      menu: { kind: "none" },
+      editor: insertCall(base.editor, name),
+      screen: { kind: "input" },
+    };
   }
   if (menu.kind === "contrast") {
     if (keyId === "right") {
-      return applySetup(state, { contrast: Math.min(6, state.setup.contrast + 1) });
+      return { ...state, setup: { ...state.setup, contrast: Math.min(6, state.setup.contrast + 1) } };
     }
     if (keyId === "left") {
-      return applySetup(state, { contrast: Math.max(1, state.setup.contrast - 1) });
+      return { ...state, setup: { ...state.setup, contrast: Math.max(1, state.setup.contrast - 1) } };
     }
     return state;
   }
@@ -431,11 +556,16 @@ function handleMenu(state: CalcState, keyId: KeyId): CalcState | null {
 }
 
 function applySetup(state: CalcState, patch: Partial<SetupState>): CalcState {
+  const displayChanged = patch.displayFormat !== undefined && patch.displayFormat !== state.setup.displayFormat;
   const next: CalcState = {
     ...clearLatches(state),
     setup: { ...state.setup, ...patch },
+    editor: displayChanged ? { ...state.editor, insertMode: "insert" } : state.editor,
     menu: { kind: "none" },
-    history: [],
+    history:
+      displayChanged
+        ? []
+        : state.history,
   };
   if (next.mode === "TABLE" && patch.displayFormat !== undefined) {
     return {
@@ -461,6 +591,7 @@ function runConfirm(state: CalcState, action: "setup" | "memory" | "all"): CalcS
       variables: zeros,
       memoryM: "0",
       ans: "0",
+      history: [],
       preAns: "0",
       ansIm: "0",
       preAnsIm: "0",
@@ -512,9 +643,21 @@ function insertAngle(state: CalcState, unit: "°" | "r" | "g"): CalcState {
   return {
     ...clearLatches(state),
     menu: { kind: "none" },
-    editor: insertAtom(state.editor, { t: "angle", unit, inner: [] }),
+    editor: wrapAngle(state.editor, unit),
     screen: { kind: "input" },
   };
+}
+
+function insertNumericalCall(editor: CalcState["editor"], name: "int" | "diff" | "Σ", displayFormat: SetupState["displayFormat"]): CalcState["editor"] {
+  const natural = displayFormat === "MthIO-MathO";
+  const argCount = natural ? (name === "diff" ? 2 : 3) : 1;
+  const make = (fn: Atom[]): Atom => ({
+    t: "call",
+    name,
+    args: [fn, ...Array.from({ length: argCount - 1 }, () => [])],
+    closed: false,
+  });
+  return wrapCapturedArgument(editor, (fn) => make(fn), "args0") ?? insertCallTemplate(editor, name, argCount);
 }
 
 function beginInputIfResult(state: CalcState): CalcState {
@@ -524,12 +667,27 @@ function beginInputIfResult(state: CalcState): CalcState {
       editor: emptyEditor(),
       screen: { kind: "input" },
       result: null,
+      calcSession: null,
+      multiStatement: null,
+      solveSession: null,
     };
   }
   if (state.screen.kind === "error") {
-    return { ...state, editor: emptyEditor(), screen: { kind: "input" }, result: null };
+    return { ...state, editor: emptyEditor(), screen: { kind: "input" }, result: null, calcSession: null, multiStatement: null, solveSession: null };
   }
   return state;
+}
+
+function prepareStatExpression(state: CalcState): CalcState {
+  const stat = state.stat;
+  if (state.mode !== "STAT" || stat?.phase !== "editor" || !stat.editing || state.editor.root.length > 0) {
+    return state;
+  }
+  return {
+    ...state,
+    stat: { ...stat, input: "", editing: false },
+    editor: editorFromAtoms([{ t: "num", s: stat.input }]),
+  };
 }
 
 function continueFromResult(state: CalcState): CalcState {
@@ -538,6 +696,9 @@ function continueFromResult(state: CalcState): CalcState {
       ...state,
       editor: insertSym(emptyEditor(), "ans"),
       screen: { kind: "input" },
+      calcSession: null,
+      multiStatement: null,
+      solveSession: null,
     };
   }
   return state;
@@ -575,50 +736,68 @@ function guessErrorIndex(atoms: Atom[]): number {
   return 0;
 }
 
+export function commitEqualsResult(state: CalcState, result: ResultValue): CalcState {
+  const entry = { expression: state.editor.root, result };
+  return {
+    ...clearLatches(state),
+    calculationPending: false,
+    screen: { kind: "result" },
+    result,
+    resultDecimal: result.naturalKind === "decimal",
+    preAns: state.ans,
+    preAnsIm: state.ansIm,
+    ans: result.internal?.re ?? result.complex?.re ?? result.approx,
+    ansIm: result.internal?.im ?? result.complex?.im ?? "0",
+    history: trimHistory([...state.history, entry]),
+    rngSeed: state.rngSeed + 1,
+    variables: result.polRec
+      ? {
+          ...state.variables,
+          X: result.internal?.x ?? result.polRec.X,
+          Y: result.internal?.y ?? result.polRec.Y,
+        }
+      : state.variables,
+  };
+}
+
+export function commitEqualsError(state: CalcState, code: ErrorCode): CalcState {
+  return {
+    ...clearLatches(state),
+    calculationPending: false,
+    screen: {
+      kind: "error",
+      code,
+      expression: state.editor.root,
+      errorIndex: guessErrorIndex(state.editor.root),
+    },
+    result: null,
+  };
+}
+
 function onEquals(state: CalcState, nextUint32: () => number): CalcState {
   try {
-    const result = evaluateEquals(state, nextUint32);
-    const entry = { expression: state.editor.root, result };
-    const history = [...state.history, entry].slice(-40);
-    return {
-      ...clearLatches(state),
-      screen: { kind: "result" },
-      result,
-      resultDecimal: result.naturalKind === "decimal",
-      preAns: state.ans,
-      preAnsIm: state.ansIm,
-      ans: result.complex?.re ?? result.approx,
-      ansIm: result.complex?.im ?? "0",
-      history,
-      rngSeed: state.rngSeed + 1,
-      variables: result.polRec
-        ? { ...state.variables, X: result.polRec.X, Y: result.polRec.Y }
-        : state.variables,
-    };
+    return commitEqualsResult(state, evaluateEquals(state, nextUint32));
   } catch (err) {
     const code = (err as { code?: ErrorCode }).code ?? "Math ERROR";
-    return {
-      ...clearLatches(state),
-      screen: {
-        kind: "error",
-        code,
-        expression: state.editor.root,
-        errorIndex: guessErrorIndex(state.editor.root),
-      },
-      result: null,
-    };
+    return commitEqualsError(state, code);
   }
 }
 
-export function reduce(state: CalcState, event: KeyEvent): CalcState {
+function reduceInternal(state: CalcState, event: KeyEvent): CalcState {
   const now = event.nowMs ?? state.lastActivityMs;
   if (state.power === "off" && event.keyId !== "on") {
     return state;
   }
-  if (state.power === "on" && now - state.lastActivityMs > AUTO_OFF_MS && event.keyId !== "on") {
-    return { ...state, power: "off", screen: { kind: "off" } };
+  if (state.power === "on" && event.keyId !== "on") {
+    const timedOut = applyIdleTimeout(state, now);
+    if (timedOut !== state) {
+      return timedOut;
+    }
   }
   let s = withActivity(state, now);
+  const displayFormat = s.calcSession || s.solveSession
+    ? "LineIO"
+    : effectiveDisplayFormat(s.mode, s.setup.displayFormat);
   if (event.keyId === "on") {
     const next = {
       ...s,
@@ -628,6 +807,10 @@ export function reduce(state: CalcState, event: KeyEvent): CalcState {
       alpha: false,
       hyp: false,
       menu: { kind: "none" as const },
+      history: [],
+      calcSession: null,
+      multiStatement: null,
+      solveSession: null,
     };
     if (next.mode === "TABLE" && next.table) {
       return tableReturnToFx(next);
@@ -655,6 +838,16 @@ export function reduce(state: CalcState, event: KeyEvent): CalcState {
     if (baseHandled) {
       return baseHandled;
     }
+  }
+
+  if (s.shift && event.keyId === "7" && s.mode !== "BASE-N") {
+    return { ...clearLatches(s), menu: { kind: "const-entry", digits: "" } };
+  }
+  if (s.shift && event.keyId === "8" && s.mode !== "BASE-N") {
+    if (s.mode === "TABLE") {
+      return clearLatches(s);
+    }
+    return { ...clearLatches(s), menu: { kind: "conv-entry", digits: "" } };
   }
 
   if (s.mode === "STAT") {
@@ -685,14 +878,46 @@ export function reduce(state: CalcState, event: KeyEvent): CalcState {
     }
   }
 
+  const sessionRng = createUint32Rng(s.rngSeed);
+  const calcHandled = reduceCalcSession(s, event.keyId, sessionRng);
+  if (calcHandled) {
+    return calcHandled;
+  }
+  const solveHandled = reduceSolveSession(s, event.keyId, sessionRng);
+  if (solveHandled) {
+    return solveHandled;
+  }
+
+  if (event.keyId === "calc") {
+    if (s.alpha) {
+      return {
+        ...clearLatches(s),
+        editor: insertAtom(beginInputIfResult(s).editor, { t: "op", op: "=" }),
+        screen: { kind: "input" },
+      };
+    }
+    if (s.shift) {
+      return startSolve(s) ?? clearLatches(s);
+    }
+    if (s.mode === "COMP" || s.mode === "CMPLX") {
+      return startCalc(s, sessionRng) ?? clearLatches(s);
+    }
+    return clearLatches(s);
+  }
+
   if (event.keyId === "hyp") {
     if (s.shift) {
-      return { ...clearLatches(s), editor: insertAbs(beginInputIfResult(s).editor), screen: { kind: "input" } };
+      const editor = beginInputIfResult(s).editor;
+      return {
+        ...clearLatches(s),
+        editor: wrapCapturedArgument(editor, (inner) => ({ t: "abs", inner }), "inner") ?? insertAbs(editor),
+        screen: { kind: "input" },
+      };
     }
     if (s.alpha) {
       return { ...clearLatches(s), editor: insertVar(beginInputIfResult(s).editor, "C"), screen: { kind: "input" } };
     }
-    return { ...s, hyp: true };
+    return { ...s, hyp: true, menu: { kind: "hyp", page: 0 } };
   }
 
   if (s.screen.kind === "error") {
@@ -718,7 +943,19 @@ export function reduce(state: CalcState, event: KeyEvent): CalcState {
     if (s.shift) {
       return { ...s, power: "off", screen: { kind: "off" }, shift: false, alpha: false, hyp: false };
     }
-    return { ...clearLatches(s), editor: emptyEditor(), screen: { kind: "input" }, result: null, menu: { kind: "none" } };
+    if ((s.screen.kind === "result" || s.screen.kind === "replay") && event.restoreInputOnAc) {
+      return {
+        ...clearLatches(s),
+        screen: { kind: "input" },
+        result: null,
+        pendingInputRecall: true,
+        menu: { kind: "none" },
+        calcSession: null,
+        multiStatement: null,
+        solveSession: null,
+      };
+    }
+    return { ...clearLatches(s), editor: emptyEditor(), screen: { kind: "input" }, result: null, menu: { kind: "none" }, calcSession: null, multiStatement: null, solveSession: null };
   }
 
   if (event.keyId === "mode") {
@@ -730,14 +967,24 @@ export function reduce(state: CalcState, event: KeyEvent): CalcState {
 
   if (event.keyId === "del") {
     if (s.shift) {
-      return { ...clearLatches(s), editor: { ...s.editor, insertMode: s.editor.insertMode === "insert" ? "overwrite" : "insert" } };
+      if (displayFormat === "LineIO") {
+        return { ...clearLatches(s), editor: { ...s.editor, insertMode: s.editor.insertMode === "insert" ? "overwrite" : "insert" } };
+      }
+      return { ...clearLatches(s), editor: captureRightArgument(s.editor) };
     }
-    return { ...clearLatches(s), editor: deleteLeft(s.editor), screen: { kind: "input" } };
+    return {
+      ...clearLatches(s),
+      editor: s.editor.insertMode === "overwrite" ? deleteAtCursor(s.editor) : deleteLeft(s.editor),
+      screen: { kind: "input" },
+    };
   }
 
   if (event.keyId === "left") {
     if (s.screen.kind === "result") {
       return { ...clearLatches(s), screen: { kind: "input" } };
+    }
+    if (displayFormat === "LineIO" && s.editor.cursor.path.length === 0 && s.editor.cursor.index === 0 && s.editor.cursor.offset === null) {
+      return clearLatches(s);
     }
     return { ...clearLatches(s), editor: moveLeft(s.editor), screen: { kind: "input" } };
   }
@@ -745,25 +992,48 @@ export function reduce(state: CalcState, event: KeyEvent): CalcState {
     if (s.screen.kind === "result") {
       return { ...clearLatches(s), screen: { kind: "input" } };
     }
+    const lastAtom = s.editor.root[s.editor.root.length - 1];
+    if (
+      displayFormat === "LineIO" &&
+      s.editor.cursor.path.length === 0 &&
+      s.editor.cursor.index >= s.editor.root.length &&
+      (s.editor.cursor.offset === null || (lastAtom?.t === "num" && s.editor.cursor.offset >= lastAtom.s.length))
+    ) {
+      return clearLatches(s);
+    }
     return { ...clearLatches(s), editor: moveRight(s.editor), screen: { kind: "input" } };
   }
   if (event.keyId === "up" || event.keyId === "down") {
+    if (s.screen.kind === "input" && displayFormat === "LineIO") {
+      const index = event.keyId === "up" ? 0 : s.editor.root.length;
+      const first = s.editor.root[0];
+      const last = s.editor.root[s.editor.root.length - 1];
+      return {
+        ...clearLatches(s),
+        editor: {
+          ...s.editor,
+          cursor: event.keyId === "up"
+            ? { path: [], index: first?.t === "num" ? 1 : 0, offset: first?.t === "num" ? 0 : null }
+            : { path: [], index, offset: last?.t === "num" ? last.s.length : null },
+        },
+      };
+    }
+    if (s.screen.kind === "input" && s.editor.cursor.path.length > 0) {
+      return { ...clearLatches(s), editor: event.keyId === "up" ? moveUp(s.editor) : moveDown(s.editor) };
+    }
     if (s.screen.kind === "result" || s.screen.kind === "input") {
       const hist = s.history;
       if (hist.length === 0) {
         return clearLatches(s);
       }
-      const idx = event.keyId === "up" ? hist.length - 1 : 0;
+      const idx = event.keyId === "up"
+        ? hist.length - (s.screen.kind === "result" ? 2 : 1)
+        : 0;
       const entry = hist[idx];
       if (!entry) {
         return clearLatches(s);
       }
-      return {
-        ...clearLatches(s),
-        editor: editorFromAtoms(entry.expression),
-        screen: { kind: "replay", historyIndex: idx },
-        result: entry.result,
-      };
+      return replayHistoryEntry(s, entry, idx);
     }
     if (s.screen.kind === "replay") {
       const delta = event.keyId === "up" ? -1 : 1;
@@ -772,25 +1042,32 @@ export function reduce(state: CalcState, event: KeyEvent): CalcState {
       if (!entry) {
         return s;
       }
-      return {
-        ...s,
-        editor: editorFromAtoms(entry.expression),
-        screen: { kind: "replay", historyIndex: idx },
-        result: entry.result,
-      };
+      return replayHistoryEntry(s, entry, idx);
     }
     return { ...clearLatches(s), editor: event.keyId === "up" ? moveUp(s.editor) : moveDown(s.editor) };
   }
 
   if (event.keyId === "equals") {
     const rng = createUint32Rng(s.rngSeed);
+    if (!s.shift && s.multiStatement) {
+      return advanceMultiStatement(s, rng) ?? clearLatches(s);
+    }
+    if (!s.shift && s.screen.kind === "input") {
+      const stepwise = startMultiStatement(s, rng);
+      if (stepwise) {
+        return stepwise;
+      }
+    }
     if (s.shift) {
       try {
         const result = evaluateEquals(s, rng);
         const approx: ResultValue = {
           ...result,
-          display: formatBySetup(parseCalcNumber(result.complex?.re ?? result.approx), s.setup),
+          display: formatBySetup(parseCalcNumber(result.internal?.re ?? result.complex?.re ?? result.approx), s.setup),
           naturalKind: "decimal",
+          // The printed SHIFT = conversion can be toggled back to fraction/π
+          // forms, but it does not restore the radical form of this result.
+          sqrt: undefined,
         };
         return {
           ...clearLatches(s),
@@ -799,9 +1076,9 @@ export function reduce(state: CalcState, event: KeyEvent): CalcState {
           resultDecimal: true,
           preAns: s.ans,
           preAnsIm: s.ansIm,
-          ans: result.complex?.re ?? result.approx,
-          ansIm: result.complex?.im ?? "0",
-          history: [...s.history, { expression: s.editor.root, result: approx }].slice(-40),
+          ans: result.internal?.re ?? result.complex?.re ?? result.approx,
+          ansIm: result.internal?.im ?? result.complex?.im ?? "0",
+          history: trimHistory([...s.history, { expression: s.editor.root, result: approx }]),
           rngSeed: s.rngSeed + 1,
         };
       } catch {
@@ -820,7 +1097,12 @@ export function reduce(state: CalcState, event: KeyEvent): CalcState {
         ...s.setup,
         fractionFormat: s.setup.fractionFormat === "d/c" ? "ab/c" : "d/c",
       };
-      return { ...clearLatches(s), setup: next };
+      const result = s.result ? fractionResultForSetup(s.result, next) : undefined;
+      return {
+        ...clearLatches(s),
+        setup: next,
+        ...(result ? { result, resultDecimal: result.naturalKind === "decimal" } : {}),
+      };
     }
     if (s.result) {
       if (s.result.remainder) {
@@ -872,7 +1154,7 @@ export function reduce(state: CalcState, event: KeyEvent): CalcState {
         return base;
       }
     }
-    const imag = base.result?.complex?.im ?? "0";
+    const imag = base.result?.internal?.im ?? base.result?.complex?.im ?? "0";
     if (imag !== "0" && !D(imag).isZero()) {
       return {
         ...clearLatches(base),
@@ -880,8 +1162,8 @@ export function reduce(state: CalcState, event: KeyEvent): CalcState {
         result: null,
       };
     }
-    const value = parseCalcNumber(base.result?.complex?.re ?? base.result?.approx ?? base.ans);
-    const next = s.shift ? parseCalcNumber(base.memoryM).minus(value) : parseCalcNumber(base.memoryM).plus(value);
+    const value = parseCalcNumber(base.result?.internal?.re ?? base.result?.complex?.re ?? base.result?.approx ?? base.ans);
+    const next = roundInternal(s.shift ? parseCalcNumber(base.memoryM).minus(value) : parseCalcNumber(base.memoryM).plus(value));
     const mStr = next.toString();
     return {
       ...clearLatches(base),
@@ -917,7 +1199,7 @@ export function reduce(state: CalcState, event: KeyEvent): CalcState {
 
   if (event.keyId === "dot") {
     if (s.shift) {
-      return { ...clearLatches(s), editor: insertCall(beginInputIfResult(s).editor, "Ran#"), screen: { kind: "input" } };
+      return { ...clearLatches(s), editor: insertClosedCall(beginInputIfResult(s).editor, "Ran#"), screen: { kind: "input" } };
     }
     return { ...clearLatches(s), editor: insertDot(beginInputIfResult(s).editor), screen: { kind: "input" } };
   }
@@ -971,62 +1253,90 @@ export function reduce(state: CalcState, event: KeyEvent): CalcState {
   }
 
   if (event.keyId === "frac") {
+    const editor = beginInputIfResult(s).editor;
+    const lineIO = displayFormat === "LineIO";
     return {
       ...clearLatches(s),
-      editor: insertFraction(beginInputIfResult(s).editor, s.shift),
+      editor: !s.shift
+        ? (lineIO
+          ? insertLinearFraction(editor)
+          : wrapCapturedArgument(editor, (num) => ({ t: "frac", num, den: [] }), "den") ?? insertFraction(editor, false))
+        : insertFraction(editor, true),
       screen: { kind: "input" },
     };
   }
   if (event.keyId === "sqrt") {
+    const editor = beginInputIfResult(s).editor;
     return {
       ...clearLatches(s),
-      editor: s.shift ? insertCbrt(beginInputIfResult(s).editor) : insertSqrt(beginInputIfResult(s).editor),
+      editor: wrapCapturedArgument(
+        editor,
+        (inner) => s.shift ? ({ t: "cbrt", inner }) : ({ t: "sqrt", inner }),
+        "inner",
+      ) ?? (s.shift ? insertCbrt(editor) : insertSqrt(editor)),
       screen: { kind: "input" },
     };
   }
   if (event.keyId === "square") {
+    const editor = beginInputIfResult(s).editor;
+    const post = s.shift ? "cube" : "sq";
     return {
       ...clearLatches(s),
-      editor: insertPost(beginInputIfResult(s).editor, s.shift ? "cube" : "sq"),
+      editor: insertPost(editor, post),
       screen: { kind: "input" },
     };
   }
   if (event.keyId === "power") {
+    const editor = beginInputIfResult(s).editor;
     return {
       ...clearLatches(s),
-      editor: s.shift ? insertNthRoot(beginInputIfResult(s).editor) : insertPower(beginInputIfResult(s).editor),
+      editor: s.shift
+        ? wrapCapturedArgument(editor, (inner) => ({ t: "nthrt", n: [], inner }), "n") ??
+          (displayFormat === "LineIO" ? insertNthRootWithIndex(editor) : insertNthRoot(editor))
+        : wrapCapturedArgument(editor, (base) => ({ t: "pow", base, exp: [] }), "exp") ?? insertPower(editor),
       screen: { kind: "input" },
     };
   }
   if (event.keyId === "log") {
+    const editor = beginInputIfResult(s).editor;
     if (s.shift) {
-      return { ...clearLatches(s), editor: insertCall(beginInputIfResult(s).editor, "exp10"), screen: { kind: "input" } };
+      return { ...clearLatches(s), editor: wrapCapturedArgument(editor, (args) => ({ t: "call", name: "exp10", args: [args], closed: false }), "args0") ?? insertCall(editor, "exp10"), screen: { kind: "input" } };
     }
-    return { ...clearLatches(s), editor: insertCall(beginInputIfResult(s).editor, "log"), screen: { kind: "input" } };
+    return { ...clearLatches(s), editor: insertCall(editor, "log"), screen: { kind: "input" } };
   }
   if (event.keyId === "ln") {
+    const editor = beginInputIfResult(s).editor;
     if (s.shift) {
-      return { ...clearLatches(s), editor: insertCall(beginInputIfResult(s).editor, "exp"), screen: { kind: "input" } };
+      return { ...clearLatches(s), editor: wrapCapturedArgument(editor, (args) => ({ t: "call", name: "exp", args: [args], closed: false }), "args0") ?? insertCall(editor, "exp"), screen: { kind: "input" } };
     }
-    return { ...clearLatches(s), editor: insertCall(beginInputIfResult(s).editor, "ln"), screen: { kind: "input" } };
+    return { ...clearLatches(s), editor: insertCall(editor, "ln"), screen: { kind: "input" } };
   }
   if (event.keyId === "logab") {
     if (s.shift) {
-      return { ...clearLatches(s), editor: insertCall(beginInputIfResult(s).editor, "Σ"), screen: { kind: "input" } };
+      const editor = beginInputIfResult(s).editor;
+      return { ...clearLatches(s), editor: insertNumericalCall(editor, "Σ", displayFormat), screen: { kind: "input" } };
     }
-    return { ...clearLatches(s), editor: insertLogab(beginInputIfResult(s).editor), screen: { kind: "input" } };
+    const editor = beginInputIfResult(s).editor;
+    return {
+      ...clearLatches(s),
+      editor: wrapCapturedArgument(editor, (arg) => ({ t: "logb", base: [], arg }), "base") ?? insertLogab(editor),
+      screen: { kind: "input" },
+    };
   }
   if (event.keyId === "xinv") {
+    const editor = beginInputIfResult(s).editor;
     if (s.shift) {
-      return { ...clearLatches(s), editor: insertPost(beginInputIfResult(s).editor, "fact"), screen: { kind: "input" } };
+      return { ...clearLatches(s), editor: insertPost(editor, "fact"), screen: { kind: "input" } };
     }
-    return { ...clearLatches(s), editor: insertPost(beginInputIfResult(s).editor, "inv"), screen: { kind: "input" } };
+    return { ...clearLatches(s), editor: insertPost(editor, "inv"), screen: { kind: "input" } };
   }
   if (event.keyId === "integral") {
+    const editor = beginInputIfResult(s).editor;
     if (s.alpha) {
-      return { ...clearLatches(s), editor: insertColon(beginInputIfResult(s).editor), screen: { kind: "input" } };
+      return { ...clearLatches(s), editor: insertColon(editor), screen: { kind: "input" } };
     }
-    return { ...clearLatches(s), editor: insertCall(beginInputIfResult(s).editor, s.shift ? "diff" : "int"), screen: { kind: "input" } };
+    const name = s.shift ? "diff" : "int";
+    return { ...clearLatches(s), editor: insertNumericalCall(editor, name, displayFormat), screen: { kind: "input" } };
   }
   if (event.keyId === "neg") {
     if (s.alpha) {
@@ -1061,17 +1371,25 @@ export function reduce(state: CalcState, event: KeyEvent): CalcState {
       return { ...clearLatches(s), editor: insertVar(beginInputIfResult(s).editor, "B"), screen: { kind: "input" } };
     }
     if (s.screen.kind === "result" && s.result) {
-      const toggled = toggleSexagesimal(s.result, s.setup);
-      return { ...clearLatches(s), result: toggled };
+      try {
+        const toggled = toggleSexagesimal(s.result, s.setup);
+        return { ...clearLatches(s), result: toggled };
+      } catch (err) {
+        const code = (err as { code?: ErrorCode }).code ?? "Math ERROR";
+        return commitEqualsError(s, code);
+      }
     }
     return { ...clearLatches(s), editor: insertDms(beginInputIfResult(s).editor), screen: { kind: "input" } };
   }
   if (event.keyId === "eng") {
+    if (s.mode === "CMPLX" && !s.shift) {
+      return { ...clearLatches(s), editor: insertSym(beginInputIfResult(s).editor, "i"), screen: { kind: "input" } };
+    }
     if (s.result) {
-      const x = parseCalcNumber(s.result.approx);
+      const x = parseCalcNumber(s.result.internal?.re ?? s.result.approx);
       const prev = s.result.engActive ? (s.result.engOffset ?? 0) : 0;
       const nextOffset = s.result.engActive ? prev + (s.shift ? 1 : -1) : s.shift ? 1 : 0;
-      const eng = formatEngineering(x, D(nextOffset));
+      const eng = applyDecimalMark(formatEngineering(x, D(nextOffset)), s.setup.decimalMark);
       return {
         ...clearLatches(s),
         result: { ...s.result, display: eng, engOffset: nextOffset, engActive: true, naturalKind: "decimal" },
@@ -1081,6 +1399,54 @@ export function reduce(state: CalcState, event: KeyEvent): CalcState {
   }
 
   return clearLatches(s);
+}
+
+/** Enforce the selected E-7 expression byte limit after every public edit. */
+export function reduce(state: CalcState, event: KeyEvent): CalcState {
+  const isNavigation = event.keyId === "left" || event.keyId === "right" || event.keyId === "up" || event.keyId === "down";
+  const isModifier = event.keyId === "shift" || event.keyId === "alpha" || event.keyId === "hyp";
+  const keepsRecalledInput = isNavigation || isModifier || (event.keyId === "del" && state.shift);
+  let base = state;
+  if (state.pendingInputRecall) {
+    if (keepsRecalledInput) {
+      base = isNavigation ? { ...state, pendingInputRecall: false } : state;
+    } else if (event.keyId !== "ac") {
+      // AC plus arrows explicitly opens the old expression for editing. If the
+      // next action starts another example, discard that recalled expression
+      // before dispatching the key (including SHIFT/ALPHA mapped functions).
+      base = {
+        ...state,
+        pendingInputRecall: false,
+        editor: emptyEditor(),
+        screen: { kind: "input" },
+        result: null,
+        resultDecimal: false,
+        menu: { kind: "none" },
+        calcSession: null,
+        multiStatement: null,
+        solveSession: null,
+      };
+    } else {
+      base = { ...state, pendingInputRecall: false };
+    }
+  }
+  const next = reduceInternal(base, event);
+  const editorChanged = next.editor.root !== base.editor.root;
+  const previousBytes = byteCount(base.editor.root);
+  const nextBytes = byteCount(next.editor.root);
+  if (editorChanged && next.screen.kind === "input" && nextBytes > MAX_BYTES && nextBytes >= previousBytes) {
+    return { ...next, editor: base.editor };
+  }
+  const naturalInput = effectiveDisplayFormat(next.mode, next.setup.displayFormat) === "MthIO-MathO";
+  if (
+    editorChanged &&
+    next.screen.kind === "input" &&
+    naturalInput &&
+    naturalFormulaHeightLines(next.editor.root, next.editor.cursor) > naturalFormulaMaxHeightLines()
+  ) {
+    return { ...next, editor: base.editor };
+  }
+  return next;
 }
 
 export function dispatchKeys(state: CalcState, keys: KeyId[], nowMs = 0): CalcState {

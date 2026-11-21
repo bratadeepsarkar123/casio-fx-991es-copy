@@ -7,6 +7,7 @@ import { emptyStatSession } from "./stat.ts";
 import { emptyEqnSession } from "./eqn.ts";
 import { emptyMatrixSession } from "./matrix.ts";
 import { emptyVectorSession } from "./vector.ts";
+import { editorFromAtoms } from "./editor.ts";
 
 export const PERSIST_KEY = "fx991es-plus2/v1";
 export const SCHEMA_VERSION = 1;
@@ -233,20 +234,30 @@ function isTransientEditorMode(mode: string): boolean {
 }
 
 export function serializeState(state: CalcState): PersistEnvelope {
+  const sessionSource = state.calcSession?.source ?? state.solveSession?.source ?? state.multiStatement?.source ?? null;
   return {
     schemaVersion: SCHEMA_VERSION,
     savedAt: Date.now(),
     state: {
       ...state,
+      calculationPending: false,
+      pendingInputRecall: false,
       table: null,
       stat: null,
       eqn: null,
       matrix: null,
       vector: null,
+      calcSession: null,
+      multiStatement: null,
+      solveSession: null,
       baseN: emptyBaseN(state.baseN.radix),
-      editor: isTransientEditorMode(state.mode) ? createInitialState(0).editor : state.editor,
-      screen: isTransientEditorMode(state.mode) ? { kind: "input" } : state.screen,
-      result: isTransientEditorMode(state.mode) ? null : state.result,
+      editor: isTransientEditorMode(state.mode)
+        ? createInitialState(0).editor
+        : sessionSource
+          ? editorFromAtoms(sessionSource)
+          : state.editor,
+      screen: isTransientEditorMode(state.mode) || sessionSource ? { kind: "input" } : state.screen,
+      result: isTransientEditorMode(state.mode) || sessionSource ? null : state.result,
     },
   };
 }
@@ -265,6 +276,8 @@ export function deserializeState(raw: unknown, nowMs = 0): CalcState | null {
   const persisted = env.state as CalcState & { ansIm?: string; preAnsIm?: string };
   return {
     ...persisted,
+    calculationPending: false,
+    pendingInputRecall: false,
     ansIm: typeof persisted.ansIm === "string" ? persisted.ansIm : "0",
     preAnsIm: typeof persisted.preAnsIm === "string" ? persisted.preAnsIm : "0",
     table: env.state.mode === "TABLE" ? emptyTableSession() : null,
@@ -272,6 +285,9 @@ export function deserializeState(raw: unknown, nowMs = 0): CalcState | null {
     eqn: env.state.mode === "EQN" ? emptyEqnSession() : null,
     matrix: env.state.mode === "MATRIX" ? emptyMatrixSession() : null,
     vector: env.state.mode === "VECTOR" ? emptyVectorSession() : null,
+    calcSession: null,
+    multiStatement: null,
+    solveSession: null,
     baseN: emptyBaseN(env.state.baseN.radix),
     lastActivityMs: nowMs,
     power: "on",

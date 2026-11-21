@@ -16,7 +16,16 @@ test.describe("TABLE mode", () => {
     await page.locator('[data-key="equals"]').click();
     await expect(page.getByTestId("lcd-result")).toHaveText("Step?");
     await page.locator('[data-key="equals"]').click();
-    await expect(page.getByTestId("lcd-expr")).toContainText("X=1");
-    await expect(page.getByTestId("lcd-result")).toHaveText("1");
+    const grid = page.getByTestId("lcd-grid");
+    await expect(grid).toHaveAttribute("data-grid-kind", "table");
+    await expect(grid.locator(".lcd-grid-header")).toContainText("X");
+    await expect(grid.locator(".lcd-grid-header")).toContainText("F(X)");
+    await expect(grid.locator('[data-grid-row="0"]')).toContainText("1");
+    await expect(page.getByTestId("grid-selected-value")).toHaveText("1");
+    await page.locator('[data-key="right"]').click();
+    await expect(grid.locator('[data-grid-row="0"] [data-selected="true"]')).toHaveText("1");
+    await page.locator('[data-key="down"]').click();
+    await expect(grid.locator('[data-grid-row="1"] [data-selected="true"]')).toHaveText("4");
+    await expect(page.getByTestId("grid-selected-value")).toHaveText("4");
   });
 });

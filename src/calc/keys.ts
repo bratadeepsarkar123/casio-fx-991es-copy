@@ -65,6 +65,8 @@ export interface KeyEvent {
   source: KeySource;
   /** Wall-clock ms; injected so tests do not read system time. */
   nowMs?: number;
+  /** The LCD measured a clipped result/input that AC should reveal for editing. */
+  restoreInputOnAc?: boolean;
 }
 
 export const OPTIONAL_KEYBOARD_MAP: Record<string, KeyId> = {

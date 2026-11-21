@@ -1,5 +1,6 @@
 import { evaluateToSym } from "./evaluate.ts";
 import { CalcMathError, CalcSyntaxError, createUint32Rng } from "./numeric.ts";
+import { scientificConstantByCallName, unitConversionByCallName } from "./scientificData.ts";
 import type { Atom, CalcState, VctReg, VectorValue } from "./types.ts";
 import {
   CalcDimensionError,
@@ -120,6 +121,9 @@ function evalAtom(atom: Atom, state: CalcState): Vx {
       return { k: "s", v: evalScalarAtoms([atom], state) };
     }
     case "call": {
+      if (scientificConstantByCallName(atom.name) || unitConversionByCallName(atom.name)) {
+        return { k: "s", v: evalScalarAtoms([atom], state) };
+      }
       const reg = vectorRegFromCall(atom.name);
       if (reg) {
         return { k: "v", v: lookupReg(state, atom.name) };

@@ -32,13 +32,15 @@ const ENTER_MATA_22: KeyId[] = [
 const ENTER_MATB_22: KeyId[] = [
   "shift",
   "4",
-  "1",
+  "2",
   "2",
   "5",
   "2",
   "equals",
+  "neg",
   "1",
   "equals",
+  "neg",
   "1",
   "equals",
   "2",
@@ -67,9 +69,9 @@ describe("MATRIX reducer / session", () => {
     ]);
   });
 
-  it("Ex1 MatA×MatB MatAns [[5,4],[3,3]] TARGET-OFFICIAL-DOC", () => {
+  it("PDF 31/E-30 Data on undefined MatB, then MatA×MatB gives MatAns [[3,0],[1,1]]", () => {
     const s = run([
-      ...ENTER_MATA_22,
+      ...ENTER_MATA_22.slice(0, -1),
       ...ENTER_MATB_22,
       "shift",
       "4",
@@ -82,19 +84,19 @@ describe("MATRIX reducer / session", () => {
     ]);
     expect(s.matrix?.phase).toBe("matans");
     expect(grid(s.matrix?.registers.Ans)).toEqual([
-      ["5", "4"],
-      ["3", "3"],
+      ["3", "0"],
+      ["1", "1"],
     ]);
     expect(lcdExpression(s)).toBe("Ans11=");
-    expect(lcdResult(s)).toBe("5");
+    expect(lcdResult(s)).toBe("3");
     const right = dispatchKeys(s, ["right"], 0);
     expect(lcdExpression(right)).toBe("Ans12=");
-    expect(lcdResult(right)).toBe("4");
+    expect(lcdResult(right)).toBe("0");
   });
 
   it("Ex1 MatA+MatB TARGET-OFFICIAL-DOC", () => {
     const s = run([
-      ...ENTER_MATA_22,
+      ...ENTER_MATA_22.slice(0, -1),
       ...ENTER_MATB_22,
       "shift",
       "4",
@@ -106,9 +108,24 @@ describe("MATRIX reducer / session", () => {
       "equals",
     ]);
     expect(grid(s.matrix?.registers.Ans)).toEqual([
-      ["4", "2"],
-      ["2", "3"],
+      ["4", "0"],
+      ["0", "3"],
     ]);
+  });
+
+  it("Data on a new MatB offers dimensions; Data on an assigned MatB opens its cells", () => {
+    let state = run(["mode", "6", "shift", "4", "2", "2"]);
+    expect(state.matrix?.phase).toBe("dim-size");
+    expect(state.matrix?.dimTarget).toBe("B");
+    state = dispatchKeys(state, ["5"], 0);
+    expect(state.matrix?.phase).toBe("editor");
+    expect(state.matrix?.editorReg).toBe("B");
+
+    state = run([...ENTER_MATA_22, ...ENTER_MATB_22]);
+    state = dispatchKeys(state, ["shift", "4", "2", "2"], 0);
+    expect(state.matrix?.phase).toBe("editor");
+    expect(state.matrix?.editorReg).toBe("B");
+    expect(lcdExpression(state)).toBe("B11=");
   });
 
   it("Ex3 3×MatA TARGET-OFFICIAL-DOC", () => {
@@ -301,11 +318,12 @@ describe("MATRIX reducer / session", () => {
   it("copy MatAns to MatC via STO INFERRED/TARGET-OFFICIAL-DOC copy", () => {
     let s = run([...ENTER_MATA_22, "3", "mul", "shift", "4", "3", "equals"]);
     expect(s.matrix?.phase).toBe("matans");
-    s = dispatchKeys(s, ["shift", "rcl", "3"], 0);
+    s = dispatchKeys(s, ["shift", "rcl", "hyp"], 0);
     expect(grid(s.matrix?.registers.C)).toEqual([
       ["6", "3"],
       ["3", "3"],
     ]);
-    expect(s.matrix?.phase).toBe("calc");
+    expect(s.matrix?.phase).toBe("editor");
+    expect(s.matrix?.editorReg).toBe("C");
   });
 });

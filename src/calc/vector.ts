@@ -16,6 +16,12 @@ const REG_BY_DIGIT: Record<string, "A" | "B" | "C"> = {
   "3": "C",
 };
 
+const STO_DEST_BY_KEY: Partial<Record<KeyId, "A" | "B" | "C">> = {
+  neg: "A",
+  dms: "B",
+  hyp: "C",
+};
+
 const DATA_BY_DIGIT: Record<string, VctReg> = {
   "1": "A",
   "2": "B",
@@ -114,7 +120,7 @@ function vectorError(state: CalcState, code: ErrorCode, expression: Atom[]): Cal
 }
 
 function currentVector(session: VectorSession): VectorValue | null {
-  if (session.phase === "vctans" || session.phase === "sto-dest") {
+  if (session.phase === "vctans" || (session.phase === "sto-dest" && session.editorReg === "Ans")) {
     return session.registers.Ans;
   }
   if (session.editorReg) {
@@ -272,8 +278,8 @@ function onCalcEquals(state: CalcState): CalcState {
       {
         screen: { kind: "result" },
         result,
-        ans: result.complex?.re ?? result.approx,
-        ansIm: result.complex?.im ?? "0",
+        ans: result.internal?.re ?? result.complex?.re ?? result.approx,
+        ansIm: result.internal?.im ?? result.complex?.im ?? "0",
         preAns: state.ans,
         preAnsIm: state.ansIm,
         history: [...state.history, { expression: state.editor.root, result }].slice(-40),
@@ -295,8 +301,12 @@ function copyToReg(state: CalcState, dest: "A" | "B" | "C"): CalcState {
   if (!src) {
     return vectorError(state, "Dimension ERROR", []);
   }
-  return goCalc(state, {
+  return withVector(state, {
     ...session,
+    phase: "editor",
+    editorReg: dest,
+    dimTarget: null,
+    index: 0,
     registers: { ...session.registers, [dest]: cloneVector(src) },
   });
 }
@@ -348,6 +358,12 @@ function handleDataReg(state: CalcState, keyId: KeyId): CalcState {
   }
   const reg = DATA_BY_DIGIT[keyId];
   if (reg) {
+    if (!session.registers[reg]) {
+      if (reg === "Ans") {
+        return vectorError(state, "Dimension ERROR", state.editor.root);
+      }
+      return withVector(state, { ...session, phase: "dim-size", dimTarget: reg });
+    }
     return openEditor(state, session, reg);
   }
   return clearLatches(state);
@@ -459,7 +475,7 @@ function handleStoDest(state: CalcState, keyId: KeyId): CalcState {
       ? showVctAns(state, session, session.registers.Ans, session.index)
       : withVector(state, { ...session, phase: session.editorReg ? "editor" : "calc" });
   }
-  const dest = REG_BY_DIGIT[keyId];
+  const dest = STO_DEST_BY_KEY[keyId];
   if (dest) {
     return copyToReg(state, dest);
   }

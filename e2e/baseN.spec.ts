@@ -5,7 +5,7 @@ test.describe("BASE-N mode", () => {
     await page.goto("./");
     await page.locator('[data-key="mode"]').click();
     await page.locator('[data-key="4"]').click();
-    await expect(page.getByTestId("ind-mode")).toHaveText("BASE-N");
+    await expect(page.getByTestId("ind-mode")).toHaveCount(0);
     await expect(page.getByTestId("ind-basen")).toHaveText("DEC");
     await page.locator('[data-key="log"]').click();
     await expect(page.getByTestId("ind-basen")).toHaveText("BIN");

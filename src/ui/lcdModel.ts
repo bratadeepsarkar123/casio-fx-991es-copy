@@ -1,7 +1,11 @@
 import type { CalcState } from "../calc/types.ts";
-import { atomsToLinear, atomsToLinearSplit } from "../calc/editor.ts";
+import { atomsToLinear, atomsToLinearSplit, byteCount, MAX_BYTES } from "../calc/editor.ts";
 import { formatBaseNExpression, radixLabel } from "../calc/baseN.ts";
-import { STAT_CALL_LABELS } from "../calc/statNumeric.ts";
+import { TABLE_DEFAULT_END, TABLE_DEFAULT_START, TABLE_DEFAULT_STEP } from "../calc/table.ts";
+import { isPairedStatType, STAT_CALL_LABELS } from "../calc/statNumeric.ts";
+import { calcPromptVar, calcSessionShowsDisp, solvePromptVar } from "../calc/calcSession.ts";
+import { effectiveDisplayFormat, formatBySetup } from "../calc/format.ts";
+import { parseCalcNumber } from "../calc/numeric.ts";
 import { statEditorExpression, statEditorValue, statMenuText, statTypeMenuText } from "../calc/stat.ts";
 import {
   eqnEditorExpression,
@@ -70,8 +74,27 @@ export function lcdExpression(state: CalcState): string {
   if (state.mode === "BASE-N") {
     return formatBaseNExpression(state.baseN.tokens);
   }
+  const displayFormat = effectiveDisplayFormat(state.mode, state.setup.displayFormat);
   if (state.screen.kind === "error") {
-    return atomsToLinear(state.screen.expression, state.setup.displayFormat);
+    return atomsToLinear(state.screen.expression, displayFormat);
+  }
+  if (state.calcSession) {
+    if (state.calcSession.phase === "prompt") {
+      return `${calcPromptVar(state.calcSession) ?? "?"}?`;
+    }
+    return atomsToLinear(state.calcSession.source, state.setup.displayFormat);
+  }
+  if (state.solveSession) {
+    if (state.solveSession.phase === "parameters") {
+      return `${solvePromptVar(state.solveSession) ?? "?"}?`;
+    }
+    if (state.solveSession.phase === "initial") {
+      return `Solve for ${state.solveSession.target}`;
+    }
+    if (state.solveSession.phase === "continue") {
+      return "Continue: [=]";
+    }
+    return atomsToLinear(state.solveSession.source, state.setup.displayFormat);
   }
   if (state.mode === "STAT" && state.stat?.phase === "editor") {
     return statEditorExpression(state.stat);
@@ -142,7 +165,23 @@ export function lcdExpression(state: CalcState): string {
     }
     return `X=${row.xDisplay}`;
   }
-  const expr = atomsToLinear(state.editor.root, state.setup.displayFormat);
+  if (state.mode === "TABLE" && state.table && state.table.phase !== "fx") {
+    const table = state.table;
+    const suggested =
+      table.phase === "start"
+        ? table.startAtoms.length > 0
+          ? table.startAtoms
+          : [{ t: "num" as const, s: TABLE_DEFAULT_START }]
+        : table.phase === "end"
+          ? table.endAtoms.length > 0
+            ? table.endAtoms
+            : [{ t: "num" as const, s: TABLE_DEFAULT_END }]
+          : table.stepAtoms.length > 0
+            ? table.stepAtoms
+            : [{ t: "num" as const, s: TABLE_DEFAULT_STEP }];
+    return atomsToLinear(state.editor.root.length > 0 ? state.editor.root : suggested, displayFormat);
+  }
+  const expr = atomsToLinear(state.editor.root, displayFormat);
   if (state.mode === "STAT") {
     return relabelStatCalls(expr);
   }
@@ -186,13 +225,26 @@ export function lcdExpressionParts(state: CalcState): LcdExprParts {
       showCaret: true,
     };
   }
+  if (
+    (state.calcSession?.phase === "prompt" || state.solveSession?.phase === "parameters" || state.solveSession?.phase === "initial") &&
+    state.screen.kind === "input"
+  ) {
+    const prompt = state.calcSession?.phase === "prompt"
+      ? `${calcPromptVar(state.calcSession) ?? "?"}? `
+      : state.solveSession?.phase === "parameters"
+        ? `${solvePromptVar(state.solveSession) ?? "?"}? `
+        : `Solve for ${state.solveSession?.target ?? "X"} `;
+    const split = atomsToLinearSplit(state.editor.root, "LineIO", state.editor.cursor);
+    return { before: prompt + split.before, after: split.after, showCaret: true };
+  }
   const expr = lcdExpression(state);
-  const linear = relabelForMode(atomsToLinear(state.editor.root, state.setup.displayFormat), state);
+  const displayFormat = effectiveDisplayFormat(state.mode, state.setup.displayFormat);
+  const linear = relabelForMode(atomsToLinear(state.editor.root, displayFormat), state);
   const showCaret = state.screen.kind === "input" && state.menu.kind === "none" && expr === linear;
   if (!showCaret) {
     return { before: expr, after: "", showCaret: false };
   }
-  const split = atomsToLinearSplit(state.editor.root, state.setup.displayFormat, state.editor.cursor);
+  const split = atomsToLinearSplit(state.editor.root, displayFormat, state.editor.cursor);
   return {
     before: relabelForMode(split.before, state),
     after: relabelForMode(split.after, state),
@@ -208,9 +260,10 @@ function systemMenuText(state: CalcState): string | null {
     case "mode":
       return "1:COMP 2:CMPLX 3:STAT 4:BASE-N 5:EQN 6:MATRIX 7:TABLE 8:VECTOR";
     case "setup":
-      return menu.page === 0
-        ? "1:MthIO 2:LineIO 3:Deg 4:Rad 5:Gra 6:Fix 7:Sci 8:Norm"
-        : "1:ab/c 2:d/c 3:CMPLX 4:STAT 5:TABLE 6:Rdec 7:Disp 8:CONT";
+      if (menu.page === 0) {
+        return "1:MthIO 2:LineIO 3:Deg 4:Rad 5:Gra 6:Fix 7:Sci 8:Norm";
+      }
+      return "1:ab/c 2:d/c 3:CMPLX 4:STAT 5:Disp 6:CONT";
     case "mthio":
       return "Result Format? 1:MathO 2:LineO";
     case "fix":
@@ -230,7 +283,7 @@ function systemMenuText(state: CalcState): string | null {
     case "drg":
       return "1:° 2:r 3:g";
     case "hyp":
-      return "hyp";
+      return menu.page === 0 ? "1:sinh 2:cosh 3:tanh" : "4:sinh^-1 5:cosh^-1 6:tanh^-1";
     case "cmplx-fmt":
       return "1:a+bi 2:r∠θ";
     case "stat-fmt":
@@ -249,6 +302,10 @@ function systemMenuText(state: CalcState): string | null {
       return "1:arg 2:Conjg 3:r∠θ 4:a+bi";
     case "comp-fn":
       return "1:GCD 2:LCM 3:Int 4:Intg";
+    case "const-entry":
+      return `CONSTANT Number 01~40? ${menu.digits}`;
+    case "conv-entry":
+      return `CONVERSION Number 01~40? ${menu.digits}`;
     case "matrix-op":
       return matrixMenuText();
     case "vector-op":
@@ -301,11 +358,22 @@ export function lcdShowsMenu(state: CalcState): boolean {
 export interface LcdMenuView {
   prompt: string;
   items: string[];
+  entry?: string;
 }
 
 export function lcdMenuView(state: CalcState): LcdMenuView | null {
   if (!lcdShowsMenu(state)) {
     return null;
+  }
+  if (state.menu.kind === "const-entry" || state.menu.kind === "conv-entry") {
+    const constantEntry = state.menu.kind === "const-entry";
+    const title = constantEntry ? "CONSTANT" : "CONVERSION";
+    const digits = state.menu.digits.padEnd(2, "_");
+    return {
+      prompt: `${title}\nNumber 01~40?`,
+      items: [],
+      entry: `[${digits}]`,
+    };
   }
   const text = lcdResult(state);
   const items = [...text.matchAll(/(?:^|\s)(\d+:\S+)/g)].map((m) => m[1] ?? "");
@@ -320,6 +388,23 @@ export function lcdResult(state: CalcState): string {
   if (state.screen.kind === "off") {
     return "";
   }
+  if (state.calcSession?.phase === "prompt") {
+    const variable = calcPromptVar(state.calcSession);
+    return variable ? formatBySetup(parseCalcNumber(state.variables[variable]), state.setup) : "";
+  }
+  if (state.solveSession?.phase === "parameters") {
+    const variable = solvePromptVar(state.solveSession);
+    return variable ? formatBySetup(parseCalcNumber(state.variables[variable]), state.setup) : "";
+  }
+  if (state.solveSession?.phase === "initial") {
+    return formatBySetup(parseCalcNumber(state.solveSession.initialGuess), state.setup);
+  }
+  if (state.solveSession?.phase === "solution") {
+    return `${state.solveSession.target}=${state.solveSession.solution ?? state.solveSession.initialGuess}  L−R=${state.solveSession.residual ?? "0"}`;
+  }
+  if (state.solveSession?.phase === "continue") {
+    return "";
+  }
   const menuText = systemMenuText(state);
   if (menuText !== null) {
     return menuText;
@@ -329,7 +414,9 @@ export function lcdResult(state: CalcState): string {
       return statTypeMenuText(state.stat.typePage);
     }
     if (state.stat.phase === "editor") {
-      return statEditorValue(state.stat);
+      return state.editor.root.length > 0
+        ? atomsToLinear(state.editor.root, "LineIO")
+        : statEditorValue(state.stat);
     }
   }
   if (state.mode === "EQN" && state.eqn) {
@@ -404,6 +491,32 @@ export function lcdResult(state: CalcState): string {
   return "";
 }
 
+export interface LcdResultRow {
+  label: string;
+  value: string;
+}
+
+/** Separate LineIO multi-component results into shared label/value columns. */
+export function lcdResultRows(state: CalcState): LcdResultRow[] | null {
+  const result = state.result;
+  if (!result || effectiveDisplayFormat(state.mode, state.setup.displayFormat) === "MthIO-MathO") {
+    return null;
+  }
+  if (!result.polRec && !result.complex) {
+    return null;
+  }
+  const lines = result.display.split("\n");
+  if (lines.length < 2) {
+    return null;
+  }
+  return lines.slice(0, 2).map((line) => {
+    const separator = line.indexOf("=");
+    return separator >= 0
+      ? { label: line.slice(0, separator + 1), value: line.slice(separator + 1) }
+      : { label: "", value: line };
+  });
+}
+
 export function angleIndicator(state: CalcState): "D" | "R" | "G" {
   switch (state.setup.angleUnit) {
     case "Deg":
@@ -430,21 +543,55 @@ export interface LcdIndicators {
   sci: boolean;
   mode: string | null;
   replay: boolean;
+  replayDown: boolean;
   sto: boolean;
   rcl: boolean;
   baseN: "BIN" | "OCT" | "DEC" | "HEX" | null;
   disp: boolean;
   exprOverflow: boolean;
   resultOverflow: boolean;
+  menuUp: boolean;
+  menuDown: boolean;
+}
+
+function pagedMenuPage(state: CalcState): number | null {
+  switch (state.menu.kind) {
+    case "setup":
+    case "hyp":
+    case "base-op":
+      return state.menu.page;
+    case "stat-sum":
+    case "stat-var":
+      return state.stat?.type && isPairedStatType(state.stat.type) ? state.menu.page : null;
+    default:
+      if (state.mode === "STAT" && state.stat?.phase === "type") {
+        return state.stat.typePage;
+      }
+      return null;
+  }
 }
 
 /** Clone character budget for overflow arrows. Not a 31×96 column count (D-024). */
 export const LCD_EXPR_VISIBLE_CHARS = 16;
 export const LCD_RESULT_VISIBLE_CHARS = 12;
 
+/** E-7: the physical caret changes shape with ten or fewer input bytes left. */
+export function lcdInputByteWarning(state: CalcState): boolean {
+  if (state.menu.kind !== "none" || state.screen.kind !== "input") {
+    return false;
+  }
+  if (state.mode !== "COMP" && state.mode !== "CMPLX") {
+    return false;
+  }
+  return byteCount(state.editor.root) >= MAX_BYTES - 10;
+}
+
 function modeIndicator(mode: CalcState["mode"]): string | null {
   switch (mode) {
     case "COMP":
+    case "BASE-N":
+    case "EQN":
+    case "TABLE":
       return null;
     case "MATRIX":
       return "MAT";
@@ -452,9 +599,6 @@ function modeIndicator(mode: CalcState["mode"]): string | null {
       return "VCT";
     case "CMPLX":
     case "STAT":
-    case "BASE-N":
-    case "EQN":
-    case "TABLE":
       return mode;
     default: {
       const _never: never = mode;
@@ -530,34 +674,57 @@ export function lcdShowsNatural(state: CalcState): boolean {
   if (state.power === "off" || state.mode === "BASE-N") {
     return false;
   }
-  if (state.setup.displayFormat === "LineIO") {
+  if (state.calcSession || state.solveSession) {
+    return false;
+  }
+  const displayFormat = effectiveDisplayFormat(state.mode, state.setup.displayFormat);
+  if (displayFormat === "LineIO") {
     return false;
   }
   if (state.screen.kind === "error" || state.menu.kind !== "none") {
     return false;
   }
   const expr = lcdExpression(state);
-  const linear = relabelForMode(atomsToLinear(state.editor.root, state.setup.displayFormat), state);
+  const linear = relabelForMode(atomsToLinear(state.editor.root, displayFormat), state);
   return expr === linear;
 }
 
 export function lcdIndicators(state: CalcState): LcdIndicators {
+  const solveResultLength = state.solveSession?.phase === "solution"
+    ? Math.max(
+        `${state.solveSession.target}=${state.solveSession.solution ?? state.solveSession.initialGuess}`.length,
+        `L−R=${state.solveSession.residual ?? "0"}`.length,
+      )
+    : lcdResult(state).length;
+  const menuPage = pagedMenuPage(state);
+  const historyScreen = state.screen.kind === "input" || state.screen.kind === "result" || state.screen.kind === "replay";
+  const showReplayIndicators = !lcdShowsMenu(state) && historyScreen;
+  const replayUp = showReplayIndicators && (
+    state.screen.kind === "replay" ? state.screen.historyIndex > 0 : state.history.length > 0
+  );
+  const replayDown = showReplayIndicators && state.screen.kind === "replay" &&
+    state.screen.historyIndex < state.history.length - 1;
   return {
     shift: state.shift,
     alpha: state.alpha,
     hyp: state.hyp,
     memory: state.memoryM !== "0",
     angle: angleIndicator(state),
-    math: state.mode === "BASE-N" ? false : state.setup.displayFormat !== "LineIO",
+    math: effectiveDisplayFormat(state.mode, state.setup.displayFormat) !== "LineIO",
     fix: state.setup.numberFormat.kind === "Fix",
     sci: state.setup.numberFormat.kind === "Sci",
     mode: modeIndicator(state.mode),
-    replay: state.history.length > 0,
+    replay: replayUp,
+    replayDown,
     sto: state.menu.kind === "sto",
     rcl: state.menu.kind === "rcl",
     baseN: state.mode === "BASE-N" ? radixLabel(state.baseN.radix) : null,
-    disp: hasColon(state),
+    disp: Boolean(state.multiStatement && hasColon(state)) || calcSessionShowsDisp(state.calcSession),
     exprOverflow: !lcdShowsMenu(state) && lcdExpression(state).length > LCD_EXPR_VISIBLE_CHARS,
-    resultOverflow: !lcdShowsMenu(state) && lcdResult(state).length > LCD_RESULT_VISIBLE_CHARS,
+      resultOverflow:
+        !lcdShowsMenu(state) &&
+        solveResultLength > (state.solveSession?.phase === "solution" ? 16 : LCD_RESULT_VISIBLE_CHARS),
+    menuUp: menuPage !== null && menuPage > 0,
+    menuDown: menuPage !== null && menuPage < 1,
   };
 }

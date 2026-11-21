@@ -9,7 +9,10 @@ test.describe("MATRIX mode", () => {
     await expect(page.getByTestId("lcd-result")).toContainText("MatA");
     await page.locator('[data-key="1"]').click();
     await page.locator('[data-key="5"]').click();
-    await expect(page.getByTestId("lcd-expr")).toHaveText("A11=");
+    const matrixGrid = page.getByTestId("lcd-grid");
+    await expect(matrixGrid).toHaveAttribute("data-grid-kind", "matrix");
+    await expect(matrixGrid.locator(".lcd-grid-title")).toHaveText("A");
+    await expect(page.getByTestId("grid-selected-value")).toHaveText("0");
     const mata = ["2", "equals", "1", "equals", "1", "equals", "1", "equals", "ac"];
     for (const key of mata) {
       await page.locator(`[data-key="${key}"]`).click();
@@ -32,7 +35,8 @@ test.describe("MATRIX mode", () => {
     await page.locator('[data-key="4"]').click();
     await page.locator('[data-key="4"]').click();
     await page.locator('[data-key="equals"]').click();
-    await expect(page.getByTestId("lcd-expr")).toHaveText("Ans11=");
-    await expect(page.getByTestId("lcd-result")).toHaveText("5");
+    await expect(matrixGrid.locator(".lcd-grid-title")).toHaveText("Ans");
+    await expect(matrixGrid.locator('[data-grid-row="0"] [data-grid-column="0"]')).toHaveText("5");
+    await expect(page.getByTestId("grid-selected-value")).toHaveText("5");
   });
 });

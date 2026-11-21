@@ -1,0 +1,344 @@
+{
+  "source_id": "SEL-FX570-991ES-2011",
+  "source_file": "fx-570_991ES_PLUS_EN.pdf",
+  "sha256": "1d2cd62e3af88b404dbc5db87646016e9e4a927f7798db8c89112777168d2686",
+  "pdf_pages": 46,
+  "extractable_pages": 46,
+  "printed_page_mapping": "PDF page 2 = E-1 through PDF page 44 = E-43; PDF page 1 is cover; PDF pages 45-46 are unpaginated back matter.",
+  "cover_models": [
+    "fx-570ES PLUS",
+    "fx-991ES PLUS"
+  ],
+  "cover_edition_label": "Not stated on cover; it names fx-570ES PLUS and fx-991ES PLUS without an edition designation.",
+  "evidence_class": "OWNER-SELECTED-MANUAL: authoritative reference for app behavior by owner decision. Transfer to photographed second-edition fx-991ES PLUS-2 hardware remains unverified; the selected PDF cover has no edition label.",
+  "pdf_metadata": {
+    "CreationDate": "D:20110323184728+09'00'",
+    "Author": "CASIO COMPUTER CO., LTD.",
+    "Creator": "Adobe InDesign CS2_J (4.0.5)",
+    "Producer": "Acrobat Distiller 9.0.0 (Macintosh)",
+    "ModDate": "D:20110329154059+09'00'",
+    "Title": "fx-570ES PLUS_fx-991ES PLUS_Users Guide_Eng"
+  },
+  "extractor": {
+    "name": "pypdf",
+    "version": "6.14.2",
+    "ocr": false,
+    "per_page_files": true
+  },
+  "visual_renderer": {
+    "name": "PyMuPDF",
+    "version": "1.28.0",
+    "dpi": 144
+  },
+  "page_text_characters": [
+    {
+      "pdf_page": 1,
+      "printed_page": null,
+      "characters": 181
+    },
+    {
+      "pdf_page": 2,
+      "printed_page": "E-1",
+      "characters": 2958
+    },
+    {
+      "pdf_page": 3,
+      "printed_page": "E-2",
+      "characters": 2702
+    },
+    {
+      "pdf_page": 4,
+      "printed_page": "E-3",
+      "characters": 2050
+    },
+    {
+      "pdf_page": 5,
+      "printed_page": "E-4",
+      "characters": 2073
+    },
+    {
+      "pdf_page": 6,
+      "printed_page": "E-5",
+      "characters": 1930
+    },
+    {
+      "pdf_page": 7,
+      "printed_page": "E-6",
+      "characters": 2865
+    },
+    {
+      "pdf_page": 8,
+      "printed_page": "E-7",
+      "characters": 2564
+    },
+    {
+      "pdf_page": 9,
+      "printed_page": "E-8",
+      "characters": 2374
+    },
+    {
+      "pdf_page": 10,
+      "printed_page": "E-9",
+      "characters": 2429
+    },
+    {
+      "pdf_page": 11,
+      "printed_page": "E-10",
+      "characters": 2111
+    },
+    {
+      "pdf_page": 12,
+      "printed_page": "E-11",
+      "characters": 1924
+    },
+    {
+      "pdf_page": 13,
+      "printed_page": "E-12",
+      "characters": 1894
+    },
+    {
+      "pdf_page": 14,
+      "printed_page": "E-13",
+      "characters": 2182
+    },
+    {
+      "pdf_page": 15,
+      "printed_page": "E-14",
+      "characters": 3223
+    },
+    {
+      "pdf_page": 16,
+      "printed_page": "E-15",
+      "characters": 3119
+    },
+    {
+      "pdf_page": 17,
+      "printed_page": "E-16",
+      "characters": 2146
+    },
+    {
+      "pdf_page": 18,
+      "printed_page": "E-17",
+      "characters": 1431
+    },
+    {
+      "pdf_page": 19,
+      "printed_page": "E-18",
+      "characters": 2090
+    },
+    {
+      "pdf_page": 20,
+      "printed_page": "E-19",
+      "characters": 1642
+    },
+    {
+      "pdf_page": 21,
+      "printed_page": "E-20",
+      "characters": 1591
+    },
+    {
+      "pdf_page": 22,
+      "printed_page": "E-21",
+      "characters": 1875
+    },
+    {
+      "pdf_page": 23,
+      "printed_page": "E-22",
+      "characters": 1711
+    },
+    {
+      "pdf_page": 24,
+      "printed_page": "E-23",
+      "characters": 2438
+    },
+    {
+      "pdf_page": 25,
+      "printed_page": "E-24",
+      "characters": 2190
+    },
+    {
+      "pdf_page": 26,
+      "printed_page": "E-25",
+      "characters": 1982
+    },
+    {
+      "pdf_page": 27,
+      "printed_page": "E-26",
+      "characters": 1842
+    },
+    {
+      "pdf_page": 28,
+      "printed_page": "E-27",
+      "characters": 2043
+    },
+    {
+      "pdf_page": 29,
+      "printed_page": "E-28",
+      "characters": 2624
+    },
+    {
+      "pdf_page": 30,
+      "printed_page": "E-29",
+      "characters": 2191
+    },
+    {
+      "pdf_page": 31,
+      "printed_page": "E-30",
+      "characters": 2232
+    },
+    {
+      "pdf_page": 32,
+      "printed_page": "E-31",
+      "characters": 1907
+    },
+    {
+      "pdf_page": 33,
+      "printed_page": "E-32",
+      "characters": 1965
+    },
+    {
+      "pdf_page": 34,
+      "printed_page": "E-33",
+      "characters": 1766
+    },
+    {
+      "pdf_page": 35,
+      "printed_page": "E-34",
+      "characters": 2536
+    },
+    {
+      "pdf_page": 36,
+      "printed_page": "E-35",
+      "characters": 1256
+    },
+    {
+      "pdf_page": 37,
+      "printed_page": "E-36",
+      "characters": 1501
+    },
+    {
+      "pdf_page": 38,
+      "printed_page": "E-37",
+      "characters": 1522
+    },
+    {
+      "pdf_page": 39,
+      "printed_page": "E-38",
+      "characters": 2135
+    },
+    {
+      "pdf_page": 40,
+      "printed_page": "E-39",
+      "characters": 2875
+    },
+    {
+      "pdf_page": 41,
+      "printed_page": "E-40",
+      "characters": 2078
+    },
+    {
+      "pdf_page": 42,
+      "printed_page": "E-41",
+      "characters": 2735
+    },
+    {
+      "pdf_page": 43,
+      "printed_page": "E-42",
+      "characters": 1865
+    },
+    {
+      "pdf_page": 44,
+      "printed_page": "E-43",
+      "characters": 2270
+    },
+    {
+      "pdf_page": 45,
+      "printed_page": null,
+      "characters": 237
+    },
+    {
+      "pdf_page": 46,
+      "printed_page": null,
+      "characters": 101
+    }
+  ],
+  "visual_review": {
+    "rendered_pdf_pages": [
+      1,
+      2,
+      5,
+      8,
+      9,
+      10,
+      11,
+      12,
+      18,
+      19,
+      20,
+      21,
+      22,
+      25,
+      28,
+      30,
+      31,
+      34,
+      35,
+      37,
+      38,
+      39,
+      41
+    ],
+    "visually_checked_pdf_pages": [
+      1,
+      2,
+      5,
+      8,
+      9,
+      10,
+      11,
+      12,
+      18,
+      19,
+      20,
+      21,
+      22,
+      25,
+      28,
+      30,
+      31,
+      34,
+      35,
+      37,
+      38,
+      39,
+      41
+    ],
+    "checks": [
+      "PDF 1: cover model names, guide title, Casio mark; no edition label visible.",
+      "PDF 2: table-of-contents mode names and printed E-1 footer.",
+      "PDF 5: E-4 input versus result overflow indicators; hollow right-pointing input marker means content continues right; result uses a distinct solid right-pointing marker and both directions for scrolling.",
+      "PDF 8: E-7 long input auto-scrolls right and shows the left-pointing indicator; left/right cursor movement scrolls the input view.",
+      "PDF 9: E-8 Natural Display result may truncate the entered expression; AC then left/right scrolls the input expression back into view.",
+      "PDF 18: E-17 keycaps and all six Math/Line sequences for integral, derivative and Σ; verified ∫₁ᵉln(x)=1, d/dx sin(x) at π/2 in Rad=0, Σ(x+1) from 1 to 5=20, and each pictured bound/fraction/argument slot against render 018-SUM.png.",
+      "PDF 19: E-18 complex input uses the physical ENG key for i; (2+6i)/(2i)=3-i and rectangular/polar conversion examples are visible. No CALC example appears on this page.",
+      "PDF 20: E-19 CALC stores 3A+B, prompts for A and B, and shows first result 25.",
+      "PDF 21: E-20 shows CALC reuse with result 41, a complex CALC expression, and the initial SOLVE Y prompt for the displayed equation.",
+      "PDF 22: E-21 shows the SOLVE X prompt, initial value, solution screen with residual, and the next SOLVE setup.",
+      "PDF 25: STAT FREQ setup, editor row/column navigation including right-arrow transition, x-bar label and mean 3.",
+      "PDF 28: BASE-N selector prefixes, radix labels, decimal result 36 and keycap shapes.",
+      "PDF 30: EQN coefficient menu, coefficient-entry order, result labels and values.",
+      "PDF 31: MATRIX dimension/data menus, cell order, MatAns bracket display and product/sum result cells.",
+      "PDF 34: TABLE x²+1/2 fraction, Start/End/Step sequence, X/F(X) columns and rows −1/1.5, −0.5/0.75, 0/0.5 in a zoomed render; the opening VECTOR worked example and VctAns=(4,6) are also visible on this page.",
+      "PDF 35: VECTOR answer-memory, dimension/data menus, VctC editor brackets, and copy instructions; printed footer E-34.",
+      "PDF 38: E-37 scientific constant codes 33–40 and CODATA March 2007 note; visually checked the printed code range and examples.",
+      "PDF 39: NIST SP 811 (1995) and 15°C J↔cal note.",
+      "PDF 41: E-40 Math ERROR recovery example, cursor movement/correction from 14/0x2 to 14/10x2, and result 14/5.",
+      "PDF 37: E-36 scientific constant codes 01–32 and C0/epsilon0-mu0 examples; visually checked code ordering and names against the render.",
+      "PDF 10: E-9 printed right-expression capture example and allowed-function list; Natural overwrite distinction and cursor deletion instructions.",
+      "PDF 11: E-10 pi/radical toggles, both Natural fraction-entry alternatives, LineIO fraction and mixed-fraction display constraints.",
+      "PDF 12: E-11 percent samples, sexagesimal addition/conversion, multi-statement values and ENG key output."
+    ],
+    "not_checked": "No physical fx-991ES PLUS-2 hardware. Most remaining page artwork and glyphs were not visually inspected; indexed text extraction alone does not validate diagram reading order."
+  },
+  "example_records": 86
+}

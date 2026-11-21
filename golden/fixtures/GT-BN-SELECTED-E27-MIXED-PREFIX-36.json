@@ -1,0 +1,19 @@
+{
+  "id": "GT-BN-SELECTED-E27-MIXED-PREFIX-36",
+  "sourceEvidenceId": "SELECTED-MANUAL-E27",
+  "evidenceClass": "OWNER-SELECTED-MANUAL",
+  "targetConfirm": "UNCONFIRMED",
+  "page": 27,
+  "keys": [
+    "mode", "4", "shift", "3", "down", "1", "1", "0", "add",
+    "shift", "3", "down", "2", "1", "0", "add",
+    "shift", "3", "down", "3", "1", "0", "add",
+    "shift", "3", "down", "4", "1", "0", "equals"
+  ],
+  "expected": {
+    "mode": "BASE-N",
+    "radix": 10,
+    "value": "36",
+    "display": "36"
+  }
+}

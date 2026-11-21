@@ -15,7 +15,7 @@ describe("BASE-N reducer / evaluation", () => {
     expect(s.mode).toBe("BASE-N");
     expect(s.baseN.radix).toBe(10);
     expect(lcdIndicators(s).baseN).toBe("DEC");
-    expect(lcdIndicators(s).mode).toBe("BASE-N");
+    expect(lcdIndicators(s).mode).toBeNull();
     expect(lcdIndicators(s).math).toBe(false);
     expect(s.ans).toMatch(/^9/);
     expect(s.variables.X).toBe(prior.variables.X);
@@ -56,6 +56,23 @@ describe("BASE-N reducer / evaluation", () => {
     s = dispatchKeys(s, ["ln"], 0);
     expect(lcdResult(s)).toBe("00000001053");
     expect(s.baseN.value).toBe("555");
+  });
+
+  it("retains BASE-N token history within the approximate E12 budget", () => {
+    let s = run(["mode", "4", "1", "add", "1", "equals"]);
+    s = dispatchKeys(s, ["2", "add", "2", "equals"], 0);
+    expect(s.history).toHaveLength(2);
+    expect(s.history[0]?.baseN?.tokens).toEqual([
+      { t: "num", digits: "1", suffix: null },
+      { t: "op", op: "+" },
+      { t: "num", digits: "1", suffix: null },
+    ]);
+    s = dispatchKeys(s, ["up"], 0);
+    expect(s.screen.kind).toBe("replay");
+    expect(lcdExpression(s)).toBe("1+1");
+    expect(lcdResult(s)).toBe("2");
+    expect(s.baseN.tokens).toEqual(s.history[0]?.baseN?.tokens);
+    expect(s.baseN.value).toBe("2");
   });
 
   it("BIN 1010 and 1100 = 0000000000001000 TARGET-OFFICIAL-DOC", () => {
@@ -106,6 +123,37 @@ describe("BASE-N reducer / evaluation", () => {
     ]);
     expect(lcdResult(s)).toBe("36");
     expect(s.baseN.value).toBe("36");
+  });
+
+  it("prints selected-manual radix prefixes and evaluates the E-27 mixed-base example", () => {
+    const keys = [
+      "mode", "4", "shift", "3", "down", "1", "1", "0", "add",
+      "shift", "3", "down", "2", "1", "0", "add",
+      "shift", "3", "down", "3", "1", "0", "add",
+      "shift", "3", "down", "4", "1", "0", "equals",
+    ] as const;
+    const s = run([...keys]);
+    expect(lcdExpression(s)).toBe("d10+h10+b10+o10");
+    expect(lcdResult(s)).toBe("36");
+    expect(s.baseN.value).toBe("36");
+  });
+
+  it("shows the selected radix before digits and accepts all hexadecimal digits per literal", () => {
+    const prefix = run(["mode", "4", "shift", "3", "down", "2"]);
+    expect(lcdExpression(prefix)).toBe("h");
+    const value = dispatchKeys(prefix, ["tan", "tan", "equals"], 0);
+    expect(lcdExpression(value)).toBe("hFF");
+    expect(lcdResult(value)).toBe("255");
+    expect(value.baseN.value).toBe("255");
+  });
+
+  it("ignores invalid digits without losing a pending binary prefix", () => {
+    let s = run(["mode", "4", "shift", "3", "down", "3", "1", "2"]);
+    expect(lcdExpression(s)).toBe("b1");
+    s = dispatchKeys(s, ["0", "equals"], 0);
+    expect(lcdExpression(s)).toBe("b10");
+    expect(lcdResult(s)).toBe("2");
+    expect(s.baseN.value).toBe("2");
   });
 
   it("invalid BIN digit is ignored at keypress (INFERRED)", () => {

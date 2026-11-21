@@ -266,3 +266,6 @@ Hardware 7-row VctAns grid: `NEEDS-HUMAN-REVIEW`.
 | COMP/TABLE/BASE-N/CMPLX/STAT/EQN/MATRIX | green (Vitest 336 / Playwright 33) |
 
 Capability: VECTOR mode **REQUIRED-COMPLETE-CLONE** / **IMPLEMENTED** / **VERIFIED** for official Ex1–Ex4, Ex6, Ex7 (source-derived, not hardware). Ex5 2D-cross + persistence + VctAns layout remain NHR.
+## Selected-guide cross-product evidence (2026-11-21)
+
+The older HTML omission is superseded for this audit by the owner-selected [PDF page 36/E-35](https://support.casio.com/storage/en/manual/pdf/EN/004/fx-570_991ES_PLUS_EN.pdf#page=36). The checked crop visibly shows all three components: selected first `0`, second `0`, and third `−2`. This closes the selected-source visual gap; physical hardware equivalence remains unverified. The exact reducer array and key trace are in `EX-VECTOR-E34-E35-001`.

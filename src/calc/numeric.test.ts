@@ -59,6 +59,10 @@ describe("numeric policy", () => {
     expect(n.isInteger()).toBe(true);
     expect(n.gte(1) && n.lte(3)).toBe(true);
     expect(() => ranInt(D("1.5"), D(3), 1)).toThrow(CalcMathError);
+    expect(() => ranInt(D(3), D(3), 1)).toThrow(CalcMathError);
+    expect(() => ranInt(D("-1e10"), D(0), 1)).toThrow(CalcMathError);
+    expect(() => ranInt(D(0), D("1e10"), 1)).toThrow(CalcMathError);
+    expect(() => ranInt(D(0), D("9999999999"), 1)).toThrow(CalcMathError);
   });
 
   it("ROUND_HALF_UP is the clone policy, not a hardware-tie claim", () => {
@@ -76,8 +80,8 @@ describe("Sci / ×10 storage", () => {
   it("formatSci is display-only; formatNumeric stays parseable", () => {
     const setup = { ...defaultSetup(), numberFormat: { kind: "Sci" as const, n: 3 } };
     const x = D("1234");
-    expect(formatSci(x, 3)).toBe("1.23×10+03");
-    expect(formatBySetup(x, setup)).toBe("1.23×10+03");
+    expect(formatSci(x, 3)).toBe("1.23×10³");
+    expect(formatBySetup(x, setup)).toBe("1.23×10³");
     const numeric = formatNumeric(x, setup);
     expect(numeric).not.toMatch(/×/);
     expect(parseCalcNumber(numeric).eq(D(numeric))).toBe(true);

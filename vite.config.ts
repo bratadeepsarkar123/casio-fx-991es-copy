@@ -13,13 +13,7 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: [
-        "assets/chassis-fx-991es-plus-2.png",
-        "keymap.json",
-        "icons/icon-192.png",
-        "icons/icon-512.png",
-        "icons/icon-maskable-512.png",
-      ],
+      includeAssets: ["assets/chassis-fx-991es-plus-2.png"],
       manifest: {
         name: "Casio fx-991ES PLUS-2",
         short_name: "fx-991ES+",
@@ -52,6 +46,7 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ["**/*.{js,css,html,png,jpg,svg,json,woff2,ico}"],
+        globIgnores: ["icons/**", "assets/chassis-fx-991es-plus-2.png"],
         navigateFallback: `${base}index.html`,
         runtimeCaching: [],
       },

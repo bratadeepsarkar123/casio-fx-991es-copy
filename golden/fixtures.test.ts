@@ -102,20 +102,28 @@ describe("independent golden fixtures", () => {
     },
   );
 
-  it.each(["GT-BN-OFFICIAL-EX1", "GT-BN-OFFICIAL-AND", "GT-BN-OFFICIAL-OR"])(
-    "%s JSON fixture matches BASE-N state TARGET-OFFICIAL-DOC",
+  it.each(["GT-BN-OFFICIAL-EX1", "GT-BN-OFFICIAL-AND", "GT-BN-OFFICIAL-OR", "GT-BN-SELECTED-E27-MIXED-PREFIX-36"])(
+    "%s JSON fixture matches BASE-N state manual evidence",
     (id) => {
       const raw = readFileSync(new URL(`./fixtures/${id}.json`, import.meta.url), "utf8");
       const fx = JSON.parse(raw) as {
         id: string;
+        sourceEvidenceId: string;
         evidenceClass: string;
         targetConfirm: string;
+        page: number;
         keys: string[];
         expected: { mode: string; radix: number; value: string; display: string };
       };
       expect(fx.id).toBe(id);
-      expect(fx.evidenceClass).toBe("TARGET-OFFICIAL-DOC");
-      expect(fx.targetConfirm).toBe("CONFIRMED");
+      expect(fx.evidenceClass).toMatch(/^(TARGET-|OWNER-SELECTED-MANUAL$)/);
+      if (id === "GT-BN-SELECTED-E27-MIXED-PREFIX-36") {
+        expect(fx.evidenceClass).toBe("OWNER-SELECTED-MANUAL");
+        expect(fx.sourceEvidenceId).toBe("SELECTED-MANUAL-E27");
+        expect(fx.page).toBe(27);
+        expect(fx.targetConfirm).toBe("UNCONFIRMED");
+      }
+      expect(fx.targetConfirm).toBe(id === "GT-BN-SELECTED-E27-MIXED-PREFIX-36" ? "UNCONFIRMED" : "CONFIRMED");
       const keys = fx.keys.map((k) => {
         if (!isKeyId(k)) {
           throw new Error(k);

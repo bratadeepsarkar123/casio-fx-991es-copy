@@ -9,7 +9,10 @@ test.describe("VECTOR mode", () => {
     await expect(page.getByTestId("lcd-result")).toContainText("VctA");
     await page.locator('[data-key="1"]').click();
     await page.locator('[data-key="2"]').click();
-    await expect(page.getByTestId("lcd-expr")).toHaveText("A1=");
+    const vectorGrid = page.getByTestId("lcd-grid");
+    await expect(vectorGrid).toHaveAttribute("data-grid-kind", "vector");
+    await expect(vectorGrid.locator(".lcd-grid-title")).toHaveText("A");
+    await expect(page.getByTestId("grid-selected-value")).toHaveText("0");
     const vcta = ["1", "equals", "2", "equals", "ac"];
     for (const key of vcta) {
       await page.locator(`[data-key="${key}"]`).click();
@@ -32,7 +35,8 @@ test.describe("VECTOR mode", () => {
     await page.locator('[data-key="5"]').click();
     await page.locator('[data-key="4"]').click();
     await page.locator('[data-key="equals"]').click();
-    await expect(page.getByTestId("lcd-expr")).toHaveText("Ans1=");
-    await expect(page.getByTestId("lcd-result")).toHaveText("4");
+    await expect(vectorGrid.locator(".lcd-grid-title")).toHaveText("Ans");
+    await expect(vectorGrid.locator('[data-grid-row="0"] [data-grid-column="0"]')).toHaveText("4");
+    await expect(page.getByTestId("grid-selected-value")).toHaveText("4");
   });
 });

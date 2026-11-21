@@ -232,4 +232,18 @@ describe("persist schema v1", () => {
     expect(back?.vector?.registers.A).toBeNull();
     expect(back?.screen.kind).toBe("input");
   });
+
+  it("persists the source expression and restores it outside a CALC prompt", () => {
+    const prompting = dispatchKeys(createInitialState(0), ["3", "alpha", "neg", "add", "alpha", "dms", "calc"], 0);
+    expect(prompting.calcSession?.phase).toBe("prompt");
+    const source = prompting.calcSession?.source;
+    const env = serializeState(prompting);
+    expect(env.state.calcSession).toBeNull();
+    expect(env.state.screen.kind).toBe("input");
+    expect(env.state.editor.root).toEqual(source);
+
+    const restored = deserializeState(JSON.parse(JSON.stringify(env)), 1);
+    expect(restored?.calcSession).toBeNull();
+    expect(restored?.editor.root).toEqual(source);
+  });
 });

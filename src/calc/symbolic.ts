@@ -53,12 +53,33 @@ export function ratToDec(a: Rat): Dec {
 }
 
 function factorSquare(n: bigint): { square: bigint; rest: bigint } {
+  if (n === 0n) {
+    return { square: 0n, rest: 1n };
+  }
   let x = n < 0n ? -n : n;
+  if (x.toString().length > 2048) {
+    return { square: 1n, rest: n };
+  }
   let square = 1n;
+  // Exact roots avoid trial division for large perfect squares. For very large
+  // radicands, preserve the remaining factor instead of factoring without a
+  // practical bound.
+  const canCheckExactRoot = x.toString().length <= 512;
+  const exactRoot = canCheckExactRoot ? integerNthRoot(x, 2n) : null;
+  if (exactRoot !== null) {
+    return { square: exactRoot, rest: n < 0n ? -1n : 1n };
+  }
+  let rest = 1n;
   let p = 2n;
-  while (p * p <= x) {
+  let trialWork = 0;
+  const maxTrialWork = 4096;
+  while (p * p <= x && trialWork < maxTrialWork) {
     let count = 0n;
-    while (x % p === 0n) {
+    while (trialWork < maxTrialWork) {
+      trialWork += 1;
+      if (x % p !== 0n) {
+        break;
+      }
       x /= p;
       count += 1n;
     }
@@ -66,9 +87,19 @@ function factorSquare(n: bigint): { square: bigint; rest: bigint } {
     for (let i = 0n; i < pairs; i += 1n) {
       square *= p;
     }
+    if (count % 2n === 1n) {
+      rest *= p;
+    }
     p += p === 2n ? 1n : 2n;
   }
-  return { square, rest: n < 0n ? -x : x };
+  // The remaining cofactor may itself be a large square (for example,
+  // 2×1000003²). Extract it exactly without extending the trial-factor loop.
+  const remainingSquare = canCheckExactRoot ? integerNthRoot(x, 2n) : null;
+  if (remainingSquare !== null) {
+    square *= remainingSquare;
+    x = 1n;
+  }
+  return { square, rest: n < 0n ? -(rest * x) : rest * x };
 }
 
 /** Sum of rational coefficients times √radicand. radicand 1 is the rational part. */
@@ -118,6 +149,29 @@ export function toDec(s: Sym): Dec {
       return _never;
     }
   }
+}
+
+/** Exact rational value for rational symbols and finite decimal inputs. */
+export function exactRational(s: Sym): Rat | null {
+  if (s.k === "rat") {
+    return s.r;
+  }
+  if (s.k !== "real") {
+    return null;
+  }
+  if (!s.v.isFinite() || Math.abs(s.v.e ?? 0) > 100) {
+    return null;
+  }
+  const text = s.v.toFixed();
+  if (text.length > 202) {
+    return null;
+  }
+  const negative = text.startsWith("-");
+  const unsigned = negative ? text.slice(1) : text;
+  const [integer = "0", fraction = ""] = unsigned.split(".");
+  const denominator = 10n ** BigInt(fraction.length);
+  const digits = `${integer}${fraction}` || "0";
+  return rat((negative ? -1n : 1n) * BigInt(digits), denominator);
 }
 
 export function isZeroReal(s: Sym): boolean {
@@ -185,8 +239,12 @@ function normalizeQuad(q: Quad): Sym {
     if (coef.n === 0n) {
       continue;
     }
+    if (rad === 0n) {
+      continue;
+    }
     if (rad === 1n) {
-      cleaned.set(1n, coef);
+      const prev = cleaned.get(1n) ?? rat(0n);
+      cleaned.set(1n, ratAdd(prev, coef));
       continue;
     }
     const { square, rest } = factorSquare(rad);
@@ -199,6 +257,11 @@ function normalizeQuad(q: Quad): Sym {
     } else {
       const prev = cleaned.get(rest) ?? rat(0n);
       cleaned.set(rest, ratAdd(prev, moved));
+    }
+  }
+  for (const [rad, coef] of cleaned) {
+    if (coef.n === 0n) {
+      cleaned.delete(rad);
     }
   }
   if (cleaned.size === 0) {
@@ -335,6 +398,28 @@ export function symDiv(a: Sym, b: Sym): Sym {
     return symMul(a, inv);
   }
   if (b.k === "quad" && b.q.size <= 2) {
+    const radicalTerms = [...b.q.keys()].filter((rad) => rad !== 1n);
+    if (radicalTerms.length === 2) {
+      // For b√r+c√s, flip just one radical: (b√r+c√s)(b√r-c√s)=b²r-c²s.
+      // Flipping both would leave a cross term and invent a false rational denominator.
+      const first = radicalTerms[0]!;
+      const second = radicalTerms[1]!;
+      const firstCoef = b.q.get(first)!;
+      const secondCoef = b.q.get(second)!;
+      const conjugate: Quad = new Map(b.q);
+      conjugate.set(second, ratNeg(secondCoef));
+      const den = ratSub(
+        ratMul(ratMul(firstCoef, firstCoef), rat(first)),
+        ratMul(ratMul(secondCoef, secondCoef), rat(second)),
+      );
+      if (den.n !== 0n) {
+        const numerator = symMul(a, { k: "quad", q: conjugate });
+        return symDiv(numerator, { k: "rat", r: den });
+      }
+    }
+    if (radicalTerms.length > 1) {
+      return { k: "real", v: toDec(a).div(bd) };
+    }
     const conjugate: Quad = new Map();
     for (const [rad, coef] of b.q) {
       conjugate.set(rad, rad === 1n ? coef : ratNeg(coef));
@@ -456,7 +541,12 @@ export function symPow(base: Sym, exp: Sym): Sym {
   }
   const b = toDec(base);
   if (b.isNeg() && !ed.isInteger()) {
-    throw new Error("math");
+    const rationalExponent = exactRational(exp);
+    if (!rationalExponent || rationalExponent.d % 2n === 0n) {
+      throw new Error("math");
+    }
+    const magnitude = b.abs().pow(ed);
+    return rationalExponent.n % 2n === 0n ? { k: "real", v: magnitude } : { k: "real", v: magnitude.neg() };
   }
   if (b.isZero() && ed.lte(0)) {
     throw new Error("math");
@@ -472,6 +562,9 @@ export function symSqrt(a: Sym): Sym {
     if (a.r.n < 0n) {
       throw new Error("math");
     }
+    if (a.r.n === 0n) {
+      return symRat(0n);
+    }
     const num = factorSquare(a.r.n);
     const den = factorSquare(a.r.d);
     if (num.rest === 1n && den.rest === 1n) {
@@ -479,7 +572,7 @@ export function symSqrt(a: Sym): Sym {
     }
     const q: Quad = new Map();
     const rad = num.rest * den.rest;
-    const coef = rat(num.square * den.rest, den.square * den.rest);
+    const coef = rat(num.square, den.square * den.rest);
     q.set(rad === 0n ? 1n : rad, coef);
     return normalizeQuad(q);
   }

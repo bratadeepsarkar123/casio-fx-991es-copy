@@ -1,6 +1,6 @@
 import { Decimal } from "decimal.js";
-import { D, DISPLAY_DIGITS, PI, parseCalcNumber } from "./numeric.ts";
-import type { ResultValue, SetupState } from "./types.ts";
+import { CalcMathError, D, DISPLAY_DIGITS, PI, parseCalcNumber, roundInternal } from "./numeric.ts";
+import type { CalcMode, DisplayFormat, ResultValue, SetupState } from "./types.ts";
 import {
   asCplx,
   isZeroReal,
@@ -13,6 +13,19 @@ import {
 } from "./symbolic.ts";
 import { complexAbs, complexArg } from "./complex.ts";
 
+/** Modes whose LCD uses Linear independently of the stored COMP/CMPLX preference. */
+export function effectiveDisplayFormat(mode: CalcMode, preferred: DisplayFormat): DisplayFormat {
+  switch (mode) {
+    case "STAT":
+    case "BASE-N":
+    case "MATRIX":
+    case "VECTOR":
+      return "LineIO";
+    default:
+      return preferred;
+  }
+}
+
 function stripTrailingZeros(s: string): string {
   if (!s.includes(".")) {
     return s;
@@ -20,26 +33,24 @@ function stripTrailingZeros(s: string): string {
   return s.replace(/\.?0+$/, "");
 }
 
-export function formatSci(x: Decimal, digits: number): string {
+export function formatSci(x: Decimal, digits: number, preserveTrailingZeros = true): string {
   const n = digits === 0 ? DISPLAY_DIGITS : digits;
   const sci = x.toExponential(n - 1, Decimal.ROUND_HALF_UP);
   const [mantRaw, expRaw] = sci.split("e");
-  const mant = stripTrailingZeros(mantRaw ?? "0");
+  const mant = preserveTrailingZeros ? mantRaw ?? "0" : stripTrailingZeros(mantRaw ?? "0");
   const exp = D(expRaw ?? "0");
-  const mag = exp.abs().toFixed(0).padStart(2, "0");
-  const expStr = exp.isNeg() ? `-${mag}` : `+${mag}`;
-  return `${mant}×10${expStr}`;
+  return `${mant}×10${formatSuperscriptExponent(exp)}`;
 }
 
-function formatExpDigits(exp: Decimal): string {
-  const mag = exp.abs().toFixed(0).padStart(2, "0");
-  return exp.isNeg() ? `-${mag}` : `+${mag}`;
+function formatSuperscriptExponent(exp: Decimal): string {
+  const glyphs: Record<string, string> = { "-": "⁻", "0": "⁰", "1": "¹", "2": "²", "3": "³", "4": "⁴", "5": "⁵", "6": "⁶", "7": "⁷", "8": "⁸", "9": "⁹" };
+  return [...exp.toFixed(0)].map((digit) => glyphs[digit] ?? digit).join("");
 }
 
 /** Engineering notation; `offsetTriples` shifts the exponent by 3 each unit. SRC-P24–25. */
 export function formatEngineering(x: Decimal, offsetTriples: Decimal): string {
   if (x.isZero()) {
-    return `0×10${formatExpDigits(offsetTriples.times(3))}`;
+    return `0×10${formatSuperscriptExponent(offsetTriples.times(3))}`;
   }
   const sign = x.isNeg() ? "-" : "";
   const abs = x.abs();
@@ -51,7 +62,7 @@ export function formatEngineering(x: Decimal, offsetTriples: Decimal): string {
   const engExp = sciExp.minus(rem).plus(offsetTriples.times(3));
   const mant = abs.div(D(10).pow(engExp));
   const mantStr = stripTrailingZeros(mant.toSignificantDigits(DISPLAY_DIGITS, Decimal.ROUND_HALF_UP).toFixed());
-  return `${sign}${mantStr}×10${formatExpDigits(engExp)}`;
+  return `${sign}${mantStr}×10${formatSuperscriptExponent(engExp)}`;
 }
 
 /** Degree–minute–second display. SRC-P23–24. */
@@ -61,7 +72,7 @@ export function formatSexagesimal(x: Decimal): string {
   let deg = abs.trunc();
   let minFrac = abs.minus(deg).times(60);
   let min = minFrac.trunc();
-  let sec = minFrac.minus(min).times(60).toDecimalPlaces(0, Decimal.ROUND_HALF_UP);
+  let sec = minFrac.minus(min).times(60).toDecimalPlaces(2, Decimal.ROUND_HALF_UP);
   if (sec.gte(60)) {
     sec = sec.minus(60);
     min = min.plus(1);
@@ -70,7 +81,7 @@ export function formatSexagesimal(x: Decimal): string {
     min = min.minus(60);
     deg = deg.plus(1);
   }
-  return `${sign}${deg.toFixed(0)}°${min.toFixed(0)}′${sec.toFixed(0)}″`;
+  return `${sign}${deg.toFixed(0)}°${min.toFixed(0)}′${stripTrailingZeros(sec.toFixed(2))}″`;
 }
 
 export function formatNorm(x: Decimal, which: 1 | 2): string {
@@ -81,27 +92,37 @@ export function formatNorm(x: Decimal, which: 1 | 2): string {
   const expThresholdLow = which === 1 ? D("1e-2") : D("1e-9");
   const expThresholdHigh = D("1e10");
   if (mag.lt(expThresholdLow) || mag.gte(expThresholdHigh)) {
-    return formatSci(x, DISPLAY_DIGITS);
+    return formatSci(x, DISPLAY_DIGITS, false);
   }
   const s = x.toSignificantDigits(DISPLAY_DIGITS, Decimal.ROUND_HALF_UP).toFixed();
   return stripTrailingZeros(s);
 }
 
+/** Apply the selected displayed decimal separator without changing numeric storage. */
+export function applyDecimalMark(display: string, decimalMark: SetupState["decimalMark"]): string {
+  return decimalMark === "Comma" ? display.replace(/(\d)\.(?=\d)/g, "$1,") : display;
+}
+
 export function formatBySetup(x: Decimal, setup: SetupState): string {
+  let display: string;
   switch (setup.numberFormat.kind) {
     case "Fix": {
       const n = setup.numberFormat.n;
-      return x.toFixed(n, Decimal.ROUND_HALF_UP);
+      display = x.toFixed(n, Decimal.ROUND_HALF_UP);
+      break;
     }
     case "Sci":
-      return formatSci(x, setup.numberFormat.n);
+      display = formatSci(x, setup.numberFormat.n);
+      break;
     case "Norm":
-      return formatNorm(x, setup.numberFormat.n);
+      display = formatNorm(x, setup.numberFormat.n);
+      break;
     default: {
       const _never: never = setup.numberFormat;
       return _never;
     }
   }
+  return applyDecimalMark(display, setup.decimalMark);
 }
 
 /** Same rounding as `formatBySetup`, but always decimal.js-parseable (no `×10`). */
@@ -145,6 +166,99 @@ function ratDigits(r: Rat, mixed: boolean): number {
   return whole.toString().length + num.toString().length + abs.d.toString().length;
 }
 
+function mixedFractionTextLength(improper: string, denominator: string): number {
+  const negative = improper.startsWith("-");
+  const numerator = negative ? improper.slice(1) : improper;
+  const absNumerator = BigInt(numerator);
+  const den = BigInt(denominator);
+  const whole = absNumerator / den;
+  if (whole === 0n) {
+    return numerator.length + denominator.length + 1;
+  }
+  const remainder = (absNumerator % den).toString();
+  // E-10's limit includes the whole, numerator, denominator, space, and slash.
+  return whole.toString().length + remainder.length + denominator.length + 2;
+}
+
+function fractionRepresentations(r: Rat): NonNullable<ResultValue["fraction"]> {
+  const sign = r.n < 0n ? "-" : "";
+  const abs = ratAbs(r);
+  const whole = abs.n / abs.d;
+  const remainder = abs.n % abs.d;
+  return {
+    ...(whole > 0n && remainder > 0n ? { mixed: `${sign}${whole.toString()}` } : {}),
+    num: `${whole > 0n ? "" : sign}${(whole > 0n ? remainder : abs.n).toString()}`,
+    den: abs.d.toString(),
+    improper: `${sign}${abs.n.toString()}`,
+  };
+}
+
+/** Apply the selected improper/mixed setting to a retained exact fraction. */
+export function fractionResultForSetup(result: ResultValue, setup: SetupState): ResultValue {
+  const fraction = result.fraction;
+  if (!fraction) {
+    return result;
+  }
+  const sign = fraction.improper?.startsWith("-") ?? fraction.num.startsWith("-") ? "-" : "";
+  const improper = fraction.improper ?? (fraction.mixed
+    ? `${sign}${(BigInt(fraction.mixed.replace(/^-/, "")) * BigInt(fraction.den) + BigInt(fraction.num))}`
+    : fraction.num);
+  if (setup.fractionFormat === "ab/c") {
+    if (fraction.mixed) {
+      const chars = mixedFractionTextLength(improper, fraction.den);
+      if (chars <= 10) {
+        return {
+          ...result,
+          display: `${fraction.mixed} ${fraction.num}${fractionSeparator(setup)}${fraction.den}`,
+          naturalKind: "mixed",
+          fraction,
+        };
+      }
+    }
+    if (!fraction.mixed && BigInt(improper.replace(/^-/, "")) < BigInt(fraction.den)) {
+      return {
+        ...result,
+        display: `${improper}${fractionSeparator(setup)}${fraction.den}`,
+        naturalKind: "fraction",
+        fraction,
+      };
+    }
+    return {
+      ...result,
+      display: formatBySetup(parseCalcNumber(result.approx), setup),
+      naturalKind: "decimal",
+      fraction,
+    };
+  }
+  return {
+    ...result,
+    display: `${improper}${fractionSeparator(setup)}${fraction.den}`,
+    naturalKind: "fraction",
+    fraction,
+  };
+}
+
+function fractionSeparator(setup: SetupState): string {
+  return setup.displayFormat === "LineIO" ? "┘" : "/";
+}
+
+/** Numerator as displayed for this result form, including legacy v1 metadata. */
+export function fractionNumeratorForResult(result: ResultValue): string {
+  const fraction = result.fraction;
+  if (!fraction || result.naturalKind === "mixed") {
+    return fraction?.num ?? "";
+  }
+  if (fraction.improper) {
+    return fraction.improper;
+  }
+  if (fraction.mixed) {
+    const whole = BigInt(fraction.mixed.replace(/^-/, ""));
+    const sign = fraction.mixed.startsWith("-") ? "-" : "";
+    return `${sign}${whole * BigInt(fraction.den) + BigInt(fraction.num)}`;
+  }
+  return fraction.num;
+}
+
 function fractionDisplay(r: Rat, setup: SetupState): ResultValue | null {
   const approx = formatNumeric(ratToDec(r), setup);
   const abs = ratAbs(r);
@@ -157,12 +271,14 @@ function fractionDisplay(r: Rat, setup: SetupState): ResultValue | null {
     };
   }
   const asMixed = setup.fractionFormat === "ab/c";
-  if (ratDigits(r, asMixed) > 10) {
-    return null;
-  }
+  const representations = fractionRepresentations(r);
   if (asMixed && abs.n > abs.d) {
     const whole = abs.n / abs.d;
     const num = abs.n % abs.d;
+    const improper = `${sign}${abs.n.toString()}`;
+    if (mixedFractionTextLength(improper, abs.d.toString()) > 10) {
+      return null;
+    }
     if (num === 0n) {
       return {
         approx,
@@ -172,34 +288,25 @@ function fractionDisplay(r: Rat, setup: SetupState): ResultValue | null {
     }
     return {
       approx,
-      display: `${sign}${whole.toString()} ${num.toString()}/${abs.d.toString()}`,
+      display: `${sign}${whole.toString()} ${num.toString()}${setup.displayFormat === "LineIO" ? "┘" : "/"}${abs.d.toString()}`,
       naturalKind: "mixed",
-      fraction: {
-        mixed: `${sign}${whole.toString()}`,
-        num: num.toString(),
-        den: abs.d.toString(),
-      },
+      fraction: representations,
     };
+  }
+  if (!asMixed && ratDigits(r, false) > 10) {
+    return null;
   }
   return {
     approx,
-    display: `${sign}${abs.n.toString()}/${abs.d.toString()}`,
+    display: `${sign}${abs.n.toString()}${setup.displayFormat === "LineIO" ? "┘" : "/"}${abs.d.toString()}`,
     naturalKind: "fraction",
-    fraction: { num: `${sign}${abs.n.toString()}`, den: abs.d.toString() },
+    fraction: representations,
   };
 }
 
 function formatQuad(s: Extract<Sym, { k: "quad" }>): string | null {
   const parts: string[] = [];
-  const entries = [...s.q.entries()].sort((a, b) => {
-    if (a[0] === 1n) {
-      return -1;
-    }
-    if (b[0] === 1n) {
-      return 1;
-    }
-    return a[0] > b[0] ? 1 : -1;
-  });
+  const entries = [...s.q.entries()].sort((a, b) => (a[0] === 1n ? -1 : b[0] === 1n ? 1 : 0));
   if (entries.length > 2) {
     return null;
   }
@@ -265,12 +372,22 @@ export function resultFromSym(s: Sym, setup: SetupState, complexFormat = setup.c
     const reApprox = formatNumeric(toDec(re), setup);
     const imApprox = formatNumeric(toDec(im), setup);
     const form = complexFormat;
-    const display = form === "r∠θ" ? formatPolar(re, im, setup) : formatRectangular(re, im, setup);
+    const lineDisplay = setup.displayFormat !== "MthIO-MathO";
+    const z = { k: "cplx" as const, re, im };
+    const lineImag = formatSignedImag(im, setup);
+    const display = lineDisplay
+      ? form === "r∠θ"
+        ? `r=${resultFromSym(complexAbs(z), setup).display}\nθ=${resultFromSym(complexArg(z, setup.angleUnit), setup).display}`
+        : `${formatBySetup(toDec(re), setup)}\n${lineImag.sign}${lineImag.body}`
+      : form === "r∠θ"
+        ? formatPolar(re, im, setup)
+        : formatRectangular(re, im, setup);
     return {
       approx: reApprox,
       display,
       naturalKind: form === "r∠θ" ? "polar" : "complex",
       complex: { re: reApprox, im: imApprox },
+      internal: { re: roundInternal(toDec(re)).toString(), im: roundInternal(toDec(im)).toString() },
     };
   }
   const approxDec = toDec(s);
@@ -278,14 +395,15 @@ export function resultFromSym(s: Sym, setup: SetupState, complexFormat = setup.c
   const shown = formatBySetup(approxDec, setup);
   const matho = setup.displayFormat === "MthIO-MathO";
   const exact = exactRealResult(s, setup, approx, shown, approxDec);
+  const internal = { re: roundInternal(approxDec).toString(), im: "0" };
 
   if (!matho) {
     if (exact.fraction || exact.pi || exact.sqrt) {
-      return { ...exact, display: shown, naturalKind: "decimal" };
+      return { ...exact, display: shown, naturalKind: "decimal", internal };
     }
-    return { approx, display: shown, naturalKind: "decimal" };
+    return { approx, display: shown, naturalKind: "decimal", internal };
   }
-  return exact;
+  return { ...exact, internal };
 }
 
 function exactRealResult(s: Sym, setup: SetupState, approx: string, shown: string, approxDec: Decimal): ResultValue {
@@ -340,7 +458,12 @@ export function toggleSexagesimal(result: ResultValue, setup: SetupState): Resul
     return result;
   }
   if (result.display === result.sexagesimal) {
-    return { ...result, display: formatBySetup(parseCalcNumber(result.approx), setup), naturalKind: "decimal" };
+    return { ...result, display: formatBySetup(parseCalcNumber(result.internal?.re ?? result.approx), setup), naturalKind: "decimal" };
+  }
+  const value = parseCalcNumber(result.internal?.re ?? result.approx);
+  const maxDegrees = D(9999999).plus(D(59).div(60)).plus(D(59).div(3600));
+  if (value.abs().gt(maxDegrees)) {
+    throw new CalcMathError();
   }
   return { ...result, display: result.sexagesimal, naturalKind: "decimal" };
 }
@@ -351,14 +474,7 @@ export function toggleDecimal(result: ResultValue, setup: SetupState): ResultVal
   }
   if (result.naturalKind === "decimal") {
     if (result.fraction) {
-      const mixed = result.fraction.mixed
-        ? `${result.fraction.mixed} ${result.fraction.num}/${result.fraction.den}`
-        : `${result.fraction.num}/${result.fraction.den}`;
-      return {
-        ...result,
-        display: mixed,
-        naturalKind: result.fraction.mixed ? "mixed" : "fraction",
-      };
+      return fractionResultForSetup(result, setup);
     }
     if (result.pi) {
       const { num, den } = result.pi;

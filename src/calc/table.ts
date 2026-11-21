@@ -6,7 +6,7 @@ import {
   moveDown,
   moveUp,
 } from "./editor.ts";
-import { resultFromSym } from "./format.ts";
+import { formatBySetup, resultFromSym } from "./format.ts";
 import { fromDec } from "./symbolic.ts";
 import { evaluateAtoms } from "./evaluate.ts";
 import { createUint32Rng, D, parseCalcNumber, type Dec } from "./numeric.ts";
@@ -40,6 +40,7 @@ export function emptyTableSession(): TableSession {
     stepAtoms: [],
     rows: [],
     rowIndex: 0,
+    col: "x",
   };
 }
 
@@ -61,10 +62,6 @@ function clearLatches(state: CalcState): CalcState {
 
 function numAtoms(s: string): Atom[] {
   return [{ t: "num", s }];
-}
-
-function editorWithDefault(atoms: Atom[], fallback: string) {
-  return editorFromAtoms(atoms.length > 0 ? atoms : numAtoms(fallback));
 }
 
 function walkAtoms(atoms: Atom[], visit: (atom: Atom) => void): void {
@@ -181,7 +178,7 @@ function tableError(state: CalcState, code: ErrorCode, expression: Atom[]): Calc
 function evalParam(state: CalcState, atoms: Atom[]): { ok: true; value: Dec; result: ReturnType<typeof evaluateAtoms> } | { ok: false; code: ErrorCode } {
   try {
     const result = evaluateAtoms(atoms, state, createUint32Rng(state.rngSeed));
-    const value = parseCalcNumber(result.approx);
+    const value = parseCalcNumber(result.internal?.re ?? result.approx);
     if (!value.isFinite()) {
       return { ok: false, code: "Math ERROR" };
     }
@@ -202,14 +199,18 @@ export function generateTableRows(
   let lastX = state.variables.X;
   for (const x of xs) {
     const xShown = resultFromSym(fromDec(x), state.setup);
-    lastX = xShown.approx;
+    lastX = xShown.internal?.re ?? xShown.approx;
     try {
       const fxResult = evaluateAtoms(fx, state, createUint32Rng(seed), { X: x.toString() });
+      const fxDisplay =
+        fxResult.naturalKind === "fraction" || fxResult.naturalKind === "mixed"
+          ? formatBySetup(parseCalcNumber(fxResult.approx), state.setup)
+          : fxResult.display;
       rows.push({
         xApprox: xShown.approx,
         xDisplay: xShown.display,
         fxApprox: fxResult.approx,
-        fxDisplay: fxResult.display,
+        fxDisplay,
         fxError: null,
       });
     } catch (err) {
@@ -227,12 +228,12 @@ export function generateTableRows(
   return { rows, lastX, rngSeed: seed };
 }
 
-function goPrompt(state: CalcState, phase: Exclude<TablePhase, "view">, atoms: Atom[], fallback: string): CalcState {
+function goPrompt(state: CalcState, phase: Exclude<TablePhase, "view">): CalcState {
   const table = state.table ?? emptyTableSession();
   return {
     ...clearLatches(state),
     table: { ...table, phase, rows: [], rowIndex: 0 },
-    editor: editorWithDefault(atoms, fallback),
+    editor: emptyEditor(),
     screen: { kind: "input" },
     result: null,
   };
@@ -260,36 +261,41 @@ export function tableConfirm(state: CalcState): CalcState {
       if (tableFunctionHasForbiddenCall(fx)) {
         return tableError(state, "Syntax ERROR", fx);
       }
-      return goPrompt({ ...state, table: { ...table, fx } }, "start", table.startAtoms, TABLE_DEFAULT_START);
+      return goPrompt({ ...state, table: { ...table, fx } }, "start");
     }
     case "start": {
-      const atoms = state.editor.root.length > 0 ? state.editor.root : numAtoms(TABLE_DEFAULT_START);
+      const atoms =
+        state.editor.root.length > 0
+          ? state.editor.root
+          : table.startAtoms.length > 0
+            ? table.startAtoms
+            : numAtoms(TABLE_DEFAULT_START);
       const parsed = evalParam(state, atoms);
       if (!parsed.ok) {
         return tableError(state, parsed.code, atoms);
       }
-      return goPrompt(
-        { ...state, table: { ...table, startAtoms: atoms } },
-        "end",
-        table.endAtoms,
-        TABLE_DEFAULT_END,
-      );
+      return goPrompt({ ...state, table: { ...table, startAtoms: atoms } }, "end");
     }
     case "end": {
-      const atoms = state.editor.root.length > 0 ? state.editor.root : numAtoms(TABLE_DEFAULT_END);
+      const atoms =
+        state.editor.root.length > 0
+          ? state.editor.root
+          : table.endAtoms.length > 0
+            ? table.endAtoms
+            : numAtoms(TABLE_DEFAULT_END);
       const parsed = evalParam(state, atoms);
       if (!parsed.ok) {
         return tableError(state, parsed.code, atoms);
       }
-      return goPrompt(
-        { ...state, table: { ...table, endAtoms: atoms } },
-        "step",
-        table.stepAtoms,
-        TABLE_DEFAULT_STEP,
-      );
+      return goPrompt({ ...state, table: { ...table, endAtoms: atoms } }, "step");
     }
     case "step": {
-      const stepAtoms = state.editor.root.length > 0 ? state.editor.root : numAtoms(TABLE_DEFAULT_STEP);
+      const stepAtoms =
+        state.editor.root.length > 0
+          ? state.editor.root
+          : table.stepAtoms.length > 0
+            ? table.stepAtoms
+            : numAtoms(TABLE_DEFAULT_STEP);
       const startAtoms = table.startAtoms.length > 0 ? table.startAtoms : numAtoms(TABLE_DEFAULT_START);
       const endAtoms = table.endAtoms.length > 0 ? table.endAtoms : numAtoms(TABLE_DEFAULT_END);
       const startP = evalParam(state, startAtoms);
@@ -317,6 +323,7 @@ export function tableConfirm(state: CalcState): CalcState {
           stepAtoms,
           rows: generated.rows,
           rowIndex: 0,
+          col: "x",
         },
         editor: emptyEditor(),
         screen: { kind: "table-view" },
@@ -353,6 +360,23 @@ function tableMove(state: CalcState, delta: number): CalcState {
   };
 }
 
+function tableMoveColumn(state: CalcState, delta: -1 | 1): CalcState {
+  const table = state.table;
+  if (!table) {
+    return state;
+  }
+  const current = table.col ?? "x";
+  const col = delta < 0 ? "x" : "fx";
+  if (col === current) {
+    return clearLatches(state);
+  }
+  return {
+    ...clearLatches(state),
+    table: { ...table, col },
+    screen: { kind: "table-view" },
+  };
+}
+
 /**
  * TABLE-owned reducer. Returns null to fall through to COMP editing keys.
  */
@@ -385,8 +409,11 @@ export function reduceTable(state: CalcState, event: KeyEvent): CalcState | null
     if (keyId === "del") {
       return clearLatches(state);
     }
-    if (keyId === "left" || keyId === "right") {
-      return clearLatches(state);
+    if (keyId === "left") {
+      return tableMoveColumn(state, -1);
+    }
+    if (keyId === "right") {
+      return tableMoveColumn(state, 1);
     }
     return clearLatches(state);
   }

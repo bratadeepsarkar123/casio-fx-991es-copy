@@ -1,10 +1,17 @@
 # Casio fx-991ES PLUS-2 web clone
 
-Responsive, offline-capable web clone of the **Casio fx-991ES PLUS 2nd edition** (`FX-991ESPLUS-2`). Faithfulness is judged against **manual worked examples**, not visual impression.
+Responsive, offline-capable web calculator using the **Casio fx-991ES PLUS 2nd edition** (`FX-991ESPLUS-2`) chassis. Calculator behavior is checked against the selected fx-570ES PLUS / fx-991ES PLUS manual and its worked examples. The selected manual does not state an edition, so equivalence with the photographed second-edition hardware is not established.
 
 ## Not a hardware-complete clone
 
-P0 COMP-mode behavior is covered by golden tests. TABLE f(x) (D-016), BASE-N (D-017), CMPLX (D-018), STAT (D-019), EQN (D-020), MATRIX (D-021), and VECTOR (D-022) are implemented and **source-verified**. Hardware differential testing, visual sign-off, and live PWA verification remain outstanding. See `CAPABILITY_MATRIX.md`, `docs/COVERAGE_AUDIT.md`, and `docs/POST_MAJOR_MODE_AUDIT.md`.
+COMP, CMPLX, STAT, BASE-N, EQN, MATRIX, TABLE and VECTOR are implemented, with manual-derived examples and automated tests. Exact hardware equivalence is not established. See `docs/MANUAL_REQUIREMENT_LEDGER.md` and `docs/MANUAL_DISCREPANCIES.md` for the evidence and open items.
+
+## Known limitations
+
+- The app does not reproduce a verified keypad-triggered **Stack ERROR**. The selected manual describes stack exhaustion but does not give the limits or a triggering sequence.
+- Some edge cases, including certain percentage boundaries, BASE-N errors and matrix/vector navigation, have not been exhaustively checked. A BASE-N manual example also has conflicting prose and illustration.
+- LCD dot patterns, cursor scrolling and timing have not been compared with a matching physical calculator. Some display geometry is reconstructed from the manual.
+- Mobile and offline behavior were tested in browser emulation; installation and offline use on an actual Android device remain unverified. This is a web app, not a native Android app.
 
 ## Requirements
 
@@ -58,7 +65,6 @@ npm run test:e2e  # Playwright (build + preview)
 - Dark theme
 - Non-English UI
 - Programmability / cloud sync
-- Pixel-perfect LCD dot-matrix
 - Full screen-reader parity beyond ARIA key labels
 - Claiming 115ES PLUS C-only modes (INEQ, VERIFY, DIST)
 

@@ -1,4 +1,5 @@
 import type { KeyEvent, KeyId } from "./keys.ts";
+import { trimHistory } from "./editor.ts";
 import type {
   BaseNOp,
   BaseNRadix,
@@ -79,7 +80,10 @@ export function formatBaseNExpression(tokens: BaseNToken[]): string {
 function tokenToLinear(tok: BaseNToken): string {
   switch (tok.t) {
     case "num":
-      return tok.suffix === null ? tok.digits : `${tok.digits}${SUFFIX_LETTER[tok.suffix]}`;
+      if (tok.suffix === null) {
+        return tok.digits;
+      }
+      return tok.prefix ? `${SUFFIX_LETTER[tok.suffix]}${tok.digits}` : `${tok.digits}${SUFFIX_LETTER[tok.suffix]}`;
     case "op":
       return tok.op;
     case "not":
@@ -114,13 +118,9 @@ function withBase(state: CalcState, patch: Partial<BaseNState>, screen: CalcStat
   };
 }
 
-function lastNumIndex(tokens: BaseNToken[]): number {
-  for (let i = tokens.length - 1; i >= 0; i -= 1) {
-    if (tokens[i]?.t === "num") {
-      return i;
-    }
-  }
-  return -1;
+function literalRadix(state: CalcState): BaseNRadix {
+  const previous = state.baseN.tokens[state.baseN.cursor - 1];
+  return previous?.t === "num" && previous.prefix ? previous.suffix ?? state.baseN.radix : state.baseN.radix;
 }
 
 function insertToken(state: CalcState, tok: BaseNToken): CalcState {
@@ -161,13 +161,14 @@ function continueBaseFromResult(state: CalcState): CalcState {
 
 function appendDigit(state: CalcState, ch: string): CalcState {
   const base = beginBaseInput(state);
-  if (!isValidDigit(ch, base.baseN.radix)) {
-    return clearLatches(base);
-  }
   const tokens = base.baseN.tokens.slice();
   const cur = base.baseN.cursor;
   const prev = tokens[cur - 1];
-  if (prev?.t === "num" && prev.suffix === null) {
+  const inputRadix = literalRadix(base);
+  if (!isValidDigit(ch, inputRadix)) {
+    return clearLatches(base);
+  }
+  if (prev?.t === "num" && (prev.suffix === null || prev.prefix === true)) {
     const next = { ...prev, digits: prev.digits + ch };
     tokens[cur - 1] = next;
     return withBase(base, { tokens, cursor: cur, value: null });
@@ -177,17 +178,21 @@ function appendDigit(state: CalcState, ch: string): CalcState {
 }
 
 function applySuffix(state: CalcState, suffix: BaseNRadix): CalcState {
-  const tokens = state.baseN.tokens.slice();
-  const idx = lastNumIndex(tokens);
-  if (idx < 0) {
-    return clearLatches(state);
-  }
+  const base = state.screen.kind === "result" ? beginBaseInput(state) : state;
+  const tokens = base.baseN.tokens.slice();
+  const idx = base.baseN.cursor - 1;
   const tok = tokens[idx];
-  if (!tok || tok.t !== "num") {
-    return clearLatches(state);
+  if (tok?.t === "num" && tok.prefix && tok.digits.length === 0) {
+    tokens[idx] = { ...tok, suffix };
+    return withBase(base, { tokens, value: null });
   }
-  tokens[idx] = { ...tok, suffix };
-  return withBase(state, { tokens, value: null });
+  if (tok?.t === "num") {
+    tokens[idx] = { ...tok, suffix, prefix: false };
+    return withBase(base, { tokens, value: null });
+  }
+  const cursor = base.baseN.cursor;
+  tokens.splice(cursor, 0, { t: "num", digits: "", suffix, prefix: true });
+  return withBase(base, { tokens, cursor: cursor + 1, value: null });
 }
 
 export function evaluateBaseN(state: CalcState): bigint {
@@ -381,25 +386,36 @@ function setRadix(state: CalcState, radix: BaseNRadix): CalcState {
 function onBaseEquals(state: CalcState): CalcState {
   try {
     const tokens = state.baseN.tokens;
+    const historyEntry = () => ({
+      expression: [],
+      baseN: {
+        ...state.baseN,
+        tokens: state.baseN.tokens.slice(),
+      },
+    });
     if (tokens.length === 0) {
       const display = formatBaseNResult(0n, state.baseN.radix);
+      const result = { approx: "0", display, naturalKind: "decimal" as const };
       return {
         ...clearLatches(state),
         baseN: { ...state.baseN, value: "0" },
         screen: { kind: "result" },
-        result: { approx: "0", display, naturalKind: "decimal" },
+        result,
         ans: "0",
+        history: trimHistory([...state.history, { ...historyEntry(), result }]),
       };
     }
     const signed = evaluateBaseN(state);
     const display = formatBaseNResult(signed, state.baseN.radix);
     const approx = signed.toString();
+    const result = { approx, display, naturalKind: "decimal" as const };
     return {
       ...clearLatches(state),
       baseN: { ...state.baseN, value: approx },
       screen: { kind: "result" },
-      result: { approx, display, naturalKind: "decimal" },
+      result,
       ans: approx,
+      history: trimHistory([...state.history, { ...historyEntry(), result }]),
     };
   } catch (err) {
     const code = (err as { code?: ErrorCode }).code ?? "Math ERROR";
@@ -421,7 +437,7 @@ function deleteLeft(state: CalcState): CalcState {
   }
   const prev = tokens[cur - 1];
   if (prev?.t === "num" && prev.digits.length > 1) {
-    tokens[cur - 1] = { ...prev, digits: prev.digits.slice(0, -1), suffix: null };
+    tokens[cur - 1] = { ...prev, digits: prev.digits.slice(0, -1) };
     return withBase(base, { tokens, cursor: cur, value: null });
   }
   tokens.splice(cur - 1, 1);
@@ -510,7 +526,7 @@ export function reduceBaseN(state: CalcState, event: KeyEvent): CalcState | null
   }
 
   const hexLetter = HEX_LETTER[keyId];
-  if (hexLetter && !state.shift && (state.baseN.radix === 16 || state.alpha)) {
+  if (hexLetter && !state.shift && (literalRadix(state) === 16 || state.alpha)) {
     return appendDigit(beginBaseInput(state), hexLetter);
   }
 
@@ -530,6 +546,9 @@ export function reduceBaseN(state: CalcState, event: KeyEvent): CalcState | null
   if (keyId === "right") {
     const cur = Math.min(state.baseN.tokens.length, state.baseN.cursor + 1);
     return { ...clearLatches(state), baseN: { ...state.baseN, cursor: cur }, screen: { kind: "input" } };
+  }
+  if (keyId === "up" || keyId === "down") {
+    return null;
   }
 
   return clearLatches(state);

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { AUTO_OFF_MS, createInitialState, dispatchKeys, reduce } from "./machine.ts";
 import { deserializeState, serializeState } from "./persist.ts";
-import { lcdExpression, lcdIndicators, lcdResult } from "../ui/lcdModel.ts";
+import { lcdExpression, lcdIndicators, lcdMenuView, lcdResult } from "../ui/lcdModel.ts";
 import type { KeyId } from "./keys.ts";
 import type { CalcState } from "./types.ts";
 
@@ -27,6 +27,38 @@ function snapshot(s: CalcState) {
 }
 
 describe("state-transition matrix", () => {
+  it("starts and reinitializes with every selected-manual default", () => {
+    const initial = createInitialState(0);
+    expect(initial.mode).toBe("COMP");
+    expect(initial.setup).toMatchObject({
+      displayFormat: "MthIO-MathO",
+      angleUnit: "Deg",
+      numberFormat: { kind: "Norm", n: 1 },
+      fractionFormat: "d/c",
+      complexFormat: "a+bi",
+      statFreq: false,
+      decimalMark: "Dot",
+    });
+
+    const changed = run([
+      "mode", "2", "shift", "mode", "2", "shift", "mode", "6", "3",
+      "shift", "mode", "down", "1", "shift", "mode", "down", "3", "2",
+    ]);
+    expect(changed.setup.displayFormat).toBe("LineIO");
+    expect(changed.setup.numberFormat).toEqual({ kind: "Fix", n: 3 });
+    const reset = dispatchKeys(changed, ["shift", "9", "1", "equals"], 0);
+    expect(reset.mode).toBe("COMP");
+    expect(reset.setup).toMatchObject({
+      displayFormat: "MthIO-MathO",
+      angleUnit: "Deg",
+      numberFormat: { kind: "Norm", n: 1 },
+      fractionFormat: "d/c",
+      complexFormat: "a+bi",
+      statFreq: false,
+      decimalMark: "Dot",
+    });
+  });
+
   it("AC clears expression/result but keeps Ans, PreAns, vars, M, history, setup", () => {
     let s = run(["7", "equals", "shift", "rcl", "neg", "mplus", "1", "add", "2"]);
     expect(s.ans).toMatch(/^7/);
@@ -87,7 +119,7 @@ describe("state-transition matrix", () => {
     expect(s.variables.A).toMatch(/^6/);
   });
 
-  it("CLR Memory zeros Ans, PreAns, vars, M and keeps setup/history", () => {
+  it("CLR Memory zeros Ans, PreAns, vars, M and clears calculation history", () => {
     let s = run(["5", "equals", "shift", "rcl", "neg", "mplus"]);
     const hist = s.history.length;
     const angle = s.setup.angleUnit;
@@ -96,7 +128,8 @@ describe("state-transition matrix", () => {
     expect(s.preAns).toBe("0");
     expect(s.variables.A).toBe("0");
     expect(s.memoryM).toBe("0");
-    expect(s.history.length).toBe(hist);
+    expect(s.history.length).toBe(0);
+    expect(hist).toBeGreaterThan(0);
     expect(s.setup.angleUnit).toBe(angle);
   });
 
@@ -109,7 +142,7 @@ describe("state-transition matrix", () => {
     expect(s.history.length).toBe(0);
   });
 
-  it("power off/on keeps Ans, PreAns, vars, M, history, setup", () => {
+  it("power off/on keeps Ans, PreAns, vars, M and setup, but clears history", () => {
     let s = run(["3", "equals", "2", "equals"]);
     const before = snapshot(s);
     s = dispatchKeys(s, ["shift", "ac"], 0);
@@ -121,7 +154,8 @@ describe("state-transition matrix", () => {
     expect(s.power).toBe("on");
     expect(s.ans).toBe(before.ans);
     expect(s.preAns).toBe(before.preAns);
-    expect(s.history.length).toBe(before.history);
+    expect(s.history.length).toBe(0);
+    expect(before.history).toBeGreaterThan(0);
     expect(s.setup.angleUnit).toBe(before.angle);
   });
 
@@ -152,6 +186,107 @@ describe("state-transition matrix", () => {
     expect(s.screen.kind).toBe("replay");
     expect(lcdResult(s)).toBe("12");
     expect(s.ans).toMatch(/^12/);
+  });
+
+  it("scrolls back from the current result to the two preceding calculations", () => {
+    let s = run(["1", "add", "1", "equals", "2", "add", "2", "equals", "3", "add", "3", "equals"]);
+    s = dispatchKeys(s, ["up"], 0);
+    expect(lcdExpression(s)).toBe("2+2");
+    expect(lcdResult(s)).toBe("4");
+    expect(s.screen).toEqual({ kind: "replay", historyIndex: 1 });
+    s = dispatchKeys(s, ["up"], 0);
+    expect(lcdExpression(s)).toBe("1+1");
+    expect(lcdResult(s)).toBe("2");
+    expect(s.screen).toEqual({ kind: "replay", historyIndex: 0 });
+  });
+
+  it("shows selected-manual SETUP numbers and keeps contrast open until AC", () => {
+    const secondPage = run(["shift", "mode", "down"]);
+    expect(lcdMenuView(secondPage)?.items).toEqual([
+      "1:ab/c",
+      "2:d/c",
+      "3:CMPLX",
+      "4:STAT",
+      "5:Disp",
+      "6:CONT",
+    ]);
+    const disp = dispatchKeys(secondPage, ["5"], 0);
+    expect(disp.menu).toEqual({ kind: "disp" });
+    const contrast = dispatchKeys(secondPage, ["6"], 0);
+    expect(contrast.menu).toEqual({ kind: "contrast" });
+    const adjusted = dispatchKeys(contrast, ["right"], 0);
+    expect(adjusted.setup.contrast).toBe(6);
+    expect(adjusted.menu).toEqual({ kind: "contrast" });
+    expect(lcdMenuView(adjusted)?.prompt).toBe("CONT 6");
+    expect(dispatchKeys(adjusted, ["ac"], 0).menu).toEqual({ kind: "none" });
+  });
+
+  it("clears history only when display format changes, not when reselected or other setup changes", () => {
+    let s = run(["1", "add", "1", "equals"]);
+    s = dispatchKeys(s, ["shift", "mode", "3"], 0);
+    expect(s.setup.angleUnit).toBe("Deg");
+    expect(s.history).toHaveLength(1);
+    s = dispatchKeys(s, ["shift", "mode", "1", "1"], 0);
+    expect(s.setup.displayFormat).toBe("MthIO-MathO");
+    expect(s.history).toHaveLength(1);
+    s = dispatchKeys(s, ["shift", "mode", "2"], 0);
+    expect(s.setup.displayFormat).toBe("LineIO");
+    expect(s.history).toHaveLength(0);
+  });
+
+  it("uses comma decimals only in displayed results and keeps Ans parseable", () => {
+    let s = run(["shift", "mode", "2"]);
+    s = dispatchKeys(s, ["shift", "mode", "down", "5", "2"], 0);
+    expect(s.setup.decimalMark).toBe("Comma");
+    s = dispatchKeys(s, ["1", "div", "2", "equals"], 0);
+    expect(lcdResult(s)).toBe("0,5");
+    expect(s.result?.approx).toBe("0.5");
+    expect(s.ans).toBe("0.5");
+    s = dispatchKeys(s, ["ans", "add", "1", "equals"], 0);
+    expect(s.ans).toBe("1.5");
+    expect(lcdResult(s)).toBe("1,5");
+    const input = dispatchKeys(s, ["1", "dot", "5"], 0);
+    expect(lcdExpression(input)).toBe("1.5");
+    expect(dispatchKeys(input, ["equals"], 0).ans).toBe("1.5");
+  });
+
+  it("uses comma/semicolon separators for Pol multiple results", () => {
+    const dot = run(["shift", "add", "1", "shift", "rparen", "1", "rparen", "equals"]);
+    expect(dot.result?.display).toMatch(/^r=.*?, θ=/);
+
+    let comma = run(["shift", "mode", "down", "5", "2"]);
+    comma = dispatchKeys(comma, ["shift", "add", "1", "shift", "rparen", "1", "rparen", "equals"], 0);
+    expect(comma.result?.display).toMatch(/^r=.*?; θ=/);
+    expect(lcdResult(comma)).toBe(comma.result?.display);
+  });
+
+  it("enters i with bare ENG in CMPLX mode", () => {
+    const s = run([
+      "mode", "2", "lparen", "2", "add", "6", "eng", "rparen", "div", "lparen", "2", "eng", "rparen", "equals",
+    ]);
+    expect(lcdExpression(s)).toBe("(2+6i)÷(2i)");
+    expect(lcdResult(s)).toBe("3-i");
+  });
+
+  it("matches the selected manual Fix 3 Rnd example", () => {
+    const s = run([
+      "shift", "mode", "6", "3", "shift", "0", "1", "0", "div", "3", "rparen", "mul", "3", "equals",
+    ]);
+    expect(s.setup.numberFormat).toEqual({ kind: "Fix", n: 3 });
+    expect(lcdResult(s)).toBe("9.999");
+  });
+
+  it("uses ten significant digits for Rnd when Sci 0 selects the default digit count", () => {
+    const initial = createInitialState(0);
+    const sciZero = {
+      ...initial,
+      setup: { ...initial.setup, numberFormat: { kind: "Sci" as const, n: 0 } },
+    };
+    const s = run([
+      "shift", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "dot", "9", "8", "7", "6", "rparen", "equals",
+    ], 0, sciZero);
+    expect(s.screen.kind).toBe("result");
+    expect(s.result?.approx).toBe("1.234567900e+8");
   });
 });
 

@@ -1,14 +1,31 @@
 import { useEffect, useState } from "react";
 import { OPTIONAL_KEYBOARD_MAP, isKeyId, type KeyId } from "./calc/keys.ts";
 import { useCalcStore } from "./store.ts";
+import { armIdleTimeout } from "./idleTimer.ts";
 import { Chassis } from "./ui/Chassis.tsx";
 import { haptic, playKeyClick, unlockAudio } from "./ui/feedback.ts";
 import type { Keymap } from "./ui/coords.ts";
+
+function scrollResultViewport(keyId: KeyId): boolean {
+  if (keyId !== "left" && keyId !== "right") {
+    return false;
+  }
+  const event = new CustomEvent<KeyId>("calculator-result-scroll", { detail: keyId, cancelable: true });
+  window.dispatchEvent(event);
+  return event.defaultPrevented;
+}
+
+function shouldRestoreInputOnAc(): boolean {
+  const event = new CustomEvent("calculator-ac-context", { cancelable: true });
+  window.dispatchEvent(event);
+  return event.defaultPrevented;
+}
 
 export function App() {
   const state = useCalcStore((s) => s.state);
   const dispatch = useCalcStore((s) => s.dispatch);
   const hydrate = useCalcStore((s) => s.hydrate);
+  const tick = useCalcStore((s) => s.tick);
   const [keymap, setKeymap] = useState<Keymap | null>(null);
   const debug = new URLSearchParams(window.location.search).get("debug") === "true";
 
@@ -18,6 +35,23 @@ export function App() {
       .then((r) => r.json())
       .then((data: Keymap) => setKeymap(data));
   }, [hydrate]);
+
+  useEffect(() => {
+    const cancelTimer = armIdleTimeout(
+      () => useCalcStore.getState().state,
+      (nowMs) => useCalcStore.getState().tick(nowMs),
+    );
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        tick();
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => {
+      cancelTimer();
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
+  }, [state.lastActivityMs, state.power, tick]);
 
   useEffect(() => {
     const onKey = (ev: KeyboardEvent) => {
@@ -34,7 +68,14 @@ export function App() {
         return;
       }
       ev.preventDefault();
-      dispatch({ keyId: mapped, source: "keyboard" });
+      if (scrollResultViewport(mapped)) {
+        return;
+      }
+      dispatch({
+        keyId: mapped,
+        source: "keyboard",
+        restoreInputOnAc: mapped === "ac" && shouldRestoreInputOnAc(),
+      });
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -44,7 +85,14 @@ export function App() {
     unlockAudio();
     playKeyClick();
     haptic();
-    dispatch({ keyId: id, source: "pointer" });
+    if (scrollResultViewport(id)) {
+      return;
+    }
+    dispatch({
+      keyId: id,
+      source: "pointer",
+      restoreInputOnAc: id === "ac" && shouldRestoreInputOnAc(),
+    });
   };
 
   if (!keymap) {

@@ -128,10 +128,11 @@ describe("CMPLX reducer / evaluation", () => {
       "2",
       "sqrt",
       "2",
+      "right",
       "add",
       "sqrt",
       "2",
-      "rparen",
+      "right",
       "alpha",
       "eng",
       "equals",
@@ -147,10 +148,11 @@ describe("CMPLX reducer / evaluation", () => {
       "2",
       "sqrt",
       "2",
+      "right",
       "add",
       "sqrt",
       "2",
-      "rparen",
+      "right",
       "alpha",
       "eng",
       "shift",
@@ -195,14 +197,14 @@ describe("CMPLX reducer / evaluation", () => {
   });
 
   it("Conjg(2+3i)=2-3i TARGET-OFFICIAL-DOC", () => {
-    const s = run(["mode", "2", "shift", "2", "2", "2", "add", "3", "alpha", "eng", "equals"]);
+    const s = run(["mode", "2", "shift", "2", "2", "2", "add", "3", "alpha", "eng", "rparen", "equals"]);
     expect(lcdResult(s)).toBe("2-3i");
   });
 
   it("Abs(1+i)=√2 and arg(1+i)=45 TARGET-OFFICIAL-DOC", () => {
     const abs = run(["mode", "2", "shift", "hyp", "1", "add", "alpha", "eng", "equals"]);
     expect(lcdResult(abs)).toBe("√2");
-    const arg = run(["mode", "2", "shift", "2", "1", "1", "add", "alpha", "eng", "equals"]);
+    const arg = run(["mode", "2", "shift", "2", "1", "1", "add", "alpha", "eng", "rparen", "equals"]);
     expect(lcdResult(arg)).toBe("45");
   });
 

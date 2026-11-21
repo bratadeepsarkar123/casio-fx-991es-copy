@@ -1,4 +1,5 @@
-import type { Atom, ComplexFormat, Cursor, DisplayFormat, EditorState, VarName } from "./types.ts";
+import type { Atom, ComplexFormat, Cursor, DisplayFormat, EditorState, HistoryEntry, VarName } from "./types.ts";
+import { scientificCallLabel, scientificConstantByCallName, unitConversionByCallName } from "./scientificData.ts";
 
 export const MAX_BYTES = 99;
 
@@ -10,7 +11,7 @@ export function emptyEditor(): EditorState {
   };
 }
 
-export type SlotField = "num" | "den" | "inner" | "exp" | "base" | "arg" | "n" | "whole" | "args0" | "args1" | "args2";
+export type SlotField = "num" | "den" | "inner" | "exp" | "base" | "arg" | "n" | "whole" | "args0" | "args1" | "args2" | "args3";
 
 interface PathStep {
   index: number;
@@ -54,6 +55,8 @@ export function fieldToCode(field: SlotField): number {
       return 9;
     case "args2":
       return 10;
+    case "args3":
+      return 11;
     default: {
       const _never: never = field;
       return _never;
@@ -85,6 +88,8 @@ function fieldFromCode(code: number): SlotField {
       return "args1";
     case 10:
       return "args2";
+    case 11:
+      return "args3";
     default:
       return "inner";
   }
@@ -113,16 +118,7 @@ function getField(atom: Atom, field: SlotField): Atom[] | null {
     case "logb":
       return field === "base" ? atom.base : field === "arg" ? atom.arg : null;
     case "call":
-      if (field === "args0") {
-        return atom.args[0] ?? null;
-      }
-      if (field === "args1") {
-        return atom.args[1] ?? null;
-      }
-      if (field === "args2") {
-        return atom.args[2] ?? null;
-      }
-      return null;
+      return field.startsWith("args") ? atom.args[Number(field.slice(4))] ?? null : null;
     default:
       return null;
   }
@@ -170,9 +166,9 @@ function setField(atom: Atom, field: SlotField, slot: Atom[]): Atom {
     case "logb":
       return field === "base" ? { ...atom, base: slot } : field === "arg" ? { ...atom, arg: slot } : atom;
     case "call":
-      if (field === "args0" || field === "args1" || field === "args2") {
+      if (field.startsWith("args")) {
         const args = [...atom.args];
-        const idx = field === "args0" ? 0 : field === "args1" ? 1 : 2;
+        const idx = Number(field.slice(4));
         args[idx] = slot;
         return { ...atom, args };
       }
@@ -247,6 +243,7 @@ function cloneEditor(ed: EditorState): EditorState {
     root: ed.root,
     cursor: { ...ed.cursor, path: [...ed.cursor.path] },
     insertMode: ed.insertMode,
+    argumentCapture: ed.argumentCapture,
   };
 }
 
@@ -267,11 +264,43 @@ function isValueAtom(atom: Atom | undefined): boolean {
 
 export function insertAtom(ed: EditorState, atom: Atom): EditorState {
   const { slot } = locate(ed.root, ed.cursor.path);
+  const previous = slot[ed.cursor.index - 1];
+  if (previous?.t === "num" && ed.cursor.offset !== null && ed.cursor.offset < previous.s.length) {
+    const before = previous.s.slice(0, ed.cursor.offset);
+    const after = previous.s.slice(ed.cursor.offset + 1);
+    const next = [...slot];
+    if (ed.insertMode === "overwrite") {
+      next.splice(ed.cursor.index - 1, 1, ...(before ? [{ t: "num" as const, s: before }] : []), atom, ...(after ? [{ t: "num" as const, s: after }] : []));
+    } else {
+      next.splice(ed.cursor.index - 1, 1, ...(before ? [{ t: "num" as const, s: before }] : []), atom, { t: "num", s: previous.s.slice(ed.cursor.offset) });
+    }
+    const index = ed.cursor.index - 1 + (before ? 1 : 0) + 1;
+    return { ...ed, argumentCapture: undefined, root: replaceSlot(ed.root, ed.cursor.path, next), cursor: { path: ed.cursor.path, index, offset: null } };
+  }
+  if (ed.insertMode === "overwrite" && ed.cursor.index < slot.length) {
+    const current = slot[ed.cursor.index];
+    const next = [...slot];
+    if (current?.t === "num" && ed.cursor.offset !== null && ed.cursor.offset < current.s.length) {
+      const before = current.s.slice(0, ed.cursor.offset);
+      const after = current.s.slice(ed.cursor.offset + 1);
+      next.splice(ed.cursor.index, 1, ...(before ? [{ t: "num" as const, s: before }] : []), atom, ...(after ? [{ t: "num" as const, s: after }] : []));
+      const index = ed.cursor.index + (before ? 1 : 0) + 1;
+      return { ...ed, argumentCapture: undefined, root: replaceSlot(ed.root, ed.cursor.path, next), cursor: { path: ed.cursor.path, index, offset: null } };
+    }
+    next[ed.cursor.index] = atom;
+    return {
+      ...ed,
+      argumentCapture: undefined,
+      root: replaceSlot(ed.root, ed.cursor.path, next),
+      cursor: { path: ed.cursor.path, index: ed.cursor.index + 1, offset: null },
+    };
+  }
   const next = [...slot];
   next.splice(ed.cursor.index, 0, atom);
   const root = replaceSlot(ed.root, ed.cursor.path, next);
   return {
     ...ed,
+    argumentCapture: undefined,
     root,
     cursor: { path: ed.cursor.path, index: ed.cursor.index + 1, offset: null },
   };
@@ -279,6 +308,42 @@ export function insertAtom(ed: EditorState, atom: Atom): EditorState {
 
 export function insertDigit(ed: EditorState, d: string): EditorState {
   const { slot } = locate(ed.root, ed.cursor.path);
+  if (ed.insertMode === "overwrite") {
+    const previous = slot[ed.cursor.index - 1];
+    if (previous?.t === "num" && ed.cursor.offset !== null && ed.cursor.offset < previous.s.length) {
+      const s = previous.s.slice(0, ed.cursor.offset) + d + previous.s.slice(ed.cursor.offset + 1);
+      const next = [...slot];
+      next[ed.cursor.index - 1] = { t: "num", s };
+      return {
+        ...ed,
+        argumentCapture: undefined,
+        root: replaceSlot(ed.root, ed.cursor.path, next),
+        cursor: { ...ed.cursor, offset: ed.cursor.offset + 1 },
+      };
+    }
+    const current = slot[ed.cursor.index];
+    if (current?.t === "num" && ed.cursor.offset !== null && ed.cursor.offset < current.s.length) {
+      const s = current.s.slice(0, ed.cursor.offset) + d + current.s.slice(ed.cursor.offset + 1);
+      const next = [...slot];
+      next[ed.cursor.index] = { t: "num", s };
+      return {
+        ...ed,
+        argumentCapture: undefined,
+        root: replaceSlot(ed.root, ed.cursor.path, next),
+        cursor: { ...ed.cursor, offset: ed.cursor.offset + 1 },
+      };
+    }
+    if (ed.cursor.index < slot.length) {
+      const next = [...slot];
+      next[ed.cursor.index] = { t: "num", s: d };
+      return {
+        ...ed,
+        argumentCapture: undefined,
+        root: replaceSlot(ed.root, ed.cursor.path, next),
+        cursor: { path: ed.cursor.path, index: ed.cursor.index + 1, offset: null },
+      };
+    }
+  }
   const prev = slot[ed.cursor.index - 1];
   if (prev?.t === "num") {
     const offset = ed.cursor.offset ?? prev.s.length;
@@ -287,11 +352,13 @@ export function insertDigit(ed: EditorState, d: string): EditorState {
     next[ed.cursor.index - 1] = { t: "num", s };
     return {
       ...ed,
+      argumentCapture: undefined,
       root: replaceSlot(ed.root, ed.cursor.path, next),
       cursor: { ...ed.cursor, offset: offset + 1 },
     };
   }
-  return insertAtom(ed, { t: "num", s: d });
+  const inserted = insertAtom(ed, { t: "num", s: d });
+  return { ...inserted, cursor: { ...inserted.cursor, offset: d.length } };
 }
 
 export function insertDot(ed: EditorState): EditorState {
@@ -325,6 +392,7 @@ function wrapPrevAs(ed: EditorState, make: (inner: Atom[]) => Atom, enter: SlotF
     const inner = getField(next[ed.cursor.index - 1]!, enter) ?? [];
     return {
       ...ed,
+      argumentCapture: undefined,
       root,
       cursor: { path, index: inner.length, offset: null },
     };
@@ -348,8 +416,53 @@ export function insertFraction(ed: EditorState, mixed: boolean): EditorState {
   return wrapPrevAs(ed, (inner) => ({ t: "frac", num: inner, den: [] }), wrapped ? "den" : "num");
 }
 
+/**
+ * Linear input uses a second fraction separator to turn an already-entered
+ * denominator into the numerator of a mixed number (for example `3 frac 1
+ * frac 2` becomes `3┘1┘2`). Natural input keeps the ordinary fraction
+ * template semantics, so this transition is only selected by the LineIO
+ * reducer.
+ */
+export function insertLinearFraction(ed: EditorState): EditorState {
+  const steps = parsePath(ed.cursor.path);
+  const last = steps[steps.length - 1];
+  const { slot: cursorSlot } = locate(ed.root, ed.cursor.path);
+  const previous = cursorSlot[ed.cursor.index - 1];
+  const cursorAtAtomEnd = ed.cursor.offset === null || (
+    ed.cursor.index > 0 &&
+    previous?.t === "num" &&
+    ed.cursor.offset === previous.s.length
+  );
+  if (last && last.field === "den" && cursorAtAtomEnd) {
+    const parentPath = ed.cursor.path.slice(0, -2);
+    const { slot } = locate(ed.root, parentPath);
+    const atom = slot[last.index];
+    const denominator = atom?.t === "frac" ? atom.den : undefined;
+    if (atom?.t === "frac" && denominator && ed.cursor.index === denominator.length && denominator.length > 0) {
+      const mixed: Atom = { t: "mixed", whole: atom.num, num: denominator, den: [] };
+      const next = [...slot];
+      next[last.index] = mixed;
+      const root = replaceSlot(ed.root, parentPath, next);
+      const path = [...parentPath, last.index, fieldToCode("den")];
+      return {
+        ...ed,
+        argumentCapture: undefined,
+        root,
+        cursor: { path, index: 0, offset: null },
+      };
+    }
+  }
+  return wrapCapturedArgument(ed, (num) => ({ t: "frac", num, den: [] }), "den") ?? insertFraction(ed, false);
+}
+
 export function insertSqrt(ed: EditorState): EditorState {
-  return wrapPrevAs(ed, (inner) => ({ t: "sqrt", inner }), "inner");
+  // √ is a prefix function. The shared insertion path keeps an immediately
+  // preceding value as an implicit-multiplication sibling (2√3), including
+  // inside a unary-negative group (-2√2). Captured RHS expressions are
+  // handled by the caller before this function and still wrap as a unit.
+  const inserted = insertAtom(ed, { t: "sqrt", inner: [] });
+  const path = [...inserted.cursor.path, inserted.cursor.index - 1, fieldToCode("inner")];
+  return { ...inserted, cursor: { path, index: 0, offset: null } };
 }
 
 export function insertCbrt(ed: EditorState): EditorState {
@@ -367,6 +480,12 @@ export function insertNthRoot(ed: EditorState): EditorState {
   return { ...inserted, cursor: { path, index: 0, offset: null } };
 }
 
+/** LineIO prints the index before SHIFT+ⁿ√, so that preceding value is the n slot. */
+export function insertNthRootWithIndex(ed: EditorState): EditorState {
+  const wrapped = wrapPrevAs(ed, (n) => ({ t: "nthrt", n, inner: [] }), "n");
+  return moveRight(wrapped);
+}
+
 export function insertLogab(ed: EditorState): EditorState {
   const atom: Atom = { t: "logb", base: [], arg: [] };
   const inserted = insertAtom(ed, atom);
@@ -378,11 +497,28 @@ export function insertLogab(ed: EditorState): EditorState {
 export const SCI10_CALL_NAME = "sci10";
 
 function callLinearName(name: string): string {
-  return name === SCI10_CALL_NAME ? "×10^" : name;
+  if (name === SCI10_CALL_NAME) {
+    return "×10^";
+  }
+  if (name === "int") {
+    return "∫";
+  }
+  if (name === "diff") {
+    return "d/dx";
+  }
+  return name;
 }
 
 export function insertCall(ed: EditorState, name: string): EditorState {
   const atom: Atom = { t: "call", name, args: [[]], closed: false };
+  const inserted = insertAtom(ed, atom);
+  const path = [...inserted.cursor.path, inserted.cursor.index - 1, fieldToCode("args0")];
+  return { ...inserted, cursor: { path, index: 0, offset: null } };
+}
+
+/** Insert a named call with its fixed Natural Display slots already present. */
+export function insertCallTemplate(ed: EditorState, name: string, argCount: number): EditorState {
+  const atom: Atom = { t: "call", name, args: Array.from({ length: argCount }, () => []), closed: false };
   const inserted = insertAtom(ed, atom);
   const path = [...inserted.cursor.path, inserted.cursor.index - 1, fieldToCode("args0")];
   return { ...inserted, cursor: { path, index: 0, offset: null } };
@@ -393,11 +529,68 @@ export function insertClosedCall(ed: EditorState, name: string): EditorState {
   return insertAtom(ed, { t: "call", name, args: [], closed: true });
 }
 
+export function insertUnitConversion(ed: EditorState, name: string): EditorState {
+  const makeConversion = (value: Atom): Atom => ({ t: "call", name, args: [[value]], closed: true });
+  const steps = parsePath(ed.cursor.path);
+  const last = steps[steps.length - 1];
+
+  if (last?.field === "inner") {
+    const parentPath = ed.cursor.path.slice(0, -2);
+    const { slot: parentSlot } = locate(ed.root, parentPath);
+    const parent = parentSlot[last.index];
+    const { slot: inner } = locate(ed.root, ed.cursor.path);
+    const lastInner = inner[ed.cursor.index - 1];
+    const atEnd = ed.cursor.index === inner.length &&
+      (ed.cursor.offset === null || (lastInner?.t === "num" && ed.cursor.offset >= lastInner.s.length));
+    if (parent?.t === "neg" && atEnd) {
+      const next = [...parentSlot];
+      next[last.index] = makeConversion(parent);
+      return {
+        ...ed,
+        argumentCapture: undefined,
+        root: replaceSlot(ed.root, parentPath, next),
+        cursor: { path: parentPath, index: last.index + 1, offset: null },
+      };
+    }
+  }
+
+  const { slot } = locate(ed.root, ed.cursor.path);
+  const previousIndex = ed.cursor.index - 1;
+  const previous = slot[previousIndex];
+  if (!isValueAtom(previous) || !previous) {
+    return ed;
+  }
+
+  const next = [...slot];
+  if (previous.t === "num" && ed.cursor.offset !== null && ed.cursor.offset < previous.s.length) {
+    const before = previous.s.slice(0, ed.cursor.offset);
+    const after = previous.s.slice(ed.cursor.offset);
+    if (!before) {
+      return ed;
+    }
+    next.splice(
+      previousIndex,
+      1,
+      makeConversion({ t: "num", s: before }),
+      ...(after ? [{ t: "num" as const, s: after }] : []),
+    );
+  } else {
+    next[previousIndex] = makeConversion(previous);
+  }
+  return {
+    ...ed,
+    argumentCapture: undefined,
+    root: replaceSlot(ed.root, ed.cursor.path, next),
+    cursor: { path: ed.cursor.path, index: previousIndex + 1, offset: null },
+  };
+}
+
 /** x̂ / ŷ / t wrap the entire current expression as the argument (official “argument immediately before”). */
 export function wrapRootAsClosedCall(ed: EditorState, name: string): EditorState {
   const args = ed.root.length > 0 ? [ed.root] : [[]];
   return {
     ...ed,
+    argumentCapture: undefined,
     root: [{ t: "call", name, args, closed: true }],
     cursor: { path: [], index: 1, offset: null },
   };
@@ -405,6 +598,11 @@ export function wrapRootAsClosedCall(ed: EditorState, name: string): EditorState
 
 export function insertAbs(ed: EditorState): EditorState {
   return wrapPrevAs(ed, (inner) => ({ t: "abs", inner }), "inner");
+}
+
+/** E-16 DRG postfix: wrap the value immediately before the cursor. */
+export function insertAngle(ed: EditorState, unit: "°" | "r" | "g"): EditorState {
+  return wrapPrevAs(ed, (inner) => ({ t: "angle", unit, inner }), "inner");
 }
 
 export function insertNeg(ed: EditorState): EditorState {
@@ -415,6 +613,14 @@ export function insertNeg(ed: EditorState): EditorState {
 }
 
 export function insertPost(ed: EditorState, op: "sq" | "cube" | "inv" | "fact" | "pct" | "dms"): EditorState {
+  const steps = parsePath(ed.cursor.path);
+  const last = steps[steps.length - 1];
+  if (last?.field === "inner" && ed.cursor.offset === null) {
+    const { slot: parent } = locate(ed.root, ed.cursor.path.slice(0, -2));
+    if (parent[last.index]?.t === "post") {
+      return ed;
+    }
+  }
   return wrapPrevAs(ed, (inner) => ({ t: "post", op, inner: inner.length ? inner : [{ t: "placeholder" }] }), "inner");
 }
 
@@ -462,6 +668,7 @@ export function closeGroupOrCall(ed: EditorState): EditorState {
   const root = replaceSlot(ed.root, parentPath, nextSlot);
   return {
     ...ed,
+      argumentCapture: undefined,
     root,
     cursor: { path: parentPath, index: last.index + 1, offset: null },
   };
@@ -482,13 +689,16 @@ export function insertColon(ed: EditorState): EditorState {
 export function insertComma(ed: EditorState): EditorState {
   const found = enclosingCall(ed);
   if (found) {
+    if (found.atom.args.length >= 4) {
+      return insertAtom(ed, { t: "comma" });
+    }
     const args = [...found.atom.args];
     args.push([]);
     const nextSlot = [...found.slot];
     nextSlot[found.index] = { ...found.atom, args };
     const root = replaceSlot(ed.root, found.parentPath, nextSlot);
     const argIndex = args.length - 1;
-    const field: SlotField = argIndex <= 0 ? "args0" : argIndex === 1 ? "args1" : "args2";
+    const field = `args${argIndex}` as SlotField;
     const path = [...found.parentPath, found.index, fieldToCode(field)];
     return { ...ed, root, cursor: { path, index: 0, offset: null } };
   }
@@ -549,11 +759,43 @@ export function insertDms(ed: EditorState): EditorState {
   }
   const inserted = insertAtom(ed, { t: "sexagesimal", deg: [], min: [], sec: [] });
   const path = [...inserted.cursor.path, inserted.cursor.index - 1, fieldToCode("whole")];
-  return { ...inserted, cursor: { path, index: 0, offset: null } };
+  return { ...inserted, argumentCapture: undefined, cursor: { path, index: 0, offset: null } };
 }
 
 export function deleteLeft(ed: EditorState): EditorState {
   const { slot } = locate(ed.root, ed.cursor.path);
+  const prev = slot[ed.cursor.index - 1];
+  if (prev?.t === "num") {
+    const offset = ed.cursor.offset ?? prev.s.length;
+    if (offset > 0) {
+      const s = prev.s.slice(0, offset - 1) + prev.s.slice(offset);
+      const next = [...slot];
+      if (s.length > 0) {
+        next[ed.cursor.index - 1] = { t: "num", s };
+      } else {
+        next.splice(ed.cursor.index - 1, 1);
+      }
+      return {
+        ...ed,
+        argumentCapture: undefined,
+        root: replaceSlot(ed.root, ed.cursor.path, next),
+        cursor: { path: ed.cursor.path, index: s.length > 0 ? ed.cursor.index : ed.cursor.index - 1, offset: s.length > 0 ? offset - 1 : null },
+      };
+    }
+    if (ed.cursor.offset === 0) {
+      if (ed.cursor.index >= 2) {
+        const next = [...slot];
+        next.splice(ed.cursor.index - 2, 1);
+        return {
+          ...ed,
+          argumentCapture: undefined,
+          root: replaceSlot(ed.root, ed.cursor.path, next),
+          cursor: { path: ed.cursor.path, index: ed.cursor.index - 1, offset: 0 },
+        };
+      }
+      return ed;
+    }
+  }
   if (ed.cursor.index === 0) {
     if (ed.cursor.path.length === 0) {
       return ed;
@@ -563,29 +805,7 @@ export function deleteLeft(ed: EditorState): EditorState {
     if (!last) {
       return ed;
     }
-    return { ...ed, cursor: { path: ed.cursor.path.slice(0, -2), index: last.index + 1, offset: null } };
-  }
-  const prev = slot[ed.cursor.index - 1];
-  if (prev?.t === "num" && prev.s.length > 1) {
-    const offset = ed.cursor.offset ?? prev.s.length;
-    if (offset > 0) {
-      const s = prev.s.slice(0, offset - 1) + prev.s.slice(offset);
-      const next = [...slot];
-      next[ed.cursor.index - 1] = { t: "num", s: s.length ? s : "0" };
-      if (s.length === 0) {
-        next.splice(ed.cursor.index - 1, 1);
-        return {
-          ...ed,
-          root: replaceSlot(ed.root, ed.cursor.path, next),
-          cursor: { ...ed.cursor, index: ed.cursor.index - 1, offset: null },
-        };
-      }
-      return {
-        ...ed,
-        root: replaceSlot(ed.root, ed.cursor.path, next),
-        cursor: { ...ed.cursor, offset: offset - 1 },
-      };
-    }
+    return { ...ed, argumentCapture: undefined, cursor: { path: ed.cursor.path.slice(0, -2), index: last.index + 1, offset: null } };
   }
   const next = [...slot];
   next.splice(ed.cursor.index - 1, 1);
@@ -596,49 +816,252 @@ export function deleteLeft(ed: EditorState): EditorState {
   };
 }
 
-export function moveLeft(ed: EditorState): EditorState {
-  if (ed.cursor.index > 0) {
-    const { slot } = locate(ed.root, ed.cursor.path);
-    const prev = slot[ed.cursor.index - 1];
-    if (prev?.t === "num" && ed.cursor.offset && ed.cursor.offset > 0) {
-      return { ...ed, cursor: { ...ed.cursor, offset: ed.cursor.offset - 1 } };
+/** DEL in overwrite mode removes the character/function under the cursor. */
+export function deleteAtCursor(ed: EditorState): EditorState {
+  const { slot } = locate(ed.root, ed.cursor.path);
+  const previous = slot[ed.cursor.index - 1];
+  if (previous?.t === "num" && ed.cursor.offset !== null && ed.cursor.offset < previous.s.length) {
+    const s = previous.s.slice(0, ed.cursor.offset) + previous.s.slice(ed.cursor.offset + 1);
+    const next = [...slot];
+    if (s.length > 0) {
+      next[ed.cursor.index - 1] = { t: "num", s };
+    } else {
+      next.splice(ed.cursor.index - 1, 1);
+      return {
+        ...ed,
+        argumentCapture: undefined,
+        root: replaceSlot(ed.root, ed.cursor.path, next),
+        cursor: { path: ed.cursor.path, index: ed.cursor.index - 1, offset: null },
+      };
     }
+    return {
+      ...ed,
+      argumentCapture: undefined,
+      root: replaceSlot(ed.root, ed.cursor.path, next),
+      cursor: { ...ed.cursor, offset: Math.min(ed.cursor.offset, s.length) },
+    };
+  }
+  if (ed.cursor.index >= slot.length) {
+    return ed;
+  }
+  const current = slot[ed.cursor.index];
+  if (current?.t === "num" && ed.cursor.offset !== null && ed.cursor.offset < current.s.length) {
+    const s = current.s.slice(0, ed.cursor.offset) + current.s.slice(ed.cursor.offset + 1);
+    const next = [...slot];
+    if (s.length > 0) {
+      next[ed.cursor.index] = { t: "num", s };
+    } else {
+      next.splice(ed.cursor.index, 1);
+    }
+    return {
+      ...ed,
+      argumentCapture: undefined,
+      root: replaceSlot(ed.root, ed.cursor.path, next),
+      cursor: { ...ed.cursor, offset: s.length > 0 ? Math.min(ed.cursor.offset, s.length) : null },
+    };
+  }
+  const next = [...slot];
+  next.splice(ed.cursor.index, 1);
+  return {
+    ...ed,
+    argumentCapture: undefined,
+    root: replaceSlot(ed.root, ed.cursor.path, next),
+    cursor: { ...ed.cursor, offset: null },
+  };
+}
+
+export function captureRightArgument(ed: EditorState): EditorState {
+  const { slot } = locate(ed.root, ed.cursor.path);
+  let start = ed.cursor.index;
+  let offset: number | null = null;
+  if (ed.cursor.offset !== null && ed.cursor.index > 0 && slot[ed.cursor.index - 1]?.t === "num") {
+    start = ed.cursor.index - 1;
+    offset = ed.cursor.offset;
+  }
+  if (start >= slot.length) {
+    return ed;
+  }
+  const first = slot[start];
+  if (!first) {
+    return ed;
+  }
+  let end = start + 1;
+  const isAtomicArgument = (atom: Atom): boolean =>
+    atom.t === "frac" || atom.t === "mixed" || atom.t === "sexagesimal" || atom.t === "sqrt" ||
+    atom.t === "cbrt" || atom.t === "call" || atom.t === "group" || atom.t === "pow" ||
+    atom.t === "logb" || atom.t === "nthrt";
+  if (!isAtomicArgument(first)) {
+    while (end < slot.length) {
+      const next = slot[end];
+      if (!next || next.t === "colon" || next.t === "comma" || firstField(next)) {
+        break;
+      }
+      if (next.t === "op") {
+        const operand = slot[end + 1];
+        if (!operand || isAtomicArgument(operand) || operand.t === "op" || operand.t === "colon" || operand.t === "comma") {
+          break;
+        }
+        end += 2;
+        continue;
+      }
+      if (isAtomicArgument(next)) {
+        break;
+      }
+      end += 1;
+    }
+  }
+  return {
+    ...ed,
+    argumentCapture: { path: [...ed.cursor.path], start, end, offset },
+  };
+}
+
+export function wrapCapturedArgument(ed: EditorState, make: (atoms: Atom[]) => Atom, field: SlotField): EditorState | null {
+  const capture = ed.argumentCapture;
+  if (!capture || !pathsEqual(capture.path, ed.cursor.path)) {
+    return null;
+  }
+  const { slot } = locate(ed.root, capture.path);
+  const selected = slot.slice(capture.start, capture.end);
+  if (selected.length === 0) {
+    return null;
+  }
+  let selectedAtoms = selected;
+  let prefix: Atom[] = [];
+  if (capture.offset !== null && selected[0]?.t === "num") {
+    const text = selected[0].s;
+    const before = text.slice(0, capture.offset);
+    const after = text.slice(capture.offset);
+    prefix = before ? [{ t: "num", s: before }] : [];
+    selectedAtoms = after ? [{ t: "num", s: after }, ...selected.slice(1)] : selected.slice(1);
+  }
+  if (selectedAtoms.length === 0) {
+    return null;
+  }
+  const wrapper = make(selectedAtoms);
+  const nextSlot = [...slot];
+  nextSlot.splice(capture.start, capture.end - capture.start, ...prefix, wrapper);
+  const root = replaceSlot(ed.root, capture.path, nextSlot);
+  const path = [...capture.path, capture.start + prefix.length, fieldToCode(field)];
+  const inner = getField(wrapper, field) ?? [];
+  return {
+    ...ed,
+    root,
+    argumentCapture: undefined,
+    cursor: { path, index: inner.length, offset: null },
+  };
+}
+
+export function moveLeft(ed: EditorState): EditorState {
+  const { slot } = locate(ed.root, ed.cursor.path);
+  const prev = slot[ed.cursor.index - 1];
+  const steps = parsePath(ed.cursor.path);
+  const last = steps[steps.length - 1];
+  if (last) {
+    const parentPath = ed.cursor.path.slice(0, -2);
+    const { slot: parent } = locate(ed.root, parentPath);
+    const template = parent[last.index];
+    if (ed.cursor.index === 0 && template?.t === "call" && last.field.startsWith("args")) {
+      const argIndex = Number(last.field.slice(4));
+      if (argIndex > 0) {
+        const previousIndex = argIndex - 1;
+        const previousField = `args${previousIndex}` as SlotField;
+        const previous = template.args[previousIndex] ?? [];
+        return {
+          ...ed,
+          argumentCapture: undefined,
+          cursor: { path: [...parentPath, last.index, fieldToCode(previousField)], index: previous.length, offset: null },
+        };
+      }
+    }
+    if (template?.t === "frac" && last.field === "den" && ed.cursor.index === 0) {
+      const path = [...parentPath, last.index, fieldToCode("num")];
+      const numeratorLast = template.num.at(-1);
+      return {
+        ...ed,
+        argumentCapture: undefined,
+        cursor: { path, index: template.num.length, offset: numeratorLast?.t === "num" ? 0 : null },
+      };
+    }
+    if (template?.t === "frac" && last.field === "num" && prev?.t === "num" && ed.cursor.offset === 0) {
+      return { ...ed, argumentCapture: undefined, cursor: { path: parentPath, index: last.index, offset: null } };
+    }
+  }
+  if (prev?.t === "num") {
+    const offset = ed.cursor.offset ?? prev.s.length;
+    if (offset > 0) {
+      return { ...ed, argumentCapture: undefined, cursor: { ...ed.cursor, offset: offset - 1 } };
+    }
+    return { ...ed, argumentCapture: undefined, cursor: { path: ed.cursor.path, index: ed.cursor.index - 1, offset: null } };
+  }
+  if (ed.cursor.index > 0) {
     const field = firstField(prev);
     if (field && prev) {
       const inner = getField(prev, field) ?? [];
       const path = [...ed.cursor.path, ed.cursor.index - 1, fieldToCode(field)];
-      return { ...ed, cursor: { path, index: inner.length, offset: null } };
+      return { ...ed, argumentCapture: undefined, cursor: { path, index: inner.length, offset: null } };
     }
-    return { ...ed, cursor: { ...ed.cursor, index: ed.cursor.index - 1, offset: prev?.t === "num" ? prev.s.length : null } };
+    return { ...ed, argumentCapture: undefined, cursor: { ...ed.cursor, index: ed.cursor.index - 1, offset: null } };
   }
   if (ed.cursor.path.length === 0) {
-    const { slot } = locate(ed.root, []);
-    return { ...ed, cursor: { path: [], index: slot.length, offset: null } };
+    const last = slot[slot.length - 1];
+    return { ...ed, argumentCapture: undefined, cursor: { path: [], index: slot.length, offset: last?.t === "num" ? last.s.length : null } };
   }
-  const steps = parsePath(ed.cursor.path);
-  const last = steps[steps.length - 1];
   if (!last) {
     return ed;
   }
-  return { ...ed, cursor: { path: ed.cursor.path.slice(0, -2), index: last.index, offset: null } };
+  return { ...ed, argumentCapture: undefined, cursor: { path: ed.cursor.path.slice(0, -2), index: last.index, offset: null } };
 }
 
 export function moveRight(ed: EditorState): EditorState {
   const { slot } = locate(ed.root, ed.cursor.path);
+  const prev = slot[ed.cursor.index - 1];
+  if (prev?.t === "num" && ed.cursor.offset !== null) {
+    if (ed.cursor.offset < prev.s.length) {
+      return { ...ed, argumentCapture: undefined, cursor: { ...ed.cursor, offset: ed.cursor.offset + 1 } };
+    }
+    if (ed.cursor.path.length === 0 && ed.cursor.index >= slot.length) {
+      return { ...ed, argumentCapture: undefined, cursor: { path: [], index: 0, offset: slot[0]?.t === "num" ? 0 : null } };
+    }
+    if (ed.cursor.index >= slot.length && ed.cursor.path.length > 0) {
+      const steps = parsePath(ed.cursor.path);
+      const last = steps[steps.length - 1];
+      if (last) {
+        const parentPath = ed.cursor.path.slice(0, -2);
+        const { slot: parent } = locate(ed.root, parentPath);
+        const atom = parent[last.index];
+        const nextField = nextSlotField(atom, last.field);
+        if (nextField && atom) {
+          const next = getField(atom, nextField) ?? [];
+          return {
+            ...ed,
+            argumentCapture: undefined,
+            cursor: { path: [...parentPath, last.index, fieldToCode(nextField)], index: next.length, offset: null },
+          };
+        }
+        // A Natural template's final slot is exited by the first RIGHT at
+        // the end of its last number. The old path left a null offset in the
+        // slot and required a second RIGHT, keeping the next operator inside
+        // Abs/group/call templates.
+        return { ...ed, argumentCapture: undefined, cursor: { path: parentPath, index: last.index + 1, offset: null } };
+      }
+    }
+    return { ...ed, argumentCapture: undefined, cursor: { ...ed.cursor, offset: null } };
+  }
   if (ed.cursor.index < slot.length) {
     const cur = slot[ed.cursor.index];
-    if (cur?.t === "num" && (ed.cursor.offset ?? 0) < cur.s.length && ed.cursor.offset !== null) {
-      return { ...ed, cursor: { ...ed.cursor, offset: (ed.cursor.offset ?? 0) + 1 } };
+    if (cur?.t === "num") {
+      return { ...ed, argumentCapture: undefined, cursor: { path: ed.cursor.path, index: ed.cursor.index + 1, offset: 0 } };
     }
     const field = firstField(cur);
     if (field && cur) {
       const path = [...ed.cursor.path, ed.cursor.index, fieldToCode(field)];
-      return { ...ed, cursor: { path, index: 0, offset: null } };
+      return { ...ed, argumentCapture: undefined, cursor: { path, index: 0, offset: null } };
     }
-    return { ...ed, cursor: { ...ed.cursor, index: ed.cursor.index + 1, offset: null } };
+    return { ...ed, argumentCapture: undefined, cursor: { ...ed.cursor, index: ed.cursor.index + 1, offset: null } };
   }
   if (ed.cursor.path.length === 0) {
-    return { ...ed, cursor: { path: [], index: 0, offset: null } };
+    return { ...ed, argumentCapture: undefined, cursor: { path: [], index: 0, offset: slot[0]?.t === "num" ? 0 : null } };
   }
   const steps = parsePath(ed.cursor.path);
   const last = steps[steps.length - 1];
@@ -652,9 +1075,9 @@ export function moveRight(ed: EditorState): EditorState {
   if (nextField && atom) {
     const inner = getField(atom, nextField) ?? [];
     const path = [...parentPath, last.index, fieldToCode(nextField)];
-    return { ...ed, cursor: { path, index: inner.length === 0 ? 0 : inner.length, offset: null } };
+    return { ...ed, argumentCapture: undefined, cursor: { path, index: inner.length, offset: null } };
   }
-  return { ...ed, cursor: { path: parentPath, index: last.index + 1, offset: null } };
+  return { ...ed, argumentCapture: undefined, cursor: { path: parentPath, index: last.index + 1, offset: null } };
 }
 
 function firstField(atom: Atom | undefined): SlotField | null {
@@ -716,17 +1139,55 @@ function nextSlotField(atom: Atom | undefined, field: SlotField): SlotField | nu
       return field === "base" ? "exp" : null;
     case "logb":
       return field === "base" ? "arg" : null;
+    case "call": {
+      if (!field.startsWith("args")) {
+        return null;
+      }
+      const next = Number(field.slice(4)) + 1;
+      return next < atom.args.length ? `args${next}` as SlotField : null;
+    }
     default:
       return null;
   }
 }
 
 export function moveDown(ed: EditorState): EditorState {
-  return moveRight(ed);
+  return moveVerticalSlot(ed, "down");
 }
 
 export function moveUp(ed: EditorState): EditorState {
-  return moveLeft(ed);
+  return moveVerticalSlot(ed, "up");
+}
+
+function moveVerticalSlot(ed: EditorState, direction: "up" | "down"): EditorState {
+  const steps = parsePath(ed.cursor.path);
+  const last = steps[steps.length - 1];
+  if (!last) {
+    return ed;
+  }
+  const parentPath = ed.cursor.path.slice(0, -2);
+  const { slot } = locate(ed.root, parentPath);
+  const atom = slot[last.index];
+  if (!atom) {
+    return ed;
+  }
+  const vertical: Partial<Record<SlotField, SlotField>> = direction === "up"
+    ? { den: "num", base: "exp", inner: "n", arg: "base", args1: "args0", args2: "args1" }
+    : { num: "den", exp: "base", n: "inner", args0: "args1", args1: "args2" };
+  const field = vertical[last.field];
+  if (!field || !getField(atom, field)) {
+    return ed;
+  }
+  const target = getField(atom, field) ?? [];
+  return {
+    ...ed,
+    argumentCapture: undefined,
+    cursor: {
+      path: [...parentPath, last.index, fieldToCode(field)],
+      index: Math.min(ed.cursor.index, target.length),
+      offset: null,
+    },
+  };
 }
 
 export function clearEditor(ed: EditorState): EditorState {
@@ -735,14 +1196,15 @@ export function clearEditor(ed: EditorState): EditorState {
 
 export function editorFromAtoms(atoms: Atom[], cursorIndex?: number): EditorState {
   const end = atoms.length;
-  const index = cursorIndex === undefined ? end : Math.min(end, Math.max(0, cursorIndex));
-  const at = atoms[index];
+  const boundary = cursorIndex === undefined ? end : Math.min(end, Math.max(0, cursorIndex));
+  const at = atoms[boundary];
+  const inNumber = cursorIndex !== undefined && at?.t === "num";
   return {
     root: atoms,
     cursor: {
       path: [],
-      index,
-      offset: at?.t === "num" ? 0 : null,
+      index: inNumber ? boundary + 1 : boundary,
+      offset: inNumber ? 0 : null,
     },
     insertMode: "insert",
   };
@@ -802,6 +1264,17 @@ export function byteCount(atoms: Atom[]): number {
           walk(a.arg);
           break;
         case "call":
+          if (scientificConstantByCallName(a.name)) {
+            n += scientificCallLabel(a.name)?.length ?? 1;
+            break;
+          }
+          if (unitConversionByCallName(a.name)) {
+            n += scientificCallLabel(a.name)?.length ?? 1;
+            for (const arg of a.args) {
+              walk(arg);
+            }
+            break;
+          }
           n += a.name.length + 2;
           for (const arg of a.args) {
             walk(arg);
@@ -814,6 +1287,47 @@ export function byteCount(atoms: Atom[]): number {
   };
   walk(atoms);
   return n;
+}
+
+/** E-12: retain the newest replay entries within the approximate 200-byte budget. */
+export function trimHistory(entries: HistoryEntry[], maxBytes = 200): HistoryEntry[] {
+  let used = 0;
+  const kept: HistoryEntry[] = [];
+  for (let i = entries.length - 1; i >= 0; i -= 1) {
+    const entry = entries[i];
+    if (!entry) {
+      continue;
+    }
+    const expressionCost = entry.baseN
+      ? entry.baseN.tokens.reduce((total, token) => {
+          switch (token.t) {
+            case "num":
+              return total + token.digits.length + (token.suffix === null ? 0 : 1);
+            case "op":
+              return total + token.op.length;
+            case "not":
+              return total + 3;
+            case "negfn":
+              return total + 3;
+            case "lparen":
+            case "rparen":
+            case "unary":
+              return total + 1;
+            case "ans":
+              return total + 3;
+            default:
+              return total;
+          }
+        }, 0)
+      : byteCount(entry.expression);
+    const cost = expressionCost + entry.result.display.length;
+    if (kept.length > 0 && used + cost > maxBytes) {
+      break;
+    }
+    kept.push(entry);
+    used += cost;
+  }
+  return kept.reverse();
 }
 
 export function atomsToLinear(atoms: Atom[], format: DisplayFormat): string {
@@ -836,9 +1350,15 @@ export function atomsToLinear(atoms: Atom[], format: DisplayFormat): string {
           break;
         case "mixed":
           walk(a.whole);
-          parts.push(" ");
-          walk(a.num);
-          parts.push("/");
+          if (format === "LineIO") {
+            parts.push("┘");
+            walk(a.num);
+            parts.push("┘");
+          } else {
+            parts.push(" ");
+            walk(a.num);
+            parts.push("/");
+          }
           walk(a.den);
           break;
         case "sexagesimal":
@@ -881,6 +1401,15 @@ export function atomsToLinear(atoms: Atom[], format: DisplayFormat): string {
           parts.push(")");
           break;
         case "call":
+          if (scientificConstantByCallName(a.name)) {
+            parts.push(scientificCallLabel(a.name) ?? a.name);
+            break;
+          }
+          if (unitConversionByCallName(a.name)) {
+            a.args.forEach((arg) => walk(arg));
+            parts.push(scientificCallLabel(a.name) ?? a.name);
+            break;
+          }
           parts.push(callLinearName(a.name));
           parts.push("(");
           a.args.forEach((arg, i) => {
@@ -1000,9 +1529,15 @@ export function atomsToLinearSplit(
           break;
         case "mixed":
           walk(a.whole, childPath(slotPath, i, "whole"));
-          emit(" ");
-          walk(a.num, childPath(slotPath, i, "num"));
-          emit("/");
+          if (format === "LineIO") {
+            emit("┘");
+            walk(a.num, childPath(slotPath, i, "num"));
+            emit("┘");
+          } else {
+            emit(" ");
+            walk(a.num, childPath(slotPath, i, "num"));
+            emit("/");
+          }
           walk(a.den, childPath(slotPath, i, "den"));
           break;
         case "sexagesimal":
@@ -1045,13 +1580,22 @@ export function atomsToLinearSplit(
           emit(")");
           break;
         case "call":
+          if (scientificConstantByCallName(a.name)) {
+            emit(scientificCallLabel(a.name) ?? a.name);
+            break;
+          }
+          if (unitConversionByCallName(a.name)) {
+            a.args.forEach((arg, argIndex) => walk(arg, childPath(slotPath, i, `args${argIndex}` as SlotField)));
+            emit(scientificCallLabel(a.name) ?? a.name);
+            break;
+          }
           emit(callLinearName(a.name));
           emit("(");
           a.args.forEach((arg, argIndex) => {
             if (argIndex) {
               emit(",");
             }
-            const field: SlotField = argIndex <= 0 ? "args0" : argIndex === 1 ? "args1" : "args2";
+            const field = `args${argIndex}` as SlotField;
             walk(arg, childPath(slotPath, i, field));
           });
           emit(a.closed ? ")" : "");
@@ -1113,7 +1657,7 @@ export function atomsToLinearSplit(
   return { before: before.join(""), after: after.join("") };
 }
 
-export function prepareForBinaryOp(ed: EditorState): EditorState {
+export function prepareForBinaryOp(ed: EditorState, lineIO = false): EditorState {
   if (ed.cursor.path.length < 2) {
     return ed;
   }
@@ -1143,7 +1687,14 @@ export function prepareForBinaryOp(ed: EditorState): EditorState {
     case "frac":
     case "mixed":
       if (last.field === "den") {
-        return { ...ed, cursor: { path: parentPath, index: last.index + 1, offset: null } };
+        if (lineIO) {
+          return { ...ed, cursor: { path: parentPath, index: last.index + 1, offset: null } };
+        }
+        // Operators typed after entering a fraction denominator remain in the
+        // denominator.  The selected E-8 worked example enters `1+√2`
+        // without parentheses, so promoting `+` to the outer slot produces a
+        // different expression (`2+2√2`) instead of the printed quotient.
+        return ed;
       }
       return ed;
     case "sexagesimal":

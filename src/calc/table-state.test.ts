@@ -63,7 +63,7 @@ describe("TABLE reducer / evaluation", () => {
     expect(s.table?.rows).toHaveLength(4);
     expect(s.table?.rows.map((r) => r.xApprox)).toEqual(["0", "30", "60", "90"]);
     expect(s.table?.rows[0]?.fxDisplay).toBe("0");
-    expect(s.table?.rows[1]?.fxDisplay?.replace(/\s/g, "")).toMatch(/1\/2/);
+    expect(s.table?.rows[1]?.fxDisplay).toBe("0.5");
     expect(s.table?.rows[3]?.fxApprox).toMatch(/^1/);
   });
 
@@ -92,6 +92,17 @@ describe("TABLE reducer / evaluation", () => {
     expect(s.table?.phase).toBe("view");
     expect(s.ans).toMatch(/^4/);
     expect(s.variables.X).toBe("5");
+  });
+
+  it("retains the precise final TABLE X for later COMP arithmetic under Fix 3", () => {
+    let s = run([
+      "shift", "mode", "2", "shift", "mode", "6", "3", "mode", "7", "alpha", "rparen", "equals",
+      "1", "0", "div", "3", "equals", "4", "equals", "1", "equals",
+    ]);
+    expect(s.table?.phase).toBe("view");
+    expect(s.variables.X).toBe("3.33333333333333");
+    s = run(["mode", "1", "alpha", "rparen", "mul", "3", "equals"], s);
+    expect(lcdResult(s)).toBe("10.000");
   });
 
   it("zero Step is Argument ERROR", () => {
@@ -193,8 +204,9 @@ describe("TABLE reducer / evaluation", () => {
     expect(lcdExpression(s)).toBe("");
   });
 
-  it("SETUP tableFormat f(x),g(x) is ignored; TABLE still generates a single f(x)", () => {
-    const prior = run(["shift", "mode", "down", "5", "2"]);
+  it("TABLE still generates a single f(x) when a legacy tableFormat value is persisted", () => {
+    const initial = createInitialState(0);
+    const prior = { ...initial, setup: { ...initial.setup, tableFormat: "f(x),g(x)" as const } };
     expect(prior.setup.tableFormat).toBe("f(x),g(x)");
     const s = run(["mode", "7", "alpha", "rparen", "add", "1", "equals", "equals", "equals", "equals"], prior);
     expect(s.table?.rows.map((r) => r.fxApprox)).toEqual(["2", "3", "4", "5", "6"]);

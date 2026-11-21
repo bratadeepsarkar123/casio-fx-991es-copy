@@ -15,7 +15,7 @@ function cells(v: VectorValue | null | undefined): string[] | null {
 
 const ENTER_VCTA_2D: KeyId[] = ["mode", "8", "1", "2", "1", "equals", "2", "equals", "ac"];
 
-const ENTER_VCTB_2D: KeyId[] = ["shift", "5", "1", "2", "2", "3", "equals", "4", "equals", "ac"];
+const ENTER_VCTB_2D: KeyId[] = ["shift", "5", "2", "2", "2", "3", "equals", "4", "equals", "ac"];
 
 const ENTER_VCTC_3D: KeyId[] = [
   "shift",
@@ -58,9 +58,24 @@ describe("VECTOR reducer / session", () => {
     expect(s.vector?.registers.A).toBeNull();
   });
 
+  it("Data on a new VctB offers dimensions; Data on an assigned VctB opens its cells", () => {
+    let state = run(["mode", "8", "shift", "5", "2", "2"]);
+    expect(state.vector?.phase).toBe("dim-size");
+    expect(state.vector?.dimTarget).toBe("B");
+    state = dispatchKeys(state, ["2"], 0);
+    expect(state.vector?.phase).toBe("editor");
+    expect(state.vector?.editorReg).toBe("B");
+
+    state = run([...ENTER_VCTA_2D, ...ENTER_VCTB_2D]);
+    state = dispatchKeys(state, ["shift", "5", "2", "2"], 0);
+    expect(state.vector?.phase).toBe("editor");
+    expect(state.vector?.editorReg).toBe("B");
+    expect(lcdExpression(state)).toBe("B1=");
+  });
+
   it("Ex1 VctA+VctB VctAns (4, 6) TARGET-OFFICIAL-DOC", () => {
     const s = run([
-      ...ENTER_VCTA_2D,
+      ...ENTER_VCTA_2D.slice(0, -1),
       ...ENTER_VCTB_2D,
       "shift",
       "5",
@@ -241,8 +256,9 @@ describe("VECTOR reducer / session", () => {
   it("copy VctAns to VctC via STO TARGET-OFFICIAL-DOC copy", () => {
     let s = run([...ENTER_VCTA_2D, "3", "mul", "shift", "5", "3", "equals"]);
     expect(s.vector?.phase).toBe("vctans");
-    s = dispatchKeys(s, ["shift", "rcl", "3"], 0);
+    s = dispatchKeys(s, ["shift", "rcl", "hyp"], 0);
     expect(cells(s.vector?.registers.C)).toEqual(["3", "6"]);
-    expect(s.vector?.phase).toBe("calc");
+    expect(s.vector?.phase).toBe("editor");
+    expect(s.vector?.editorReg).toBe("C");
   });
 });

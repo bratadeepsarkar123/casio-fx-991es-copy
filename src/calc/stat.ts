@@ -1,5 +1,7 @@
-import { emptyEditor, insertCall, insertClosedCall, wrapRootAsClosedCall } from "./editor.ts";
+import { emptyEditor, insertCall, insertClosedCall, insertDigit, insertDot, insertNeg, insertUnitConversion } from "./editor.ts";
 import type { KeyEvent, KeyId } from "./keys.ts";
+import { evaluateAtoms } from "./evaluate.ts";
+import { createUint32Rng } from "./numeric.ts";
 import { isPairedStatType, statMaxRows } from "./statNumeric.ts";
 import type {
   CalcState,
@@ -201,10 +203,25 @@ function clampCol(stat: StatSession, freqOn: boolean): StatCol {
   return "x";
 }
 
+function isOccupiedRow(row: StatRow | undefined): boolean {
+  return !!row && (row.x != null || row.y != null || row.freq != null);
+}
+
 function moveRow(stat: StatSession, delta: number, type: StatType, freqOn: boolean): StatSession {
   const max = statMaxRows(type, freqOn);
   let next = stat.rowIndex + delta;
   let rows = [...stat.rows];
+  const lastOccupied = rows.reduce((last, row, index) => (isOccupiedRow(row) ? index : last), -1);
+  const atTrailingBlank = !isOccupiedRow(rows[stat.rowIndex]) && stat.rowIndex > lastOccupied;
+  if (delta > 0 && atTrailingBlank && lastOccupied >= 0) {
+    return {
+      ...stat,
+      rowIndex: 0,
+      input: "",
+      editing: false,
+      col: clampCol(stat, freqOn),
+    };
+  }
   if (next < 0) {
     next = 0;
   }
@@ -249,7 +266,7 @@ function appendDigit(stat: StatSession, d: string): StatSession {
   return { ...stat, input: next, editing: true };
 }
 
-function handleEditorKey(state: CalcState, keyId: KeyId): CalcState {
+function handleEditorKey(state: CalcState, keyId: KeyId): CalcState | null {
   const stat0 = state.stat;
   if (!stat0 || !stat0.type) {
     return state;
@@ -260,6 +277,31 @@ function handleEditorKey(state: CalcState, keyId: KeyId): CalcState {
 
   if (state.shift && keyId === "1") {
     return withStat(state, stat, { menu: { kind: "stat-editor" } });
+  }
+
+  if (state.editor.root.length > 0) {
+    if (keyId === "ac") {
+      if (state.shift) {
+        return null;
+      }
+      return editorState(state, { ...stat, input: "", editing: false });
+    }
+    if (keyId === "equals") {
+      try {
+        const value = evaluateAtoms(state.editor.root, state, createUint32Rng(state.rngSeed));
+        const valueState: CalcState = {
+          ...state,
+          stat: { ...stat, input: value.internal?.re ?? value.approx, editing: true },
+          editor: emptyEditor(),
+          rngSeed: state.rngSeed + 1,
+        };
+        return handleEditorKey(valueState, keyId);
+      } catch (err) {
+        const code = (err as { code?: ErrorCode }).code ?? "Math ERROR";
+        return statError(state, code);
+      }
+    }
+    return null;
   }
 
   if (keyId === "ac") {
@@ -452,13 +494,18 @@ export function goStatEditor(state: CalcState): CalcState {
 }
 
 export function insertStatCommand(state: CalcState, name: string): CalcState {
+  const previous = state.editor.root[0];
+  const afterPriorCommand = state.screen.kind === "input" &&
+    state.editor.root.length === 1 && previous?.t === "call" && previous.closed && previous.name.startsWith("stat-");
   const base =
-    state.screen.kind === "result" || state.screen.kind === "replay"
+    state.screen.kind === "result" || state.screen.kind === "replay" || afterPriorCommand
       ? { ...state, editor: emptyEditor(), screen: { kind: "input" as const }, result: null }
       : { ...state, screen: { kind: "input" as const } };
   let editor = base.editor;
   if (WRAP_STAT_CALLS.has(name)) {
-    editor = wrapRootAsClosedCall(base.editor, name);
+    // E-8 places STAT estimate commands above every infix operator: `2 + 160 y-hat`
+    // means `2 + y-hat(160)`, so bind only the value immediately before the command.
+    editor = insertUnitConversion(base.editor, name);
   } else if (PREFIX_STAT_CALLS.has(name)) {
     editor = insertCall(base.editor, name);
   } else {
@@ -473,8 +520,9 @@ export function insertStatCommand(state: CalcState, name: string): CalcState {
 }
 
 /**
- * STAT-owned reducer. Returns null to fall through (MODE, SETUP, calc-phase COMP keys).
- * Editor/type phases swallow keys so they never become COMP Atom[].
+ * STAT-owned reducer. Returns null to fall through for shared atom editing and
+ * calculation keys; entered atom expressions are evaluated into the current
+ * data cell when the user confirms them.
  */
 export function reduceStat(state: CalcState, event: KeyEvent): CalcState | null {
   if (state.mode !== "STAT" || !state.stat) {
@@ -482,6 +530,23 @@ export function reduceStat(state: CalcState, event: KeyEvent): CalcState | null 
   }
   const keyId = event.keyId;
   const phase = state.stat.phase;
+
+  // After AC on a result, retain its expression for arrow-key review. If the
+  // next new operand begins a calculation, replace a lone prior STAT command.
+  const priorStatCommand = state.screen.kind === "input" && state.stat.phase === "calc" &&
+    state.editor.root.length === 1 && state.editor.root[0]?.t === "call" && state.editor.root[0].closed &&
+    state.editor.root[0].name.startsWith("stat-");
+  if (priorStatCommand) {
+    if (/^[0-9]$/.test(keyId) && !state.shift) {
+      return { ...clearLatches(state), editor: insertDigit(emptyEditor(), keyId), result: null };
+    }
+    if (keyId === "dot" && !state.shift) {
+      return { ...clearLatches(state), editor: insertDot(emptyEditor()), result: null };
+    }
+    if (keyId === "neg" && !state.shift) {
+      return { ...clearLatches(state), editor: insertNeg(emptyEditor()), result: null };
+    }
+  }
 
   if (state.screen.kind === "error") {
     if (phase !== "editor" && phase !== "type") {

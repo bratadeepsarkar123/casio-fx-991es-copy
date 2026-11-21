@@ -14,7 +14,7 @@ describe("S⇔D in LineO / LineIO (hardware: decimal ↔ fraction)", () => {
     expect(s.setup.displayFormat).toBe("MthIO-LineO");
     expect(s.result?.naturalKind).toBe("decimal");
     expect(lcdResult(s)).toMatch(/^0\.811/);
-    expect(s.result?.fraction).toEqual({ num: "56", den: "69" });
+    expect(s.result?.fraction).toMatchObject({ num: "56", den: "69", improper: "56" });
     const frac = run(["sd"], s);
     expect(frac.result?.naturalKind).toBe("fraction");
     expect(lcdResult(frac).replace(/\s/g, "")).toBe("56/69");
@@ -28,6 +28,6 @@ describe("S⇔D in LineO / LineIO (hardware: decimal ↔ fraction)", () => {
     expect(s.setup.displayFormat).toBe("LineIO");
     expect(lcdResult(s)).toMatch(/^0\.811/);
     const frac = run(["sd"], s);
-    expect(lcdResult(frac).replace(/\s/g, "")).toBe("56/69");
+    expect(lcdResult(frac).replace(/\s/g, "")).toBe("56┘69");
   });
 });

@@ -2,6 +2,7 @@ import {
   CalcArgumentError,
   CalcMathError,
   CalcSyntaxError,
+  CalcTimeoutError,
   D,
   E,
   PI,
@@ -19,11 +20,12 @@ import {
   toBigIntExact,
   type Dec,
 } from "./numeric.ts";
-import { resultFromSym, formatBySetup, formatNumeric, formatSexagesimal } from "./format.ts";
+import { effectiveDisplayFormat, resultFromSym, formatBySetup, formatNumeric, formatSexagesimal, fractionResultForSetup } from "./format.ts";
 import { specialTrigFromSym } from "./specialTrig.ts";
 import {
   asCplx,
   cplxI,
+  exactRational,
   fromDec,
   isNonReal,
   packCplx,
@@ -40,10 +42,18 @@ import {
 } from "./symbolic.ts";
 import { complexAbs, complexArg, complexConj, polarToRect } from "./complex.ts";
 import { evalStatCommand, isStatCallName } from "./statNumeric.ts";
-import type { AngleUnit, Atom, CalcState, ComplexFormat, ResultValue, StatRow, StatType, VarName } from "./types.ts";
+import { assertAllowedCalculusTree, differentiateCentral, integrateAdaptive, sumIntegerRange } from "./calculus.ts";
+import {
+  convertUnitValue,
+  scientificConstantByCallName,
+  unitConversionByCallName,
+} from "./scientificData.ts";
+import type { AngleUnit, Atom, CalcMode, CalcState, ComplexFormat, NumberFormat, ResultValue, StatRow, StatType, VarName } from "./types.ts";
 
 export interface EvalContext {
+  mode: CalcMode;
   angle: AngleUnit;
+  numberFormat: NumberFormat;
   ans: Dec;
   ansIm: Dec;
   preAns: Dec;
@@ -66,7 +76,9 @@ function ctxFromState(state: CalcState, nextUint32: () => number): EvalContext {
     vars[k] = parseCalcNumber(state.variables[k] ?? "0");
   }
   return {
+    mode: state.mode,
     angle: state.setup.angleUnit,
+    numberFormat: state.setup.numberFormat,
     ans: parseCalcNumber(state.ans),
     ansIm: parseCalcNumber(state.ansIm ?? "0"),
     preAns: parseCalcNumber(state.preAns),
@@ -108,7 +120,7 @@ function evalSlot(atoms: Atom[], ctx: EvalContext): Sym {
 
 type Item =
   | { k: "val"; v: Sym }
-  | { k: "op"; op: "+" | "-" | "×" | "÷" | "÷R" | "nPr" | "nCr" | "implied" | "∠" };
+  | { k: "op"; op: "+" | "-" | "×" | "÷" | "÷R" | "nPr" | "nCr" | "implied" | "∠" | "=" };
 
 function recallPair(re: Dec, im: Dec, ctx: EvalContext): Sym {
   const real = fromDec(re);
@@ -128,6 +140,93 @@ function requireReal(s: Sym): Dec {
   return toDec(s.k === "cplx" ? s.re : s);
 }
 
+function requireMagnitude(x: Dec, max: string, inclusive = false): Dec {
+  const magnitude = x.abs();
+  if (inclusive ? magnitude.gt(max) : magnitude.gte(max)) {
+    throw new CalcMathError();
+  }
+  return x;
+}
+
+function requireFunctionInputRange(
+  x: Dec,
+  min: string | null,
+  max: string,
+  minInclusive = true,
+  maxInclusive = true,
+): Dec {
+  if (
+    (min !== null && (minInclusive ? x.lt(min) : x.lte(min))) ||
+    (maxInclusive ? x.gt(max) : x.gte(max))
+  ) {
+    throw new CalcMathError();
+  }
+  return x;
+}
+
+function requireTrigInput(name: string, x: Dec, angle: AngleUnit): Dec {
+  switch (name) {
+    case "sin":
+    case "cos":
+    case "tan": {
+      const max = angle === "Deg" ? "9e9" : angle === "Rad" ? "157079632.7" : "1e10";
+      return requireMagnitude(x, max);
+    }
+    case "asin":
+    case "acos":
+      return requireMagnitude(x, "1", true);
+    case "atan":
+      return requireMagnitude(x, "9.999999999e99", true);
+    case "sinh":
+    case "cosh":
+      return requireMagnitude(x, "230.2585092", true);
+    case "tanh":
+      return requireMagnitude(x, "9.999999999e99", true);
+    case "asinh":
+      return requireMagnitude(x, "4.999999999e99", true);
+    case "acosh":
+      return requireFunctionInputRange(x, "1", "4.999999999e99");
+    case "atanh":
+      return requireMagnitude(x, "0.9999999999", true);
+    default:
+      throw new CalcSyntaxError();
+  }
+}
+
+function requirePowerRange(base: Sym, exponent: Sym): void {
+  if (base.k === "cplx" || exponent.k === "cplx") {
+    return;
+  }
+  const x = toDec(base);
+  const y = toDec(exponent);
+  assertRange(x);
+  assertRange(y);
+  if (x.isZero()) {
+    if (y.lte(0)) {
+      throw new CalcMathError();
+    }
+    return;
+  }
+  const rationalExponent = exactRational(exponent);
+  if (x.isNeg() && (!rationalExponent || rationalExponent.d % 2n === 0n)) {
+    throw new CalcMathError();
+  }
+  const logProduct = y.times(x.abs().log(10));
+  if (logProduct.lte("-1e100") || logProduct.gte(100)) {
+    throw new CalcMathError();
+  }
+}
+
+function requireExactTanNonSingularity(value: Dec, angle: AngleUnit): void {
+  const singularUnit = angle === "Deg" ? D(90) : angle === "Gra" ? D(100) : null;
+  if (singularUnit) {
+    const multiple = value.abs().div(singularUnit);
+    if (multiple.isInteger() && multiple.mod(2).eq(1)) {
+      throw new CalcMathError();
+    }
+  }
+}
+
 function evalAtom(atom: Atom, ctx: EvalContext): Sym {
   switch (atom.t) {
     case "num":
@@ -143,6 +242,15 @@ function evalAtom(atom: Atom, ctx: EvalContext): Sym {
       return symDiv(n, d);
     }
     case "mixed": {
+      const wholeLength = literalIntegerLength(atom.whole);
+      const numeratorLength = literalIntegerLength(atom.num);
+      const denominatorLength = literalIntegerLength(atom.den);
+      if (wholeLength !== null && numeratorLength !== null && denominatorLength !== null && atom.den.length > 0) {
+        const separators = (atom.whole.length > 0 ? 1 : 0) + 1;
+        if (wholeLength + numeratorLength + denominatorLength + separators > 10) {
+          throw new CalcMathError();
+        }
+      }
       const w = atom.whole.length ? evalSlot(atom.whole, ctx) : symRat(0n);
       const n = evalSlot(atom.num, ctx);
       const d = evalSlot(atom.den, ctx);
@@ -152,24 +260,40 @@ function evalAtom(atom: Atom, ctx: EvalContext): Sym {
       const deg = atom.deg.length ? requireReal(evalSlot(atom.deg, ctx)) : D(0);
       const min = atom.min.length ? requireReal(evalSlot(atom.min, ctx)) : D(0);
       const sec = atom.sec.length ? requireReal(evalSlot(atom.sec, ctx)) : D(0);
+      requireMagnitude(deg, "1e100");
+      requireFunctionInputRange(min, "0", "1e100", true, false);
+      requireFunctionInputRange(sec, "0", "1e100", true, false);
       return fromDec(deg.plus(min.div(60)).plus(sec.div(3600)));
     }
-    case "sqrt":
-      return symSqrt(evalSlot(atom.inner, ctx));
+    case "sqrt": {
+      const value = evalSlot(atom.inner, ctx);
+      requireFunctionInputRange(requireReal(value), "0", "1e100", true, false);
+      return symSqrt(value);
+    }
     case "cbrt": {
       const inner = evalSlot(atom.inner, ctx);
+      requireMagnitude(requireReal(inner), "1e100");
       return symPow(inner, symRat(1n, 3n));
     }
     case "nthrt": {
       const n = evalSlot(atom.n, ctx);
       const inner = evalSlot(atom.inner, ctx);
-      return symPow(inner, symDiv(symRat(1n), n));
+      const exactIndex = exactRational(n);
+      const exponent = exactIndex ? symRat(exactIndex.d, exactIndex.n) : symDiv(symRat(1n), n);
+      requirePowerRange(inner, exponent);
+      return symPow(inner, exponent);
     }
-    case "pow":
-      return symPow(evalSlot(atom.base, ctx), evalSlot(atom.exp, ctx));
+    case "pow": {
+      const base = evalSlot(atom.base, ctx);
+      const exponent = evalSlot(atom.exp, ctx);
+      requirePowerRange(base, exponent);
+      return symPow(base, exponent);
+    }
     case "logb": {
       const a = requireReal(evalSlot(atom.arg, ctx));
       const b = requireReal(evalSlot(atom.base, ctx));
+      requireFunctionInputRange(a, "0", "9.999999999e99", false, true);
+      requireFunctionInputRange(b, "0", "9.999999999e99", false, true);
       if (a.lte(0) || b.lte(0) || b.eq(1)) {
         throw new CalcMathError();
       }
@@ -207,11 +331,22 @@ function evalAtom(atom: Atom, ctx: EvalContext): Sym {
       const inner = evalSlot(atom.inner, ctx);
       switch (atom.op) {
         case "sq":
+          if (!isNonReal(inner)) {
+            requireMagnitude(requireReal(inner), "1e50");
+          }
           return symPow(inner, symRat(2n));
         case "cube":
           return symPow(inner, symRat(3n));
-        case "inv":
+        case "inv": {
+          if (!isNonReal(inner)) {
+            const value = requireReal(inner);
+            requireMagnitude(value, "1e100");
+            if (value.isZero()) {
+              throw new CalcMathError();
+            }
+          }
           return symDiv(symRat(1n), inner);
+        }
         case "fact":
           return fromDec(factorial(requireReal(inner)));
         case "pct":
@@ -252,6 +387,16 @@ function evalAtom(atom: Atom, ctx: EvalContext): Sym {
   }
 }
 
+function literalIntegerLength(atoms: Atom[]): number | null {
+  if (atoms.length === 0) {
+    return 0;
+  }
+  if (atoms.length !== 1 || atoms[0]?.t !== "num" || !/^\d+$/.test(atoms[0].s)) {
+    return null;
+  }
+  return atoms[0].s.length;
+}
+
 function fromRadToCurrent(rad: Dec, unit: AngleUnit): Dec {
   switch (unit) {
     case "Deg":
@@ -268,6 +413,18 @@ function fromRadToCurrent(rad: Dec, unit: AngleUnit): Dec {
 }
 
 function evalCall(name: string, args: Atom[][], ctx: EvalContext): Sym {
+  const constant = scientificConstantByCallName(name);
+  if (constant) {
+    return fromDec(D(constant.value));
+  }
+  const conversion = unitConversionByCallName(name);
+  if (conversion) {
+    const source = args[0];
+    if (!source || source.length === 0) {
+      throw new CalcSyntaxError();
+    }
+    return fromDec(convertUnitValue(conversion.code, requireReal(evalSlot(source, ctx))));
+  }
   if (isStatCallName(name)) {
     if (!ctx.statType || !ctx.statRows) {
       throw new CalcSyntaxError();
@@ -278,6 +435,9 @@ function evalCall(name: string, args: Atom[][], ctx: EvalContext): Sym {
     }
     const dec = evalStatCommand(name, arg, ctx.statType, ctx.statRows, ctx.statFreq);
     return fromDec(dec);
+  }
+  if (name === "int" || name === "diff" || name === "Σ") {
+    return evalNumericalCall(name, args, ctx);
   }
   const vals = args.map((a) => evalSlot(a, ctx));
   switch (name) {
@@ -308,16 +468,22 @@ function evalCall(name: string, args: Atom[][], ctx: EvalContext): Sym {
       if (isNonReal(arg)) {
         throw new CalcMathError();
       }
+      const trigValue = requireTrigInput(name, toDec(arg), ctx.angle);
+      if (name === "tan") {
+        requireExactTanNonSingularity(trigValue, ctx.angle);
+      }
       const special = specialTrigFromSym(name, arg, ctx.angle);
       if (special) {
         return special;
       }
-      return fromDec(evalTrig(name, toDec(arg), ctx.angle));
+      return fromDec(evalTrig(name, trigValue, ctx.angle));
     }
     case "log": {
       if (vals.length >= 2 && vals[0] && vals[1]) {
         const b = requireReal(vals[0]);
         const a = requireReal(vals[1]);
+        requireFunctionInputRange(a, "0", "9.999999999e99", false, true);
+        requireFunctionInputRange(b, "0", "9.999999999e99", false, true);
         if (a.lte(0) || b.lte(0) || b.eq(1)) {
           throw new CalcMathError();
         }
@@ -325,6 +491,7 @@ function evalCall(name: string, args: Atom[][], ctx: EvalContext): Sym {
       }
       {
         const x = vals[0] ? requireReal(vals[0]) : D(0);
+        requireFunctionInputRange(x, "0", "9.999999999e99", false, true);
         if (x.lte(0)) {
           throw new CalcMathError();
         }
@@ -333,18 +500,28 @@ function evalCall(name: string, args: Atom[][], ctx: EvalContext): Sym {
     }
     case "ln": {
       const x = vals[0] ? requireReal(vals[0]) : D(0);
+      requireFunctionInputRange(x, "0", "9.999999999e99", false, true);
       if (x.lte(0)) {
         throw new CalcMathError();
       }
       return fromDec(roundInternal(x.ln()));
     }
     case "sci10":
-    case "exp10":
-      return fromDec(roundInternal(D(10).pow(vals[0] ? requireReal(vals[0]) : D(0))));
-    case "exp":
-      return fromDec(roundInternal((vals[0] ? requireReal(vals[0]) : D(0)).exp()));
-    case "Ran#":
-      return fromDec(ranHash(ctx.nextUint32()));
+    case "exp10": {
+      const exponent = vals[0] ? requireReal(vals[0]) : D(0);
+      requireFunctionInputRange(exponent, "-9.999999999e99", "99.99999999");
+      return fromDec(roundInternal(D(10).pow(exponent)));
+    }
+    case "exp": {
+      const exponent = vals[0] ? requireReal(vals[0]) : D(0);
+      requireFunctionInputRange(exponent, "-9.999999999e99", "230.2585092");
+      return fromDec(roundInternal(exponent.exp()));
+    }
+    case "Ran#": {
+      const value = fromDec(ranHash(ctx.nextUint32()));
+      const exact = exactRational(value);
+      return exact ? symRat(exact.n, exact.d) : value;
+    }
     case "RanInt": {
       const a = vals[0];
       const b = vals[1];
@@ -353,16 +530,28 @@ function evalCall(name: string, args: Atom[][], ctx: EvalContext): Sym {
       }
       return fromDec(ranInt(requireReal(a), requireReal(b), ctx.nextUint32()));
     }
-    case "Rnd":
-      return fromDec((vals[0] ? requireReal(vals[0]) : D(0)).toSignificantDigits(10, 4));
+    case "Rnd": {
+      const value = vals[0] ? requireReal(vals[0]) : D(0);
+      const rounded =
+        ctx.numberFormat.kind === "Fix"
+          ? value.toDecimalPlaces(ctx.numberFormat.n, 4)
+          : value.toSignificantDigits(
+              ctx.numberFormat.kind === "Sci" && ctx.numberFormat.n !== 0 ? ctx.numberFormat.n : 10,
+              4,
+            );
+      return fromDec(roundInternal(rounded));
+    }
     case "Pol": {
       if (!vals[0] || !vals[1]) {
         throw new CalcArgumentError();
       }
       const x = requireReal(vals[0]);
       const y = requireReal(vals[1]);
+      requireMagnitude(x, "9.999999999e99", true);
+      requireMagnitude(y, "9.999999999e99", true);
       const z = packCplx(fromDec(x), fromDec(y));
       const r = toDec(complexAbs(z));
+      requireFunctionInputRange(r, "0", "9.999999999e99");
       const th = toDec(complexArg(z, ctx.angle));
       ctx.polRec = { x: r, y: th, kind: "pol" };
       return fromDec(r);
@@ -373,8 +562,12 @@ function evalCall(name: string, args: Atom[][], ctx: EvalContext): Sym {
       }
       const r = requireReal(vals[0]);
       const th = requireReal(vals[1]);
+      requireFunctionInputRange(r, "0", "9.999999999e99");
+      requireTrigInput("sin", th, ctx.angle);
       const z = polarToRect(fromDec(r), fromDec(th), ctx.angle);
       const { re, im } = asCplx(z);
+      assertRange(toDec(re));
+      assertRange(toDec(im));
       ctx.polRec = { x: toDec(re), y: toDec(im), kind: "rec" };
       return re;
     }
@@ -403,6 +596,52 @@ function evalCall(name: string, args: Atom[][], ctx: EvalContext): Sym {
   }
 }
 
+function evalNumericalCall(name: "int" | "diff" | "Σ", args: Atom[][], ctx: EvalContext): Sym {
+  if (ctx.mode !== "COMP") {
+    throw new CalcSyntaxError();
+  }
+  const required = name === "int" || name === "Σ" ? 3 : 2;
+  if (args.length < required || args.slice(0, required).some((slot) => slot.length === 0)) {
+    throw new CalcSyntaxError();
+  }
+  if (args.length > required + (name === "Σ" ? 0 : 1)) {
+    throw new CalcArgumentError();
+  }
+  if (args.length > required && args[required]?.length === 0) {
+    throw new CalcSyntaxError();
+  }
+  assertAllowedCalculusTree(name, args);
+  const fn = args[0];
+  const first = args[1];
+  const second = args[2];
+  if (!fn || !first || (name !== "diff" && !second)) {
+    throw new CalcSyntaxError();
+  }
+  const firstValue = requireReal(evalSlot(first, ctx));
+  const secondValue = name !== "diff" && second ? requireReal(evalSlot(second, ctx)) : D(0);
+  const toleranceSlot = name === "diff" ? args[2] : name === "int" ? args[3] : undefined;
+  const explicitTolerance = Boolean(toleranceSlot?.length);
+  const tolerance = explicitTolerance
+    ? requireReal(evalSlot(toleranceSlot!, ctx))
+    : D(name === "int" ? "1e-5" : "1e-10");
+  const originalX = ctx.variables.X;
+  const sample = (x: Dec): Dec => {
+    ctx.variables.X = x;
+    try {
+      return requireReal(evalSlot(fn, ctx));
+    } finally {
+      ctx.variables.X = originalX;
+    }
+  };
+  if (name === "int") {
+    return fromDec(integrateAdaptive(sample, firstValue, secondValue, tolerance));
+  }
+  if (name === "diff") {
+    return fromDec(differentiateCentral(sample, firstValue, tolerance, explicitTolerance));
+  }
+  return fromDec(sumIntegerRange(sample, firstValue, secondValue));
+}
+
 function evalTrig(name: string, x: Dec, angle: AngleUnit): Dec {
   switch (name) {
     case "sin":
@@ -412,9 +651,6 @@ function evalTrig(name: string, x: Dec, angle: AngleUnit): Dec {
     case "tan": {
       const r = toRad(x, angle);
       const c = r.cos();
-      if (c.abs().lt("1e-15")) {
-        throw new CalcMathError();
-      }
       return roundInternal(r.sin().div(c));
     }
     case "asin":
@@ -603,29 +839,138 @@ export function evaluateToSym(
   return sym;
 }
 
-function decorateCompResult(result: ResultValue, ctx: EvalContext, state: CalcState): ResultValue {
-  const mathO = state.setup.displayFormat === "MthIO-MathO";
+function containsSexagesimalInput(atoms: Atom[]): boolean {
+  for (const atom of atoms) {
+    let nested: Atom[][] = [];
+    switch (atom.t) {
+      case "sexagesimal":
+        return true;
+      case "frac":
+        nested = [atom.num, atom.den];
+        break;
+      case "mixed":
+        nested = [atom.whole, atom.num, atom.den];
+        break;
+      case "sqrt":
+      case "cbrt":
+      case "neg":
+      case "abs":
+        nested = [atom.inner];
+        break;
+      case "post":
+        if (atom.op === "dms") {
+          return true;
+        }
+        nested = [atom.inner];
+        break;
+      case "angle":
+        nested = [atom.inner];
+        break;
+      case "nthrt":
+        nested = [atom.n, atom.inner];
+        break;
+      case "pow":
+        nested = [atom.base, atom.exp];
+        break;
+      case "logb":
+        nested = [atom.base, atom.arg];
+        break;
+      case "call":
+        nested = atom.args;
+        break;
+      case "group":
+        nested = [atom.inner];
+        break;
+      default:
+        break;
+    }
+    if (nested.some(containsSexagesimalInput)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function containsFractionInput(atoms: Atom[]): boolean {
+  return atoms.some((atom) => {
+    if (atom.t === "frac" || atom.t === "mixed") {
+      return true;
+    }
+    return nestedAtomLists(atom).some(containsFractionInput);
+  });
+}
+
+function containsDecimalLiteral(atoms: Atom[]): boolean {
+  return atoms.some((atom) => {
+    if (atom.t === "num") {
+      return atom.s.includes(".");
+    }
+    return nestedAtomLists(atom).some(containsDecimalLiteral);
+  });
+}
+
+function nestedAtomLists(atom: Atom): Atom[][] {
+  switch (atom.t) {
+    case "frac": return [atom.num, atom.den];
+    case "mixed": return [atom.whole, atom.num, atom.den];
+    case "sqrt":
+    case "cbrt":
+    case "neg":
+    case "abs":
+    case "post":
+    case "angle": return [atom.inner];
+    case "nthrt": return [atom.n, atom.inner];
+    case "pow": return [atom.base, atom.exp];
+    case "logb": return [atom.base, atom.arg];
+    case "sexagesimal": return [atom.deg, atom.min, atom.sec];
+    case "call": return atom.args;
+    case "group": return [atom.inner];
+    default: return [];
+  }
+}
+
+function decorateCompResult(result: ResultValue, ctx: EvalContext, state: CalcState, source: Atom[]): ResultValue {
+  const mathO = effectiveDisplayFormat(state.mode, state.setup.displayFormat) === "MthIO-MathO";
   let next: ResultValue = result.complex
     ? result
-    : { ...result, sexagesimal: formatSexagesimal(parseCalcNumber(result.approx)) };
+    : { ...result, sexagesimal: formatSexagesimal(parseCalcNumber(result.internal?.re ?? result.approx)) };
+  if (
+    !mathO &&
+    !result.complex &&
+    result.fraction &&
+    containsFractionInput(source) &&
+    !containsDecimalLiteral(source)
+  ) {
+    next = fractionResultForSetup(next, state.setup);
+  }
+  if (!result.complex && containsSexagesimalInput(source) && next.sexagesimal) {
+    next = { ...next, display: next.sexagesimal, naturalKind: "decimal" };
+  }
   if (ctx.polRec) {
     const X = formatNumeric(ctx.polRec.x, state.setup);
     const Y = formatNumeric(ctx.polRec.y, state.setup);
     const Xd = formatBySetup(ctx.polRec.x, state.setup);
     const Yd = formatBySetup(ctx.polRec.y, state.setup);
+    const separator = state.setup.decimalMark === "Dot" ? "," : ";";
     const display =
       ctx.polRec.kind === "pol"
         ? mathO
-          ? `r=${Xd} θ=${Yd}`
-          : `r=${Xd}`
+          ? `r=${Xd}${separator} θ=${Yd}`
+          : `r=${Xd}\nθ=${Yd}`
         : mathO
-          ? `X=${Xd} Y=${Yd}`
-          : `X=${Xd}`;
+          ? `X=${Xd}${separator} Y=${Yd}`
+          : `X=${Xd}\nY=${Yd}`;
     next = {
       ...next,
       display,
       approx: X,
       polRec: { X, Y, kind: ctx.polRec.kind },
+      internal: {
+        re: next.internal?.re ?? next.approx,
+        ...(next.internal?.im !== undefined ? { im: next.internal.im } : {}),
+        x: roundInternal(ctx.polRec.x).toString(),
+        y: roundInternal(ctx.polRec.y).toString(),
+      },
       naturalKind: "decimal",
     };
   }
@@ -655,9 +1000,13 @@ export function evaluateAtoms(
     const bound: CalcState = variableOverlay
       ? { ...state, variables: { ...state.variables, ...variableOverlay } }
       : state;
-    const ctx = ctxFromState(bound, nextUint32);
+    const effectiveState: CalcState = {
+      ...bound,
+      setup: { ...bound.setup, displayFormat: effectiveDisplayFormat(bound.mode, bound.setup.displayFormat) },
+    };
+    const ctx = ctxFromState(effectiveState, nextUint32);
     const sym = evalSlot(atoms, ctx);
-    const format = ctx.complexFormatOverride ?? state.setup.complexFormat;
+    const format = ctx.complexFormatOverride ?? effectiveState.setup.complexFormat;
     if (sym.k === "cplx") {
       if (!ctx.complexOk) {
         throw new CalcMathError();
@@ -665,17 +1014,17 @@ export function evaluateAtoms(
       const { re, im } = asCplx(sym);
       assertRange(toDec(re));
       assertRange(toDec(im));
-      return resultFromSym(sym, state.setup, format);
+      return resultFromSym(sym, effectiveState.setup, format);
     }
     const raw = toDec(sym);
     const dec = assertRange(raw);
     const base =
       raw.isZero() || (dec.isZero() && !raw.isZero())
-        ? resultFromSym(symRat(0n), state.setup)
-        : resultFromSym(sym, state.setup, format);
-    return decorateCompResult(base, ctx, state);
+        ? resultFromSym(symRat(0n), effectiveState.setup)
+        : resultFromSym(sym, effectiveState.setup, format);
+    return decorateCompResult(base, ctx, effectiveState, atoms);
   } catch (err) {
-    if (err instanceof CalcMathError || err instanceof CalcSyntaxError || err instanceof CalcArgumentError) {
+    if (err instanceof CalcMathError || err instanceof CalcSyntaxError || err instanceof CalcArgumentError || err instanceof CalcTimeoutError) {
       throw err;
     }
     if (err instanceof Error && (err.message === "div0" || err.message === "math")) {

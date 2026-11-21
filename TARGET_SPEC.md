@@ -2,6 +2,10 @@
 
 Stable ID prefix: `TGT-`
 
+## Manual-source decision update (2026-11-20)
+
+The owner’s separate 46-page fx-570ES PLUS / fx-991ES PLUS guide is now the authoritative expected-behavior source for this app. See [docs/SELECTED_MANUAL.md](docs/SELECTED_MANUAL.md). Its cover has no edition label, so applying its details to the photographed second-edition fx-991ES PLUS-2 remains unverified. The 105-page fx-115ES PLUS / fx-991ES PLUS C guide described below is a retained historical cross-model source, not the current app behavior authority.
+
 ## Verified model identity
 
 | Field | Value | Evidence |
@@ -21,7 +25,7 @@ Stable ID prefix: `TGT-`
 
 Colorway used for the chassis overlay: official Casio **FX-991ESPLUS-2BU** (light blue-gray), which matches the supplied chat reference photograph (integral \(\int_0^{\pi/2}\cos(X)\,dx=1\) on screen). Black Seq1 photography of the same product code exists; layout is the same.
 
-## Primary reference manual (supplied)
+## Historical project manual reference (pre-2026-11-20 source hierarchy)
 
 | Field | Value |
 | --- | --- |
@@ -39,7 +43,7 @@ Colorway used for the chassis overlay: official Casio **FX-991ESPLUS-2BU** (ligh
 
 **Variant conflict (not silently resolved):** the supplied PDF is the North-American **fx-115ES PLUS / fx-991ES PLUS C** combined guide, not a cover titled “fx-991ES PLUS 2nd edition” alone. The 115/C guide documents extra modes **INEQ, VERIF, DIST** and dual-function TABLE defaults that the official fx-570ES PLUS / fx-991ES PLUS 2nd edition web ToC does **not** list.
 
-## Source-of-truth hierarchy (this project)
+## Historical source hierarchy (pre-2026-11-20)
 
 Evidence classes: see `docs/EVIDENCE_CLASSES.md`. Short labels used below: `TARGET-OFFICIAL-DOC`, `CROSS-MODEL-SOURCE`, `EMPIRICAL`, `INFERRED`, `NEEDS-HUMAN-REVIEW`.
 

@@ -57,8 +57,11 @@ Inspected via geometric keymap. User signed off D-pad hitboxes 2026-08-24. Overl
 ## Deployment
 
 Workflow: `.github/workflows/ci.yml` (verify job + Pages deploy of `dist/`).  
-Live origin: **https://bratadeepsarkar123.github.io/casio-fx-991es-copy/** — HTTP 200 but currently **legacy branch `/(root)`**, so it serves Vite source (blank UI). Production files are in `docs/` for folder `/docs`, or via GitHub Actions. **Do not claim live PWA verification.**
+GitHub Actions deploys the verified `dist/` build to **https://bratadeepsarkar123.github.io/casio-fx-991es-copy/**. The `docs/` folder is a separate fallback. The earlier branch-root deployment that served Vite source was replaced by the Actions workflow. Installation and offline use on a real Android device remain unverified.
 
 ## Provenance
 
 See `docs/EVIDENCE_CLASSES.md`, `docs/NUMERIC_AUDIT.md`, `TARGET_SPEC.md` D-012 (PreAns unconfirmed on target official memory ToC).
+## Selected-guide E-35 cross-product evidence (2026-11-21)
+
+The older HTML omission is superseded for this audit by the owner-selected [PDF page 36/E-35](https://support.casio.com/storage/en/manual/pdf/EN/004/fx-570_991ES_PLUS_EN.pdf#page=36). The checked crop visibly shows the selected first component `0`, the second `0`, and the third `−2`. The reducer trace and exact array are recorded in `EX-VECTOR-E34-E35-001`; physical hardware equivalence remains unverified.

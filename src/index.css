@@ -43,6 +43,13 @@ button:focus-visible {
   animation: lcd-caret-pulse 1s ease-in-out infinite;
 }
 
+.lcd-panel.is-byte-warning .lcd-caret {
+  width: 0.82em;
+  height: 0.95em;
+  margin: 0 0.08em;
+  animation: none;
+}
+
 @keyframes lcd-caret-pulse {
   0%,
   100% {

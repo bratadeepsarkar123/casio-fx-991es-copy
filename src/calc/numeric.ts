@@ -71,6 +71,14 @@ export class CalcArgumentError extends Error {
   }
 }
 
+export class CalcTimeoutError extends Error {
+  readonly code = "Time Out Error" as const;
+  constructor() {
+    super("Time Out Error");
+    this.name = "CalcTimeoutError";
+  }
+}
+
 export class CalcStackError extends Error {
   readonly code = "Stack ERROR" as const;
   constructor(message = "Stack ERROR") {
@@ -183,6 +191,9 @@ export function nPr(n: Decimal, r: Decimal): Decimal {
   let i = ZERO;
   while (i.lt(r)) {
     acc = acc.times(n.minus(i));
+    if (acc.gte("1e100")) {
+      throw new CalcMathError();
+    }
     i = i.plus(1);
   }
   return roundInternal(acc);
@@ -194,12 +205,17 @@ export function nCr(n: Decimal, r: Decimal): Decimal {
   }
   const k = Decimal.min(r, n.minus(r));
   let acc = ONE;
+  let denominator = ONE;
   let i = ONE;
   while (i.lte(k)) {
-    acc = acc.times(n.minus(k).plus(i)).div(i);
+    acc = acc.times(n.minus(k).plus(i));
+    if (acc.gte("1e100")) {
+      throw new CalcMathError();
+    }
+    denominator = denominator.times(i);
     i = i.plus(1);
   }
-  return roundInternal(acc);
+  return roundInternal(acc.div(denominator));
 }
 
 /**
