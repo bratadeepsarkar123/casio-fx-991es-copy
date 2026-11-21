@@ -82,12 +82,15 @@
   flex-shrink: 0;
   width: max-content;
   min-width: 100%;
-  /* Normalize monospace ch widths so the calibrated 15-character prefix fits
-     the existing continuation-marker reserve across system fonts. */
-  font-size-adjust: ch-width 0.54912;
   padding-right: 0;
   align-items: baseline;
   flex-wrap: nowrap;
+}
+
+/* Normalize result-screen monospace widths to fit the calibrated prefix while
+   preserving the original entry-template metrics. */
+.lcd-panel:not(.is-input-screen) .lcd-expr-inner {
+  font-size-adjust: ch-width 0.54912;
 }
 
 .lcd-expression-marker {
